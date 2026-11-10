@@ -21,7 +21,13 @@ export type Shadow = {
 };
 export type ShadowMetadata = {
   source_sha256: string;
+  projection?: {
+    ground: [number, number, number, number];
+    depth: number;
+    body_bbox: [number, number, number, number];
+  };
   body_path_ids: string[];
+  body_exclude_path_ids?: string[];
   anchor: [number, number];
   width: number;
   height: number;

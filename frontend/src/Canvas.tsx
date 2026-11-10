@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import {
   elementCorners,
+  elementPoint,
   frameCorners,
   framePatch,
   framePoint,
@@ -193,10 +194,13 @@ function containsInk(
     for (let i = 0; i < list.numberOfItems; i++)
       local = local.matrixTransform(list.getItem(i).matrix.inverse());
   }
-  if (node instanceof SVGGeometryElement)
+  if (node instanceof SVGGeometryElement) {
+    const style = getComputedStyle(node);
     return (
-      node.isPointInFill(local) || (outline && node.isPointInStroke(local))
+      (style.fill !== "none" && node.isPointInFill(local)) ||
+      (outline && style.stroke !== "none" && node.isPointInStroke(local))
     );
+  }
   return Array.from(node.children).some((child) =>
     containsInk(child as SVGElement, local, outline),
   );
@@ -223,15 +227,18 @@ function pickPart(
       const e = scene.elements.find(
         (item) => item.id === group.dataset.elementId,
       )!;
-      const mask = group.querySelector<SVGElement>("mask");
-      const local = inverseElementPoint(e, scene.scale, location);
-      const p = new DOMPoint(local.x, local.y);
-      const bodyMask = (point: DOMPoint) =>
-        !!mask &&
-        containsInk(mask.firstElementChild as SVGElement, point, true) &&
+      const local = inverseElementPoint(e, scene.scale, location),
+        p = new DOMPoint(local.x, local.y);
+      const reviewed =
+        group
+          .querySelector<SVGElement>('[data-mask-part="body"]')
+          ?.closest("mask") ?? null;
+      const reviewedBody = (point: DOMPoint) =>
+        !!reviewed &&
+        containsInk(reviewed.firstElementChild as SVGElement, point, true) &&
         !(
-          mask.children[1] &&
-          containsInk(mask.children[1] as SVGElement, point, true)
+          reviewed.children[1] &&
+          containsInk(reviewed.children[1] as SVGElement, point, true)
         );
       const castOwner =
         stage.querySelector<SVGGElement>(
@@ -240,51 +247,96 @@ function pickPart(
       const layer = castOwner.querySelector<SVGGElement>(
         "[data-custom-shadow],[data-source-shadow]",
       );
+      const projected =
+        layer?.getAttribute("data-shadow-source") === "body-silhouette";
       const subject = layer?.querySelector<SVGElement>("[data-shadow-subject]");
-      const clipId = subject?.parentElement
-        ?.getAttribute("clip-path")
-        ?.match(/url\(#([^)]*)\)/)?.[1];
-      const clip = clipId
-        ? stage.querySelector<SVGElement>(`#${CSS.escape(clipId)}`)
-        : null;
+      const clipFor = (node: globalThis.Element | null | undefined) => {
+        const id = node
+          ?.getAttribute("clip-path")
+          ?.match(/url\(#([^)]*)\)/)?.[1];
+        return id
+          ? stage.querySelector<SVGElement>(`#${CSS.escape(id)}`)
+          : null;
+      };
+      const clip = clipFor(subject?.parentElement);
       const sourceInk = (point: DOMPoint) =>
-        !bodyMask(point) &&
-        containsInk(subject ?? null, point) &&
+        !reviewedBody(point) &&
+        containsInk(subject ?? null, point, true) &&
         (!clip || containsInk(clip, point));
-      return { group, e, mask, p, bodyMask, layer, sourceInk };
+      const cut = group.querySelector<SVGElement>(
+        "[data-source-body-mask] [data-mask-cut]",
+      );
+      const cutClip = clipFor(cut);
+      const cutInk = (point: DOMPoint) =>
+        !!cut &&
+        containsInk(cut, point, true) &&
+        !reviewedBody(point) &&
+        (!cutClip || containsInk(cutClip, point));
+      const body = group.querySelector<SVGElement>("[data-shadow-body]");
+      const subjectMask = (
+        subject?.hasAttribute("mask")
+          ? subject
+          : subject?.querySelector("[mask]")
+      )
+        ?.getAttribute("mask")
+        ?.match(/url\(#([^)]*)\)/)?.[1];
+      const sourceBodyMask = subjectMask
+        ? !!stage.querySelector(
+            `#${CSS.escape(subjectMask)}[data-source-body-mask]`,
+          )
+        : false;
+      const bodyInk = (point: DOMPoint, content: SVGElement | null = body) =>
+        (containsInk(content, point, true) &&
+          (projected && !sourceBodyMask
+            ? reviewedBody(point)
+            : !cutInk(point))) ||
+        containsInk(
+          content?.querySelector<SVGElement>("[data-shadow-body-repair]") ??
+            null,
+          point,
+          true,
+        );
+      return {
+        group,
+        e,
+        p,
+        reviewed,
+        reviewedBody,
+        layer,
+        projected,
+        subject,
+        sourceInk,
+        bodyInk,
+      };
     });
-  // Painted subjects win over every shadow, regardless of the owner's order.
+  // Every visible body is above every scene shadow, including other owners.
   for (const c of candidates) {
-    const s = c.e.shadow;
-    const preservesSource =
-      !s ||
-      (s.angle % 360 === 0 &&
-        s.length === 1 &&
-        s.opacity === 1 &&
-        !(s.x ?? 0) &&
-        !(s.y ?? 0) &&
-        (s.scale_x ?? 1) === 1 &&
-        (s.scale_y ?? 1) === 1);
     if (
-      nativeHits.has(c.group) &&
-      (!c.mask || (preservesSource ? !c.sourceInk(c.p) : c.bodyMask(c.p)))
+      c.projected
+        ? c.bodyInk(c.p)
+        : nativeHits.has(c.group) &&
+          (!c.reviewed ||
+            (!c.e.shadow ? !c.sourceInk(c.p) : c.reviewedBody(c.p)))
     )
       return { e: c.e, part: "object" as const };
   }
   for (const c of candidates) {
-    const { e, layer, bodyMask } = c;
+    const { e, layer } = c;
     if (!layer) {
       if (nativeHits.has(c.group)) return { e, part: "object" as const };
       continue;
     }
     const settings = e.shadow ?? { angle: 0, length: 1, opacity: 1 };
-    if (settings.length <= 0 || settings.opacity <= 0) continue;
+    if (settings.opacity <= 0 || !layer.transform.baseVal.numberOfItems)
+      continue;
     const matrix = layer.transform.baseVal.getItem(0).matrix;
     if (Math.abs(matrix.a * matrix.d - matrix.b * matrix.c) < 1e-12) continue;
     const p = c.p.matrixTransform(matrix.inverse());
-    const bridge = layer.querySelector<SVGElement>("[data-shadow-bridge]");
-    if (bridge && !bodyMask(c.p) && containsInk(bridge, p))
-      return { e, part: e.shadow ? ("shadow" as const) : ("object" as const) };
+    if (c.projected) {
+      if (!c.bodyInk(c.p) && c.bodyInk(p, c.subject ?? null))
+        return { e, part: "shadow" as const };
+      continue;
+    }
     const a = assets.find(
       (a) =>
         a.family === e.family && a.detail === scene.detail && a.role === e.role,
@@ -473,7 +525,7 @@ export function Canvas({
     const f = selectionFrame(e, a, current.scene.scale, part),
       p = framePoint(f, scenePoint);
     const localCorners = elementCorners(f.element, f.scale, f.width, f.height);
-    const center = {
+    const center = f.projection?.anchor ?? {
       x: (localCorners[0].x + localCorners[2].x) / 2,
       y: (localCorners[0].y + localCorners[2].y) / 2,
     };
@@ -526,19 +578,46 @@ export function Canvas({
         },
       ]
     : [];
-  const top = positions[1];
+  const shadowAnchor =
+    frame?.owner && frame.projection
+      ? elementPoint(frame.owner, frame.sceneScale, frame.projection.anchor)
+      : null;
+  const shadowEndpoint =
+    frame?.owner && frame.projection
+      ? elementPoint(frame.owner, frame.sceneScale, frame.element)
+      : null;
+  const top = editingShadow ? shadowEndpoint : positions[1];
   const edge = top && {
     x: corners[1].x - corners[0].x,
     y: corners[1].y - corners[0].y,
   };
   const edgeSize = edge ? Math.hypot(edge.x, edge.y) : 0;
-  const rotation =
-    top && edgeSize && edge
+  const shadowVector =
+    shadowAnchor && shadowEndpoint
       ? {
-          x: top.x + ((edge.y / edgeSize) * 30) / camera,
-          y: top.y - ((edge.x / edgeSize) * 30) / camera,
+          x: shadowEndpoint.x - shadowAnchor.x,
+          y: shadowEndpoint.y - shadowAnchor.y,
         }
       : null;
+  const vectorSize = shadowVector
+    ? Math.hypot(shadowVector.x, shadowVector.y)
+    : 0;
+  const rotation =
+    editingShadow && top && shadowVector
+      ? {
+          x:
+            top.x +
+            ((vectorSize ? shadowVector.y / vectorSize : 0) * 28) / camera,
+          y:
+            top.y -
+            ((vectorSize ? shadowVector.x / vectorSize : 1) * 28) / camera,
+        }
+      : top && edgeSize && edge
+        ? {
+            x: top.x + ((edge.y / edgeSize) * 30) / camera,
+            y: top.y - ((edge.x / edgeSize) * 30) / camera,
+          }
+        : null;
   return (
     <div ref={host} className="canvas-host">
       <div ref={scroll} className="canvas-scroll" data-testid="canvas-scroll">
@@ -576,6 +655,25 @@ export function Canvas({
                 return;
               }
               let next = f.element;
+              if (f.owner && f.projection) {
+                if (d.kind === "rotate") {
+                  let angle =
+                    next.angle +
+                    ((Math.atan2(p.y - d.center!.y, p.x - d.center!.x) -
+                      d.angle!) *
+                      180) /
+                      Math.PI;
+                  if (event.shiftKey) angle = Math.round(angle / 15) * 15;
+                  next = { ...next, angle };
+                } else
+                  next = {
+                    ...next,
+                    x: next.x + p.x - d.start.x,
+                    y: next.y + p.y - d.start.y,
+                  };
+                current.previewElement(d.element.id, framePatch(f, next));
+                return;
+              }
               if (d.kind === "move")
                 next = {
                   ...next,
@@ -651,69 +749,151 @@ export function Canvas({
                 />
                 {!element.locked && rotation && (
                   <>
-                    {positions.map((p, i) => (
-                      <rect
-                        key={handles[i]}
-                        data-resize-handle={handles[i]}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Размер ${editingShadow ? "тени" : "объекта"}: ${handles[i]}`}
-                        onKeyDown={(event) => {
-                          if (
-                            ![
-                              "ArrowLeft",
-                              "ArrowRight",
-                              "ArrowUp",
-                              "ArrowDown",
-                            ].includes(event.key)
-                          )
-                            return;
-                          event.preventDefault();
-                          event.stopPropagation();
-                          if (drag.current || busy) return;
-                          const step = (event.shiftKey ? 10 : 1) / camera;
-                          const target = {
-                            x:
-                              p.x +
-                              (event.key === "ArrowRight"
-                                ? step
-                                : event.key === "ArrowLeft"
-                                  ? -step
-                                  : 0),
-                            y:
-                              p.y +
-                              (event.key === "ArrowDown"
-                                ? step
-                                : event.key === "ArrowUp"
-                                  ? -step
-                                  : 0),
-                          };
-                          const next = resizeElement(
-                            frame.element,
-                            frame.scale,
-                            frame.width,
-                            frame.height,
-                            handles[i],
-                            framePoint(frame, target),
-                            !frame.owner,
-                          );
-                          store
-                            .getState()
-                            .patchElement(element.id, framePatch(frame, next));
-                        }}
-                        x={p.x - 4 / camera}
-                        y={p.y - 4 / camera}
-                        width={8 / camera}
-                        height={8 / camera}
-                        fill="white"
-                        stroke="#FF68A4"
-                        strokeWidth={1 / camera}
-                        style={{ cursor: `${handles[i]}-resize` }}
-                      />
-                    ))}
+                    {!editingShadow &&
+                      positions.map((p, i) => (
+                        <rect
+                          key={handles[i]}
+                          data-resize-handle={handles[i]}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Размер ${editingShadow ? "тени" : "объекта"}: ${handles[i]}`}
+                          onKeyDown={(event) => {
+                            if (
+                              ![
+                                "ArrowLeft",
+                                "ArrowRight",
+                                "ArrowUp",
+                                "ArrowDown",
+                              ].includes(event.key)
+                            )
+                              return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (drag.current || busy) return;
+                            const step = (event.shiftKey ? 10 : 1) / camera;
+                            const target = {
+                              x:
+                                p.x +
+                                (event.key === "ArrowRight"
+                                  ? step
+                                  : event.key === "ArrowLeft"
+                                    ? -step
+                                    : 0),
+                              y:
+                                p.y +
+                                (event.key === "ArrowDown"
+                                  ? step
+                                  : event.key === "ArrowUp"
+                                    ? -step
+                                    : 0),
+                            };
+                            const next = resizeElement(
+                              frame.element,
+                              frame.scale,
+                              frame.width,
+                              frame.height,
+                              handles[i],
+                              framePoint(frame, target),
+                              !frame.owner,
+                            );
+                            store
+                              .getState()
+                              .patchElement(
+                                element.id,
+                                framePatch(frame, next),
+                              );
+                          }}
+                          x={p.x - 4 / camera}
+                          y={p.y - 4 / camera}
+                          width={8 / camera}
+                          height={8 / camera}
+                          fill="white"
+                          stroke="#FF68A4"
+                          strokeWidth={1 / camera}
+                          style={{ cursor: `${handles[i]}-resize` }}
+                        />
+                      ))}
+                    {editingShadow && shadowAnchor && shadowEndpoint && (
+                      <>
+                        <line
+                          x1={shadowAnchor.x}
+                          y1={shadowAnchor.y}
+                          x2={shadowEndpoint.x}
+                          y2={shadowEndpoint.y}
+                          stroke="#FF68A4"
+                          strokeWidth={1 / camera}
+                          strokeDasharray={`${4 / camera} ${3 / camera}`}
+                          pointerEvents="none"
+                        />
+                        <circle
+                          data-shadow-anchor="true"
+                          cx={shadowAnchor.x}
+                          cy={shadowAnchor.y}
+                          r={3 / camera}
+                          fill="#FF68A4"
+                          pointerEvents="none"
+                        />
+                        <circle
+                          data-resize-handle="e"
+                          data-shadow-vector-handle="true"
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Направление и длина тени"
+                          onKeyDown={(event) => {
+                            if (
+                              ![
+                                "ArrowLeft",
+                                "ArrowRight",
+                                "ArrowUp",
+                                "ArrowDown",
+                              ].includes(event.key)
+                            )
+                              return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (drag.current || busy) return;
+                            const step = (event.shiftKey ? 10 : 1) / camera;
+                            const target = framePoint(frame, {
+                              x:
+                                shadowEndpoint.x +
+                                (event.key === "ArrowRight"
+                                  ? step
+                                  : event.key === "ArrowLeft"
+                                    ? -step
+                                    : 0),
+                              y:
+                                shadowEndpoint.y +
+                                (event.key === "ArrowDown"
+                                  ? step
+                                  : event.key === "ArrowUp"
+                                    ? -step
+                                    : 0),
+                            });
+                            store.getState().patchElement(
+                              element.id,
+                              framePatch(frame, {
+                                ...frame.element,
+                                ...target,
+                              }),
+                            );
+                          }}
+                          cx={shadowEndpoint.x}
+                          cy={shadowEndpoint.y}
+                          r={6 / camera}
+                          fill="white"
+                          stroke="#FF68A4"
+                          strokeWidth={2 / camera}
+                          style={{ cursor: "crosshair" }}
+                        >
+                          <title>
+                            Потяните, чтобы изменить направление и длину
+                          </title>
+                        </circle>
+                      </>
+                    )}
                     <line
-                      x1={top.x}
-                      y1={top.y}
+                      x1={top!.x}
+                      y1={top!.y}
                       x2={rotation!.x}
                       y2={rotation!.y}
                       stroke="#FF68A4"
@@ -733,16 +913,20 @@ export function Canvas({
                         event.preventDefault();
                         event.stopPropagation();
                         if (drag.current || busy) return;
-                        const next = rotateElement(
-                          frame.element,
-                          frame.scale,
-                          frame.width,
-                          frame.height,
+                        const angle =
                           frame.element.angle +
-                            (event.key === "ArrowRight" ? 1 : -1) *
-                              (event.shiftKey ? 15 : 5),
-                          !frame.owner,
-                        );
+                          (event.key === "ArrowRight" ? 1 : -1) *
+                            (event.shiftKey ? 15 : 5);
+                        const next = editingShadow
+                          ? { ...frame.element, angle }
+                          : rotateElement(
+                              frame.element,
+                              frame.scale,
+                              frame.width,
+                              frame.height,
+                              angle,
+                              !frame.owner,
+                            );
                         store
                           .getState()
                           .patchElement(element.id, framePatch(frame, next));
@@ -781,12 +965,12 @@ export function Canvas({
                 <MousePointer2 size={17} />
               </button>
               <button
-                aria-label="Сбросить настройки тени"
-                title="Сбросить настройки тени"
+                aria-label="Сбросить проекцию тени"
+                title="Сбросить проекцию тени"
                 disabled={element.locked}
                 onClick={() =>
                   store.getState().patchElement(element.id, {
-                    shadow: { angle: 0, length: 1, opacity: 1 },
+                    shadow: { angle: 90, length: 1, opacity: 1 },
                   })
                 }
               >

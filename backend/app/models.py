@@ -35,7 +35,7 @@ class Palette(Model):
 
 
 class Shadow(Model):
-    angle: Finite = Field(default=0, ge=0, le=360)
+    angle: Finite = Field(default=90, ge=0, le=360)
     length: Finite = Field(default=1, ge=0, le=2)
     opacity: Finite = Field(default=1, ge=0, le=1)
     x: Finite = Field(default=0, ge=-5000, le=5000)

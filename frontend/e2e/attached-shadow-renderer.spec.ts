@@ -15,24 +15,19 @@ const helper = ts
   })
   .outputText.replace(/^export /gm, "");
 
-test("folder and earphone contact bridges render filled continuous fields in every source variant", async ({
+test("all forty silhouettes project the body, retain openings and occlude below opaque bases", async ({
   page,
 }) => {
+  test.setTimeout(60000);
   await page.addScriptTag({ content: helper });
   const results = [];
-  for (const asset of assets.filter((a: { family: string }) =>
-    ["folder", "headphones", "lamp", "phone"].includes(a.family),
-  )) {
-    for (const settings of [
-      { angle: 0, length: 1, opacity: 1, x: 90, y: 60 },
-      { angle: 65, length: 1, opacity: 1 },
-      { angle: 0, length: 1, opacity: 1, scale_x: 1.8, scale_y: 0.4 },
-    ]) {
+  for (const asset of assets)
+    for (const angle of [45, 90, 135, 225]) {
       const result = await page.evaluate(
-        async ({ source, asset, metadata, settings }) => {
+        async ({ source, asset, metadata, angle }) => {
           const doc = new DOMParser().parseFromString(source, "image/svg+xml");
-          // The production DOM helper is loaded above; no server or AI call is used.
-          // @ts-expect-error injected production function
+          const settings = { angle, length: 1, opacity: 1 };
+          // @ts-expect-error injected production helper
           applyCustomShadow(doc, {
             metadata,
             settings,
@@ -40,130 +35,238 @@ test("folder and earphone contact bridges render filled continuous fields in eve
             width: asset.width,
             height: asset.height,
           });
-          const root = doc.documentElement;
-          // @ts-expect-error injected production function
+          // @ts-expect-error injected production helper
           const [a, b, c, d, e, f] = shadowMatrix(metadata, settings)
             .slice(7, -1)
             .split(" ")
             .map(Number);
-          const polygons = metadata.attachment_edges.map(
-            (edge: number[], index: number) => {
-              const [x1, y1, x2, y2] = edge,
-                [cx1, cy1, cx2, cy2] = metadata.attachment_cast_edges[index];
-              return [
-                [x1, y1],
-                [x2, y2],
-                [a * cx2 + c * cy2 + e, b * cx2 + d * cy2 + f],
-                [a * cx1 + c * cy1 + e, b * cx1 + d * cy1 + f],
-              ];
-            },
-          );
-          root.querySelector("[data-shadow-body]")!.remove();
-          const pad = 700,
-            width = Math.ceil(asset.width + pad * 2),
-            height = Math.ceil(asset.height + pad * 2);
+          const corners = [
+            [0, 0],
+            [asset.width, 0],
+            [0, asset.height],
+            [asset.width, asset.height],
+          ];
+          const points = [
+            ...corners,
+            ...corners.map(([x, y]) => [a * x + c * y + e, b * x + d * y + f]),
+          ];
+          const left = Math.floor(Math.min(...points.map((p) => p[0]))) - 8,
+            top = Math.floor(Math.min(...points.map((p) => p[1]))) - 8;
+          const width =
+              Math.ceil(Math.max(...points.map((p) => p[0]))) - left + 8,
+            height = Math.ceil(Math.max(...points.map((p) => p[1]))) - top + 8;
+          const root = doc.documentElement;
           root.setAttribute("width", String(width));
           root.setAttribute("height", String(height));
-          root.setAttribute("viewBox", `${-pad} ${-pad} ${width} ${height}`);
+          root.setAttribute("viewBox", `${left} ${top} ${width} ${height}`);
           const bodyRoot = root.cloneNode(true) as SVGSVGElement;
           bodyRoot.querySelector("[data-custom-shadow]")!.remove();
-          const body = doc.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "rect",
-          );
-          for (const [key, value] of Object.entries({
-            x: -pad,
-            y: -pad,
-            width,
-            height,
-            fill: "white",
-            mask: "url(#custom-body-mask)",
-          }))
-            body.setAttribute(key, String(value));
-          bodyRoot.append(body);
+          root.querySelector("[data-shadow-body]")!.remove();
           const canvas = document.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
-          const context = canvas.getContext("2d")!;
+          const ctx = canvas.getContext("2d")!;
           const raster = async (svg: Element) => {
             const image = new Image();
             image.src =
               "data:image/svg+xml," +
               encodeURIComponent(new XMLSerializer().serializeToString(svg));
             await image.decode();
-            context.clearRect(0, 0, width, height);
-            context.drawImage(image, 0, 0);
-            return context.getImageData(0, 0, width, height).data;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(image, 0, 0);
+            return {
+              image,
+              pixels: ctx.getImageData(0, 0, width, height).data,
+            };
           };
-          const cast = await raster(root),
-            matte = await raster(bodyRoot);
-          let checked = 0,
-            missing = 0;
-          for (const polygon of polygons) {
-            const [p, q, r, s] = polygon;
-            // Do not demand coverage of sub-pixel or folded degenerate cells.
-            const contactLength = Math.hypot(q[0] - p[0], q[1] - p[1]);
-            if (contactLength < 3) continue;
-            for (const edgeT of [0.25, 0.5, 0.75])
-              for (const sweepT of [0.2, 0.5, 0.8]) {
-                const x =
-                  (p[0] * (1 - edgeT) + q[0] * edgeT) * (1 - sweepT) +
-                  (s[0] * (1 - edgeT) + r[0] * edgeT) * sweepT;
-                const y =
-                  (p[1] * (1 - edgeT) + q[1] * edgeT) * (1 - sweepT) +
-                  (s[1] * (1 - edgeT) + r[1] * edgeT) * sweepT;
-                const index =
-                  (Math.floor(y + pad) * width + Math.floor(x + pad)) * 4 + 3;
-                if (matte[index] > 16) continue; // the real subject correctly occludes these samples
-                checked++;
-                if (cast[index] < 8) missing++;
-              }
-          }
-          let seamPixels = 0;
-          const seamExamples: number[][] = [];
-          for (let y = 1; y < height - 1; y++)
-            for (let x = 1; x < width - 1; x++) {
+          const actual = await raster(root),
+            body = await raster(bodyRoot);
+          // Independent raster reference is test-only. Product/exports remain SVG:
+          // project the visible body alpha, then subtract its fixed opaque body.
+          ctx.clearRect(0, 0, width, height);
+          ctx.setTransform(
+            a,
+            b,
+            c,
+            d,
+            a * left + c * top + e - left,
+            b * left + d * top + f - top,
+          );
+          ctx.drawImage(body.image, 0, 0);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.drawImage(body.image, 0, 0);
+          ctx.globalCompositeOperation = "source-over";
+          const expected = ctx.getImageData(0, 0, width, height).data;
+          let interiors = 0,
+            missing = 0,
+            exteriorInk = 0,
+            coveredBaseInk = 0,
+            coloredInk = 0,
+            referenceInk = 0,
+            actualInk = 0;
+          const missingExamples: number[][] = [];
+          const stable = (
+            data: Uint8ClampedArray,
+            index: number,
+            value: number,
+          ) =>
+            (value === 0 ? [-3, 0, 3] : [-3, -2, -1, 0, 1, 2, 3]).every((dy) =>
+              (value === 0 ? [-3, 0, 3] : [-3, -2, -1, 0, 1, 2, 3]).every(
+                (dx) =>
+                  value === 0
+                    ? data[index + (dy * width + dx) * 4] === 0
+                    : data[index + (dy * width + dx) * 4] >= 250,
+              ),
+            );
+          for (let y = 4; y < height - 4; y += 3)
+            for (let x = 4; x < width - 4; x += 3) {
               const index = (y * width + x) * 4 + 3;
-              if (matte[index] > 0 || cast[index] >= 245) continue;
-              const left = cast[index - 4],
-                right = cast[index + 4],
-                up = cast[index - width * 4],
-                down = cast[index + width * 4];
-              if ((left >= 250 && right >= 250) || (up >= 250 && down >= 250)) {
-                seamPixels++;
-                if (seamExamples.length < 8)
-                  seamExamples.push([x - pad, y - pad, cast[index]]);
+              if (expected[index] > 16) referenceInk++;
+              if (actual.pixels[index] > 16) actualInk++;
+              if (stable(expected, index, 255)) {
+                interiors++;
+                if (actual.pixels[index] < 245) {
+                  missing++;
+                  if (missingExamples.length < 5)
+                    missingExamples.push([
+                      x + left,
+                      y + top,
+                      actual.pixels[index],
+                      expected[index],
+                    ]);
+                }
               }
+              if (stable(expected, index, 0) && actual.pixels[index] > 16)
+                exteriorInk++;
+              if (stable(body.pixels, index, 255) && actual.pixels[index] > 8)
+                coveredBaseInk++;
+              if (
+                actual.pixels[index] >= 250 &&
+                [1, 2, 3].some((offset) => actual.pixels[index - offset] > 25)
+              )
+                coloredInk++;
             }
-          return { checked, missing, seamPixels, seamExamples };
+          return {
+            interiors,
+            referenceInk,
+            actualInk,
+            missingExamples,
+            missing,
+            exteriorInk,
+            coveredBaseInk,
+            coloredInk,
+            mesh: root.querySelectorAll(
+              "[data-shadow-mesh],[data-shadow-bridge]",
+            ).length,
+            source: root
+              .querySelector("[data-custom-shadow]")!
+              .getAttribute("data-shadow-source"),
+          };
         },
         {
           source: readFileSync(`../assets/${asset.file}`, "utf8"),
           asset,
           metadata: metadata[asset.id],
-          settings,
+          angle,
         },
       );
-      results.push({ id: asset.id, settings, ...result });
+      results.push({ id: asset.id, angle, ...result });
     }
-  }
   for (const result of results) {
-    expect(result.seamPixels, JSON.stringify(result)).toBeLessThan(10);
-    expect(result.checked, JSON.stringify(result)).toBeGreaterThan(0);
-    expect(
-      result.missing / result.checked,
-      JSON.stringify(result),
-    ).toBeLessThan(0.025);
+    expect(result.source, JSON.stringify(result)).toBe("body-silhouette");
+    expect(result.mesh, JSON.stringify(result)).toBe(0);
+    // Thin/fully occluded projections may contain no 7px-wide opaque interior.
+    if (result.referenceInk > 0)
+      expect(result.actualInk, JSON.stringify(result)).toBeGreaterThan(0);
+    expect(result.missing, JSON.stringify(result)).toBe(0);
+    expect(result.exteriorInk, JSON.stringify(result)).toBe(0);
+    expect(result.coveredBaseInk, JSON.stringify(result)).toBe(0);
+    expect(result.coloredInk, JSON.stringify(result)).toBe(0);
   }
 });
 
-test("small coin remains attached through offsets of five thousand units and sixfold rotation/scale", async ({
+test("a real vector opening stays open; the old cast disappears and the base covers the projection", async ({
   page,
 }) => {
   await page.addScriptTag({ content: helper });
-  for (const asset of assets.filter(
-    (a: { id: string }) =>
-      a.id === "s-main-coin" || a.id === "s-background-coin",
+  const result = await page.evaluate(async () => {
+    const source =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="-40 -40 260 260" fill="none"><g transform="translate(0 0)"><path id="body" d="M10 10H90V90H10Z M40 40H60V60H40Z" fill="white" fill-rule="evenodd"/><path id="cast" d="M90 90H120V105H90Z" fill="#181817"/></g></svg>';
+    const metadata = {
+      body_path_ids: ["body"],
+      cast_path_ids: ["cast"],
+      outline: 0,
+      anchor: [50, 90],
+      width: 80,
+      height: 80,
+      projection: {
+        ground: [10, 90, 90, 90],
+        depth: 80,
+        body_bbox: [10, 10, 80, 80],
+      },
+    };
+    const render = async (angle: number, length: number, x = 0, y = 0) => {
+      const doc = new DOMParser().parseFromString(source, "image/svg+xml");
+      // @ts-expect-error injected production helper
+      applyCustomShadow(doc, {
+        metadata,
+        settings: { angle, length, opacity: 1, x, y },
+        role: "main",
+        width: 220,
+        height: 220,
+      });
+      doc.querySelector("[data-shadow-body]")!.remove();
+      const image = new Image();
+      image.src =
+        "data:image/svg+xml," +
+        encodeURIComponent(
+          new XMLSerializer().serializeToString(doc.documentElement),
+        );
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = 260;
+      canvas.height = 260;
+      const context = canvas.getContext("2d")!;
+      context.drawImage(image, 0, 0);
+      const alpha = (x: number, y: number) =>
+        context.getImageData(Math.floor(x + 40), Math.floor(y + 40), 1, 1)
+          .data[3];
+      return {
+        alpha,
+        source: doc
+          .querySelector("[data-custom-shadow]")!
+          .getAttribute("data-shadow-source"),
+      };
+    };
+    const down = await render(45, 2),
+      up = await render(225, 1),
+      zero = await render(45, 0);
+    return {
+      hole: down.alpha(106.5, 146.5),
+      solid: down.alpha(135, 146.5),
+      oldCast: down.alpha(115, 97),
+      underBase: up.alpha(38, 65),
+      zero: zero.alpha(135, 146.5),
+      source: down.source,
+    };
+  });
+  expect(result).toEqual({
+    hole: 0,
+    solid: 255,
+    oldCast: 0,
+    underBase: 0,
+    zero: 0,
+    source: "body-silhouette",
+  });
+});
+test("legacy offsets move the projection vector while keeping small-coin support fixed", async ({
+  page,
+}) => {
+  await page.addScriptTag({ content: helper });
+  for (const asset of assets.filter((asset: { id: string }) =>
+    ["s-main-coin", "s-background-coin"].includes(asset.id),
   )) {
     for (const [x, y] of [
       [5000, 0],
@@ -173,77 +276,69 @@ test("small coin remains attached through offsets of five thousand units and six
     ]) {
       const result = await page.evaluate(
         async ({ source, asset, metadata, x, y }) => {
+          const settings = {
+            angle: 130,
+            length: 1,
+            opacity: 1,
+            x,
+            y,
+            scale_x: 6,
+            scale_y: 0.1,
+          };
           const doc = new DOMParser().parseFromString(source, "image/svg+xml");
-          // @ts-expect-error injected production function
+          // @ts-expect-error injected production helper
           applyCustomShadow(doc, {
             metadata,
-            settings: {
-              angle: 130,
-              length: 1,
-              opacity: 1,
-              scale_x: 6,
-              scale_y: 6,
-              x,
-              y,
-            },
+            settings,
             role: asset.role,
             width: asset.width,
             height: asset.height,
           });
-          const root = doc.documentElement;
-          root.querySelector("[data-shadow-body]")!.remove();
-          // @ts-expect-error injected production function
-          const [a, b, c, d, e, f] = shadowMatrix(metadata, {
-            angle: 130,
-            length: 1,
-            opacity: 1,
-            scale_x: 6,
-            scale_y: 6,
-            x,
-            y,
-          })
+          // @ts-expect-error injected production helper
+          const [a, b, c, d, e, f] = shadowMatrix(metadata, settings)
             .slice(7, -1)
             .split(" ")
             .map(Number);
-          const polygons = metadata.attachment_edges.map(
-            (edge: number[], index: number) => {
-              const [x1, y1, x2, y2] = edge,
-                [cx1, cy1, cx2, cy2] = metadata.attachment_cast_edges[index];
-              return [
-                [x1, y1],
-                [x2, y2],
-                [a * cx2 + c * cy2 + e, b * cx2 + d * cy2 + f],
-                [a * cx1 + c * cy1 + e, b * cx1 + d * cy1 + f],
-              ];
-            },
+          const [bx, by, bw, bh] = metadata.projection.body_bbox;
+          const cx = bx + bw / 2,
+            cy = by + bh / 2,
+            target = [a * cx + c * cy + e, b * cx + d * cy + f];
+          const root = doc.documentElement;
+          root.querySelector("[data-shadow-body]")!.remove();
+          root.setAttribute("width", "1024");
+          root.setAttribute("height", "1024");
+          root.setAttribute(
+            "viewBox",
+            `${target[0] - 16} ${target[1] - 16} 32 32`,
           );
-          const polygon = polygons.sort(
-            (a, b) =>
-              Math.hypot(b[1][0] - b[0][0], b[1][1] - b[0][1]) -
-              Math.hypot(a[1][0] - a[0][0], a[1][1] - a[0][1]),
-          )[0];
-          const [p, q, r, s] = polygon;
+          const image = new Image();
+          image.src =
+            "data:image/svg+xml," +
+            encodeURIComponent(new XMLSerializer().serializeToString(root));
+          await image.decode();
           const canvas = document.createElement("canvas");
-          canvas.width = 64;
-          canvas.height = 64;
-          const ctx = canvas.getContext("2d")!;
-          const values = [];
-          for (const t of [0.1, 0.3, 0.5, 0.7, 0.9]) {
-            const sx = ((p[0] + q[0]) / 2) * (1 - t) + ((r[0] + s[0]) / 2) * t;
-            const sy = ((p[1] + q[1]) / 2) * (1 - t) + ((r[1] + s[1]) / 2) * t;
-            root.setAttribute("width", "64");
-            root.setAttribute("height", "64");
-            root.setAttribute("viewBox", `${sx - 16} ${sy - 16} 32 32`);
-            const image = new Image();
-            image.src =
-              "data:image/svg+xml," +
-              encodeURIComponent(new XMLSerializer().serializeToString(root));
-            await image.decode();
-            ctx.clearRect(0, 0, 64, 64);
-            ctx.drawImage(image, 0, 0);
-            values.push(ctx.getImageData(32, 32, 1, 1).data[3]);
-          }
-          return values;
+          canvas.width = 1024;
+          canvas.height = 1024;
+          const context = canvas.getContext("2d")!;
+          context.drawImage(image, 0, 0);
+          const [x1, y1, x2, y2] = metadata.projection.ground;
+          return {
+            // Extreme shears can place the centroid between destination pixels.
+            // Keep the opaque-coverage threshold, sampling its central patch.
+            alpha: Math.max(
+              ...Array.from(context.getImageData(510, 510, 5, 5).data).filter(
+                (_, index) => index % 4 === 3,
+              ),
+            ),
+            ground: [
+              [a * x1 + c * y1 + e, b * x1 + d * y1 + f],
+              [a * x2 + c * y2 + e, b * x2 + d * y2 + f],
+            ],
+            expected: [
+              [x1, y1],
+              [x2, y2],
+            ],
+          };
         },
         {
           source: readFileSync(`../assets/${asset.file}`, "utf8"),
@@ -254,9 +349,15 @@ test("small coin remains attached through offsets of five thousand units and six
         },
       );
       expect(
-        Math.min(...result),
-        JSON.stringify({ id: asset.id, x, y, result }),
+        result.alpha,
+        JSON.stringify({ id: asset.id, x, y, ...result }),
       ).toBeGreaterThan(245);
+      for (let point = 0; point < 2; point++)
+        for (let axis = 0; axis < 2; axis++)
+          expect(result.ground[point][axis]).toBeCloseTo(
+            result.expected[point][axis],
+            2,
+          );
     }
   }
 });
@@ -298,6 +399,8 @@ test("separated ordinary artwork preserves all forty source interiors without re
           role: asset.role,
           width: asset.width,
           height: asset.height,
+          preserveSource: true,
+          separateLayers: true,
         });
         const castRoot = separated.documentElement.cloneNode(
           true,
@@ -392,6 +495,7 @@ test("separated ordinary artwork preserves all forty source interiors without re
           if (
             sourceInterior &&
             uniformColor &&
+            !nearCast &&
             [0, 1, 2, 3].some(
               (offset) =>
                 Math.abs(before[index - offset] - control[index - offset]) > 1,

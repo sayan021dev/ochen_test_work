@@ -9,33 +9,64 @@ export type ShadowEffect = {
   preserveSource?: boolean;
 };
 const NS = "http://www.w3.org/2000/svg";
-export function shadowMatrix(meta: ShadowMetadata, shadow: Shadow): string {
+function projectionValues(meta: ShadowMetadata, shadow: Shadow): number[] {
+  const projection = meta.projection ?? {
+    ground: [
+      meta.anchor[0] - meta.width / 2,
+      meta.anchor[1],
+      meta.anchor[0] + meta.width / 2,
+      meta.anchor[1],
+    ],
+    depth: meta.height * 0.65,
+    body_bbox: [
+      meta.anchor[0] - meta.width / 2,
+      meta.anchor[1] - meta.height,
+      meta.width,
+      meta.height,
+    ],
+  };
+  const [x, y, endX, endY] = projection.ground,
+    span = Math.hypot(endX - x, endY - y);
+  const [tx, ty] =
+    span > 1e-9 ? [(endX - x) / span, (endY - y) / span] : [1, 0];
+  const [nx, ny] = [ty, -tx],
+    height = Math.max(projection.body_bbox[3], 1e-9);
   const angle = (shadow.angle * Math.PI) / 180,
-    [x, y] = meta.anchor;
-  const scaleX = shadow.length * (shadow.scale_x ?? 1),
-    scaleY = shadow.length * (shadow.scale_y ?? 1),
-    a = Math.cos(angle) * scaleX,
-    b = Math.sin(angle) * scaleX,
-    c = -Math.sin(angle) * scaleY,
-    d = Math.cos(angle) * scaleY;
-  return `matrix(${[a, b, c, d, x + (shadow.x ?? 0) - a * x - c * y, y + (shadow.y ?? 0) - b * x - d * y].map((n) => n.toFixed(6)).join(" ")})`;
+    depth = projection.depth * shadow.length;
+  const vx = (Math.cos(angle) * depth + (shadow.x ?? 0)) / height;
+  const vy = (Math.sin(angle) * depth + (shadow.y ?? 0)) / height;
+  const [a, b, c, d] = [
+    tx * tx + vx * nx,
+    ty * tx + vy * nx,
+    tx * ty + vx * ny,
+    ty * ty + vy * ny,
+  ];
+  return [a, b, c, d, x - a * x - c * y, y - b * x - d * y];
 }
+export function shadowMatrix(meta: ShadowMetadata, shadow: Shadow): string {
+  return `matrix(${projectionValues(meta, shadow)
+    .map((n) => n.toFixed(6))
+    .join(" ")})`;
+}
+
 export function applyCustomShadow(
   document: Document,
   effect: ShadowEffect,
 ): void {
   const { metadata: meta, settings, role, width, height } = effect,
     root = document.documentElement;
-  const identity =
-    settings.angle % 360 === 0 &&
-    settings.length === 1 &&
-    settings.opacity === 1 &&
-    (settings.x ?? 0) === 0 &&
-    (settings.y ?? 0) === 0 &&
-    (settings.scale_x ?? 1) === 1 &&
-    (settings.scale_y ?? 1) === 1;
-  const preserveSource =
-    effect.preserveSource || (effect.separateLayers && identity);
+  const preserveSource = effect.preserveSource ?? false;
+  const blackCopy = (node: SVGElement, color: string) => {
+    const copy = node.cloneNode(true) as SVGElement;
+    for (const child of [copy, ...copy.querySelectorAll("*")]) {
+      child.removeAttribute("id");
+      child.removeAttribute("data-shadow-body");
+      for (const key of ["fill", "stroke"])
+        if (child.hasAttribute(key) && child.getAttribute(key) !== "none")
+          child.setAttribute(key, color);
+    }
+    return copy;
+  };
   const create = (tag: string, attrs: Record<string, string> = {}) => {
     const node = document.createElementNS(NS, tag);
     for (const [key, value] of Object.entries(attrs))
@@ -156,34 +187,40 @@ export function applyCustomShadow(
   for (const node of [...castSource.querySelectorAll("[id]")])
     node.removeAttribute("id");
   cast.append(castSource);
-  const body = create("g", {
-    mask: "url(#custom-body-mask)",
-    "data-shadow-body": "true",
+  const body = create("g", { "data-shadow-body": "true" });
+  const subject = create("g", {
+    "data-shadow-subject": "true",
+    mask: preserveSource
+      ? "url(#custom-source-body-mask)"
+      : "url(#custom-body-mask)",
   });
-  const subject = create("g", { "data-shadow-subject": "true" });
   subject.append(...children);
   body.append(subject);
+  if (!preserveSource) {
+    const excluded = new Set(meta.body_exclude_path_ids ?? []);
+    for (const path of [...subject.querySelectorAll("path")])
+      if (excluded.has(path.id)) path.remove();
+  }
   if (preserveSource) {
     const sourceMask = create("mask", {
       id: "custom-source-body-mask",
       maskUnits: "userSpaceOnUse",
       "mask-type": "luminance",
+      "data-source-body-mask": "true",
     });
-    const rectAttrs: Record<string, string> = { fill: "white" };
+    const rectAttrs: Record<string, string> = {
+      fill: "white",
+      "data-mask-allow": "true",
+    };
     for (const key of ["x", "y", "width", "height"]) {
       sourceMask.setAttribute(key, mask.getAttribute(key)!);
       rectAttrs[key] = mask.getAttribute(key)!;
     }
     sourceMask.append(create("rect", rectAttrs));
-    const subtraction = cast.cloneNode(true) as SVGElement;
-    for (const path of [...subtraction.querySelectorAll("path")]) {
-      path.setAttribute("fill", "black");
-      if (path.hasAttribute("stroke") && path.getAttribute("stroke") !== "none")
-        path.setAttribute("stroke", "black");
-    }
+    const subtraction = blackCopy(cast, "black");
+    subtraction.setAttribute("data-mask-cut", "true");
     sourceMask.append(subtraction);
     defs.append(sourceMask);
-    body.setAttribute("mask", "url(#custom-source-body-mask)");
   }
   if (meta.sidewall && !preserveSource) {
     const [cx, cy, rx, ry, depth] = meta.sidewall,
@@ -202,108 +239,81 @@ export function applyCustomShadow(
   }
   const layer = create("g", {
     "data-custom-shadow": "true",
-    "data-shadow-source": "original-footprint",
+    "data-shadow-source": preserveSource
+      ? "original-footprint"
+      : "body-silhouette",
     "pointer-events": "none",
     opacity: String(settings.opacity),
-    transform: shadowMatrix(meta, settings),
+    transform: preserveSource
+      ? "matrix(1.000000 0.000000 -0.000000 1.000000 0.000000 0.000000)"
+      : shadowMatrix(meta, settings),
   });
-  layer.append(cast);
-  // Sweep only the measured cast/body contact, leaving its source perimeter fixed.
-  const [a, b, c, d, e, f] = shadowMatrix(meta, settings)
-      .slice(7, -1)
-      .split(" ")
-      .map(Number),
-    determinant = a * d - b * c;
-  if (Math.abs(determinant) > 1e-12 && !preserveSource) {
-    const inverseMatrix = [d, -b, -c, a, c * f - d * e, b * e - a * f]
-      .map((value) => (value / determinant).toFixed(6))
-      .join(" ");
-    const overlap =
-      ((meta as ShadowMetadata & { attachment_overlap?: number })
-        .attachment_overlap ?? 1) *
-      Math.max(1, Math.hypot(a, b), Math.hypot(c, d));
-    const corners = [
-      [0, 0],
-      [width, 0],
-      [0, height],
-      [width, height],
-    ];
-    const covered = [
-      ...corners,
-      ...corners.map(([x, y]) => [a * x + c * y + e, b * x + d * y + f]),
-    ];
-    const margin = overlap + 2;
-    const left = Math.min(...covered.map((p) => p[0])) - margin;
-    const top = Math.min(...covered.map((p) => p[1])) - margin;
-    const bounds = {
-      x: String(left),
-      y: String(top),
-      width: String(Math.max(...covered.map((p) => p[0])) - left + margin),
-      height: String(Math.max(...covered.map((p) => p[1])) - top + margin),
-    };
-    const bridgeMask = inverse.cloneNode(true) as SVGElement;
-    bridgeMask.setAttribute("id", "custom-bridge-mask");
-    for (const [key, value] of Object.entries(bounds)) {
-      bridgeMask.setAttribute(key, value);
-      bridgeMask.firstElementChild!.setAttribute(key, value);
-    }
-    defs.append(bridgeMask);
-    const bridge = create("g", {
-      "data-shadow-attachment": "true",
-      "data-shadow-bridge": "true",
-      transform: `matrix(${inverseMatrix})`,
-      mask: "url(#custom-bridge-mask)",
-    });
-    const color =
-      paths.get(meta.cast_path_ids![0])?.getAttribute("fill") ?? "#181817";
-    const edges = meta.attachment_edges ?? [];
-    const castEdges = meta.attachment_cast_edges ?? edges;
-    const commands: string[] = [];
-    for (const [index, [x1, y1, x2, y2]] of edges.entries()) {
-      const [cx1, cy1, cx2, cy2] = castEdges[index];
-      const points = [
-        [x1, y1],
-        [x2, y2],
-        [a * cx2 + c * cy2 + e, b * cx2 + d * cy2 + f],
-        [a * cx1 + c * cy1 + e, b * cx1 + d * cy1 + f],
+  if (preserveSource) layer.append(cast);
+  else {
+    const silhouette = blackCopy(body, "#181817");
+    silhouette.setAttribute("data-shadow-subject", "true");
+    layer.append(silhouette);
+    const [a, b, c, d, e, f] = shadowMatrix(meta, settings)
+        .slice(7, -1)
+        .split(" ")
+        .map(Number),
+      determinant = a * d - b * c;
+    const raw = projectionValues(meta, settings);
+    if (
+      Math.abs(raw[0] * raw[3] - raw[1] * raw[2]) <= 1e-12 ||
+      Math.abs(determinant) <= 1e-12
+    )
+      layer.setAttribute("display", "none");
+    else {
+      const inverse = [
+        d / determinant,
+        -b / determinant,
+        -c / determinant,
+        a / determinant,
+        (c * f - d * e) / determinant,
+        (b * e - a * f) / determinant,
       ];
-      for (const triangle of [
-        [points[0], points[1], points[2]],
-        [points[0], points[2], points[3]],
-      ]) {
-        const [p, q, r] = triangle;
-        const area =
-          (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
-        if (Math.abs(area) < 1e-10) continue;
-        if (area < 0) triangle.reverse();
-        commands.push(
-          "M" +
-            triangle
-              .map((p) => p.map((n) => n.toFixed(6)).join(","))
-              .join(" L") +
-            " Z",
-        );
-      }
+      const [ia, ib, ic, id, ie, iff] = inverse;
+      const corners = [
+          [0, 0],
+          [width, 0],
+          [0, height],
+          [width, height],
+        ],
+        covered = [
+          ...corners,
+          ...corners.map(([x, y]) => [
+            ia * x + ic * y + ie,
+            ib * x + id * y + iff,
+          ]),
+        ];
+      const margin = Math.max(meta.outline, 1) * 3,
+        left = Math.min(...covered.map((p) => p[0])) - margin,
+        top = Math.min(...covered.map((p) => p[1])) - margin;
+      const bounds = {
+        x: String(left),
+        y: String(top),
+        width: String(Math.max(...covered.map((p) => p[0])) - left + margin),
+        height: String(Math.max(...covered.map((p) => p[1])) - top + margin),
+      };
+      const occlusion = create("mask", {
+        ...bounds,
+        id: "custom-projection-occlusion",
+        maskUnits: "userSpaceOnUse",
+        "mask-type": "luminance",
+      });
+      occlusion.append(create("rect", { ...bounds, fill: "white" }));
+      const fixed = create("g", {
+        "data-shadow-occluder": "true",
+        transform: `matrix(${inverse.map((n) => n.toFixed(9)).join(" ")})`,
+      });
+      const opaqueBody = blackCopy(body, "black");
+      opaqueBody.setAttribute("data-shadow-occluder-body", "true");
+      fixed.append(opaqueBody);
+      occlusion.append(fixed);
+      defs.append(occlusion);
+      layer.setAttribute("mask", "url(#custom-projection-occlusion)");
     }
-    bridge.append(
-      create("path", {
-        "data-shadow-mesh": "true",
-        d: commands.join(" "),
-        fill: color,
-        "fill-rule": "nonzero",
-        stroke: color,
-        "stroke-width": String(overlap),
-        "stroke-linejoin": "round",
-      }),
-    );
-    layer.append(bridge);
-  }
-  if (!effect.separateLayers && identity) {
-    layer.setAttribute("display", "none");
-    for (const child of children)
-      child.setAttribute("data-shadow-body", "true");
-    root.append(defs, layer, ...children);
-    return;
   }
   root.append(defs, layer, body);
 }

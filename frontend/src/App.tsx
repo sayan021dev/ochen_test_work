@@ -31,6 +31,7 @@ import { WelcomeDialog } from "./WelcomeDialog";
 import { ProjectGallery } from "./ProjectGallery";
 import { DownloadMenu } from "./DownloadMenu";
 import { createEditorStore, defaultScene } from "./state";
+import { framePatch, selectionFrame } from "./geometry";
 import {
   FORMATS,
   FORMAT_LABELS,
@@ -380,30 +381,34 @@ function Editor({
               : event.key === "ArrowUp"
                 ? -delta
                 : 0;
+          const asset = data.assets.find(
+            (a) =>
+              a.family === selected.family &&
+              a.detail === s.scene.detail &&
+              a.role === selected.role,
+          );
+          if (!asset) return;
+          const frame = selectionFrame(
+            selected,
+            asset,
+            s.scene.scale,
+            "shadow",
+          );
           const r = (-selected.angle * Math.PI) / 180;
-          s.patchElement(selected.id, {
-            shadow: {
-              ...selected.shadow,
-              x: Math.max(
-                -5000,
-                Math.min(
-                  5000,
-                  (selected.shadow.x ?? 0) +
-                    (dx * Math.cos(r) - dy * Math.sin(r)) /
-                      (s.scene.scale * (selected.scale_x ?? 1)),
-                ),
-              ),
-              y: Math.max(
-                -5000,
-                Math.min(
-                  5000,
-                  (selected.shadow.y ?? 0) +
-                    (dx * Math.sin(r) + dy * Math.cos(r)) /
-                      (s.scene.scale * (selected.scale_y ?? 1)),
-                ),
-              ),
-            },
-          });
+          s.patchElement(
+            selected.id,
+            framePatch(frame, {
+              ...frame.element,
+              x:
+                frame.element.x +
+                (dx * Math.cos(r) - dy * Math.sin(r)) /
+                  (s.scene.scale * (selected.scale_x ?? 1)),
+              y:
+                frame.element.y +
+                (dx * Math.sin(r) + dy * Math.cos(r)) /
+                  (s.scene.scale * (selected.scale_y ?? 1)),
+            }),
+          );
           return;
         }
         const x = Math.max(
@@ -435,7 +440,7 @@ function Editor({
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [store, save, busy, showProjects, locked]);
+  }, [store, save, busy, showProjects, locked, data.assets]);
 
   useEffect(() => {
     if (selected) setRightOpen(true);

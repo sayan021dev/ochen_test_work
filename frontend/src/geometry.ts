@@ -1,3 +1,4 @@
+import { shadowMatrix } from "./shadow";
 import {
   FORMATS,
   type Asset,
@@ -54,12 +55,21 @@ export function sceneBounds(scene: Scene, assets: Asset[]) {
           a.role === e.role,
       );
       if (!a) return [];
-      const corners = elementCorners(e, scene.scale, a.width, a.height);
+      const body = e.shadow && a.shadow?.projection?.body_bbox;
+      const corners = body
+        ? [
+            [body[0], body[1]],
+            [body[0] + body[2], body[1]],
+            [body[0] + body[2], body[1] + body[3]],
+            [body[0], body[1] + body[3]],
+          ].map(([x, y]) => elementPoint(e, scene.scale, { x, y }))
+        : elementCorners(e, scene.scale, a.width, a.height);
       if (
         e.shadow &&
         e.shadow.opacity > 0 &&
-        e.shadow.length > 0 &&
-        a.shadow?.cast_bbox
+        (e.shadow.length > 0 ||
+          Math.abs(e.shadow.x ?? 0) + Math.abs(e.shadow.y ?? 0) > 1e-9) &&
+        a.shadow?.projection
       )
         corners.push(
           ...frameCorners(selectionFrame(e, a, scene.scale, "shadow")),
@@ -217,17 +227,17 @@ export function inverseElementPoint(
   };
 }
 
-// Object frames use scene coordinates. A cast frame uses the local coordinates of
-// its owner, so even a stretched, rotated parent can be edited without introducing shear.
+// Projection frames remain in owner coordinates. Their virtual element is the
+// direction/length endpoint; its position never moves the fixed ground anchor.
 export function selectionFrame(
   e: Element,
   asset: Asset,
   sceneScale: number,
   part: "object" | "shadow",
 ) {
-  const box = asset.shadow?.cast_bbox,
-    shadow = e.shadow;
-  if (part !== "shadow" || !shadow || !box) {
+  const projection = asset.shadow?.projection;
+  const shadow = e.shadow;
+  if (part !== "shadow" || !shadow || !projection) {
     return {
       element: e,
       scale: sceneScale,
@@ -235,27 +245,44 @@ export function selectionFrame(
       height: asset.height,
       owner: null,
       offset: null,
+      projection: null,
       sceneScale,
     };
   }
-  const [ax, ay] = asset.shadow.anchor;
-  const offset = { x: box[0] - ax, y: box[1] - ay };
-  const pose = {
-    ...e,
-    x: ax + (shadow.x ?? 0),
-    y: ay + (shadow.y ?? 0),
-    angle: shadow.angle,
-    scale_x: shadow.scale_x ?? 1,
-    scale_y: shadow.scale_y ?? 1,
+  const [x1, y1, x2, y2] = projection.ground;
+  const anchor = { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
+  const radians = (shadow.angle * Math.PI) / 180;
+  const vector = {
+    x: Math.cos(radians) * projection.depth * shadow.length + (shadow.x ?? 0),
+    y: Math.sin(radians) * projection.depth * shadow.length + (shadow.y ?? 0),
   };
-  const start = elementPoint(pose, shadow.length, offset);
   return {
-    element: { ...pose, ...start },
-    scale: shadow.length,
-    width: box[2],
-    height: box[3],
+    element: {
+      ...e,
+      x: anchor.x + vector.x,
+      y: anchor.y + vector.y,
+      angle:
+        Math.hypot(vector.x, vector.y) > 1e-10
+          ? ((Math.atan2(vector.y, vector.x) * 180) / Math.PI + 360) % 360
+          : shadow.angle,
+      scale_x: 1,
+      scale_y: 1,
+    },
+    scale: 1,
+    width: projection.body_bbox[2],
+    height: projection.body_bbox[3],
     owner: e,
-    offset,
+    offset: anchor,
+    projection: {
+      ...projection,
+      anchor,
+      vector,
+      matrix: shadowMatrix(asset.shadow, shadow)
+        .slice(7, -1)
+        .trim()
+        .split(/[ ,]+/)
+        .map(Number),
+    },
     sceneScale,
   };
 }
@@ -263,15 +290,22 @@ export function selectionFrame(
 export type SelectionFrame = ReturnType<typeof selectionFrame>;
 
 export function frameCorners(frame: SelectionFrame) {
-  const points = elementCorners(
-    frame.element,
-    frame.scale,
-    frame.width,
-    frame.height,
-  );
-  return frame.owner
-    ? points.map((p) => elementPoint(frame.owner!, frame.sceneScale, p))
-    : points;
+  if (frame.projection && frame.owner) {
+    const [x, y, w, h] = frame.projection.body_bbox;
+    const [a, b, c, d, tx, ty] = frame.projection.matrix;
+    return [
+      [x, y],
+      [x + w, y],
+      [x + w, y + h],
+      [x, y + h],
+    ].map(([px, py]) =>
+      elementPoint(frame.owner!, frame.sceneScale, {
+        x: a * px + c * py + tx,
+        y: b * px + d * py + ty,
+      }),
+    );
+  }
+  return elementCorners(frame.element, frame.scale, frame.width, frame.height);
 }
 
 export function framePoint(frame: SelectionFrame, scenePoint: Point) {
@@ -284,46 +318,28 @@ export function framePatch(
   frame: SelectionFrame,
   next: Element,
 ): Partial<Element> {
-  if (!frame.owner || !frame.offset) return next;
-  const shadow = frame.owner.shadow!;
-  const oldOffset = elementPoint(
-    { ...frame.element, x: 0, y: 0 },
-    frame.scale,
-    frame.offset,
-  );
-  const newOffset = elementPoint(
-    { ...next, x: 0, y: 0 },
-    frame.scale,
-    frame.offset,
-  );
+  if (!frame.owner || !frame.projection) return next;
+  const { anchor, vector, depth } = frame.projection;
+  const turned = Math.abs(next.angle - frame.element.angle) > 1e-8;
+  const radians = (next.angle * Math.PI) / 180;
+  const length = Math.hypot(vector.x, vector.y);
+  const target = turned
+    ? { x: Math.cos(radians) * length, y: Math.sin(radians) * length }
+    : { x: next.x - anchor.x, y: next.y - anchor.y };
+  const magnitude = Math.hypot(target.x, target.y);
   return {
     shadow: {
-      ...shadow,
-      x: rounded(
-        clamp(
-          (shadow.x ?? 0) +
-            next.x -
-            frame.element.x +
-            oldOffset.x -
-            newOffset.x,
-          -5000,
-          5000,
-        ),
+      ...frame.owner.shadow!,
+      angle: rounded(
+        magnitude > 1e-8
+          ? ((Math.atan2(target.y, target.x) * 180) / Math.PI + 360) % 360
+          : next.angle,
       ),
-      y: rounded(
-        clamp(
-          (shadow.y ?? 0) +
-            next.y -
-            frame.element.y +
-            oldOffset.y -
-            newOffset.y,
-          -5000,
-          5000,
-        ),
-      ),
-      angle: ((next.angle % 360) + 360) % 360,
-      scale_x: next.scale_x ?? 1,
-      scale_y: next.scale_y ?? 1,
+      length: rounded(clamp(magnitude / depth, 0, 2)),
+      x: 0,
+      y: 0,
+      scale_x: 1,
+      scale_y: 1,
     },
   };
 }

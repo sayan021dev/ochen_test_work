@@ -54,50 +54,102 @@ it("side resize changes one axis and rotation keeps the object center fixed", ()
   expect(turned.y).toBeCloseTo(175);
 });
 
-it("the cast frame stretches under a nonuniformly scaled and rotated owner without moving its opposite edge", () => {
-  const owner: Element = {
-    ...item,
-    angle: 65,
-    scale_x: 1.7,
-    scale_y: 0.6,
-    shadow: {
-      angle: 31,
-      length: 1.4,
-      opacity: 0.75,
-      x: 25,
-      y: -12,
-      scale_x: 1.2,
-      scale_y: 0.8,
+const projectionAsset = {
+  ...assets[0],
+  width: 180,
+  height: 160,
+  shadow: {
+    anchor: [50, 100],
+    cast_bbox: [0, 100, 180, 60],
+    projection: {
+      ground: [0, 100, 100, 100],
+      depth: 100,
+      body_bbox: [0, 0, 100, 100],
     },
-  };
-  const asset = {
-    ...assets[0],
-    shadow: { anchor: [100, 220], cast_bbox: [30, 50, 200, 80] },
-  } as Asset;
-  const frame = selectionFrame(owner, asset, 0.5, "shadow");
-  const corners = frameCorners(frame),
-    side = elementPoint(frame.element, frame.scale, { x: 300, y: 40 });
-  const screen = elementPoint(owner, frame.sceneScale, side);
-  const updated = resizeElement(
-    frame.element,
-    frame.scale,
-    frame.width,
-    frame.height,
-    "e",
-    framePoint(frame, screen),
-    false,
-  );
-  const patch = framePatch(frame, updated);
-  expect(Object.keys(patch)).toEqual(["shadow"]);
-  expect(patch.shadow?.scale_x).toBeCloseTo(1.8);
-  expect(patch.shadow?.scale_y).toBeCloseTo(0.8);
-  const changed = frameCorners(
-    selectionFrame({ ...owner, ...patch }, asset, 0.5, "shadow"),
-  );
-  for (const i of [0, 3]) {
-    expect(changed[i].x).toBeCloseTo(corners[i].x, 3);
-    expect(changed[i].y).toBeCloseTo(corners[i].y, 3);
+  },
+} as Asset;
+const projectionOwner: Element = {
+  ...item,
+  angle: 65,
+  scale_x: 1.7,
+  scale_y: 0.6,
+  shadow: { angle: 45, length: 1, opacity: 0.75, scale_x: 5, scale_y: 0.2 },
+};
+it("a silhouette frame projects the body bbox and ignores historical lateral stretch", () => {
+  const frame = selectionFrame(projectionOwner, projectionAsset, 0.5, "shadow");
+  const points = frameCorners(frame);
+  const expected = [
+    { x: Math.SQRT1_2 * 100, y: 100 + Math.SQRT1_2 * 100 },
+    { x: 100 + Math.SQRT1_2 * 100, y: 100 + Math.SQRT1_2 * 100 },
+    { x: 100, y: 100 },
+    { x: 0, y: 100 },
+  ].map((p) => elementPoint(projectionOwner, 0.5, p));
+  for (let i = 0; i < 4; i++) {
+    expect(points[i].x).toBeCloseTo(expected[i].x, 3);
+    expect(points[i].y).toBeCloseTo(expected[i].y, 3);
   }
+});
+it("dragging the projection changes its endpoint while both ground contacts stay fixed", () => {
+  const frame = selectionFrame(projectionOwner, projectionAsset, 0.5, "shadow");
+  const patch = framePatch(frame, {
+    ...frame.element,
+    x: frame.element.x + 20,
+    y: frame.element.y - 10,
+  });
+  expect(Object.keys(patch)).toEqual(["shadow"]);
+  expect(patch.shadow!.angle).not.toBe(projectionOwner.shadow!.angle);
+  expect(patch.shadow!.length).not.toBe(1);
+  expect(patch.shadow!.x ?? 0).toBe(0);
+  expect(patch.shadow!.y ?? 0).toBe(0);
+  expect(patch.shadow!.scale_x ?? 1).toBe(1);
+  expect(patch.shadow!.scale_y ?? 1).toBe(1);
+  const next = frameCorners(
+    selectionFrame(
+      { ...projectionOwner, ...patch },
+      projectionAsset,
+      0.5,
+      "shadow",
+    ),
+  );
+  const before = frameCorners(frame);
+  for (const i of [2, 3]) {
+    expect(next[i].x).toBeCloseTo(before[i].x, 3);
+    expect(next[i].y).toBeCloseTo(before[i].y, 3);
+  }
+});
+it("rotation is about the fixed ground anchor and never changes contact width", () => {
+  const frame = selectionFrame(projectionOwner, projectionAsset, 0.5, "shadow");
+  const patch = framePatch(frame, { ...frame.element, angle: 135 });
+  expect(patch.shadow!.angle).toBeCloseTo(135);
+  expect(patch.shadow!.length).toBeCloseTo(1);
+  const next = frameCorners(
+    selectionFrame(
+      { ...projectionOwner, ...patch },
+      projectionAsset,
+      0.5,
+      "shadow",
+    ),
+  );
+  const before = frameCorners(frame);
+  for (const i of [2, 3]) {
+    expect(next[i].x).toBeCloseTo(before[i].x, 3);
+    expect(next[i].y).toBeCloseTo(before[i].y, 3);
+  }
+  const pointer = elementPoint(projectionOwner, 0.5, { x: 50, y: 200 });
+  expect(framePoint(frame, pointer).x).toBeCloseTo(50);
+  expect(framePoint(frame, pointer).y).toBeCloseTo(200);
+});
+it("length editing preserves the contact span and adapts legacy offsets into the endpoint", () => {
+  const owner = {
+    ...projectionOwner,
+    shadow: { angle: 0, length: 1, opacity: 1, x: -100, y: 100 },
+  };
+  const frame = selectionFrame(owner, projectionAsset, 1, "shadow");
+  expect(frame.element.x).toBeCloseTo(50);
+  expect(frame.element.y).toBeCloseTo(200);
+  const patch = framePatch(frame, { ...frame.element, x: 50, y: 250 });
+  expect(patch.shadow!.angle).toBeCloseTo(90);
+  expect(patch.shadow!.length).toBeCloseTo(1.5);
 });
 
 it("a corner at a scale limit preserves an already stretched aspect ratio", () => {
@@ -125,7 +177,7 @@ it("format centering leaves hidden distant anchors valid", () => {
 it("format centering includes rotated and translated visible casts", () => {
   const asset = {
     ...assets[0],
-    shadow: { anchor: [100, 100], cast_bbox: [0, 50, 200, 100] },
+    shadow: projectionAsset.shadow,
   } as Asset;
   const shadow = { angle: 90, length: 1, opacity: 1, x: 1500, y: 750 };
   const source = { ...scene, elements: [{ ...item, shadow }] };
@@ -140,5 +192,31 @@ it("format centering includes rotated and translated visible casts", () => {
     { ...scene, elements: [{ ...item, shadow: { ...shadow, opacity: 0 } }] },
     [asset],
   );
-  expect(invisible).toEqual(sceneBounds(scene, [asset]));
+  expect(invisible).toEqual({ left: 700, top: 100, right: 750, bottom: 150 });
+});
+
+it("new endpoint drags cap at 200% and clear historical projection offsets", () => {
+  const owner = {
+    ...projectionOwner,
+    shadow: { angle: 0, length: 1, opacity: 1, x: 2000, y: 300 },
+  };
+  const frame = selectionFrame(owner, projectionAsset, 1, "shadow");
+  const patch = framePatch(frame, { ...frame.element, x: frame.element.x + 1 });
+  expect(patch.shadow!.length).toBe(2);
+  expect([
+    patch.shadow!.x,
+    patch.shadow!.y,
+    patch.shadow!.scale_x,
+    patch.shadow!.scale_y,
+  ]).toEqual([0, 0, 1, 1]);
+});
+
+it("legacy zero length with offsets still contributes visible projection bounds", () => {
+  const owner = {
+    ...item,
+    shadow: { angle: 45, length: 0, opacity: 1, x: 100, y: 100 },
+  };
+  const box = sceneBounds({ ...scene, elements: [owner] }, [projectionAsset])!;
+  expect(box.right).toBeCloseTo(800);
+  expect(box.bottom).toBeCloseTo(200);
 });

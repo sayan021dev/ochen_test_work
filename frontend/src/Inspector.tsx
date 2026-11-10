@@ -219,7 +219,7 @@ export function Inspector({
                 onChange={(event) => {
                   state.patchElement(element.id, {
                     shadow: event.target.checked
-                      ? { angle: 0, length: 1, opacity: 1 }
+                      ? { angle: 90, length: 1, opacity: 1 }
                       : null,
                   });
                   if (!event.target.checked) state.select(element.id);
@@ -235,9 +235,9 @@ export function Inspector({
               <>
                 <p className="shadow-hint">
                   <span>
-                    Тень закреплена у предмета. Меняйте направление и длину.
+                    Силуэт предмета проецируется от неподвижной опоры.
                   </span>
-                  <span>100% — исходная длина.</span>
+                  <span>100% — стандартная длина проекции.</span>
                 </p>
                 <button
                   className="secondary shadow-select"
@@ -248,9 +248,7 @@ export function Inspector({
                 </button>
                 <div className="shadow-fields">
                   <div>
-                    <span className="field-label">
-                      Поворот исходной тени, °
-                    </span>
+                    <span className="field-label">Направление проекции, °</span>
                     <NumberField
                       label="Направление тени"
                       value={element.shadow.angle}
@@ -268,13 +266,24 @@ export function Inspector({
                             shadow: {
                               ...current.shadow,
                               angle: (current.shadow.angle + delta + 360) % 360,
+                              x: 0,
+                              y: 0,
+                              scale_x: 1,
+                              scale_y: 1,
                             },
                           });
                       }}
                       onCommit={(angle) =>
                         !element.locked &&
                         state.patchElement(element.id, {
-                          shadow: { ...element.shadow!, angle },
+                          shadow: {
+                            ...element.shadow!,
+                            angle,
+                            x: 0,
+                            y: 0,
+                            scale_x: 1,
+                            scale_y: 1,
+                          },
                         })
                       }
                     />
@@ -290,7 +299,14 @@ export function Inspector({
                       onCommit={(length) =>
                         !element.locked &&
                         state.patchElement(element.id, {
-                          shadow: { ...element.shadow!, length: length / 100 },
+                          shadow: {
+                            ...element.shadow!,
+                            length: length / 100,
+                            x: 0,
+                            y: 0,
+                            scale_x: 1,
+                            scale_y: 1,
+                          },
                         })
                       }
                     />
@@ -317,10 +333,10 @@ export function Inspector({
                 </div>
                 <div className="shadow-presets" aria-label="Направления тени">
                   {[
-                    [0, "Исходное направление"],
-                    [90, "Поворот на 90°"],
-                    [180, "Поворот на 180°"],
-                    [270, "Поворот на 270°"],
+                    [45, "Вправо вниз"],
+                    [135, "Влево вниз"],
+                    [225, "Влево вверх"],
+                    [315, "Вправо вверх"],
                   ].map(([angle, name]) => (
                     <button
                       key={angle}
@@ -329,7 +345,14 @@ export function Inspector({
                       title={String(name)}
                       onClick={() =>
                         state.patchElement(element.id, {
-                          shadow: { ...element.shadow!, angle: Number(angle) },
+                          shadow: {
+                            ...element.shadow!,
+                            angle: Number(angle),
+                            x: 0,
+                            y: 0,
+                            scale_x: 1,
+                            scale_y: 1,
+                          },
                         })
                       }
                     >

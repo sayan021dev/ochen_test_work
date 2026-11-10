@@ -20,7 +20,7 @@ for (const viewport of [
 ]) {
   test(`panels keep their controls reachable at ${viewport.width}×${viewport.height}`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.setViewportSize(viewport);
     await start(page);
     const toggle = page.getByRole("button", {
@@ -53,7 +53,9 @@ for (const viewport of [
     await expect(page.getByLabel("Описание композиции")).toBeInViewport();
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await page.screenshot({
-      path: `/private/tmp/ochen-ui-panel-${viewport.width}-${viewport.height}.png`,
+      path: testInfo.outputPath(
+        `panel-${viewport.width}-${viewport.height}.png`,
+      ),
     });
     await page.getByRole("button", { name: "Настройки", exact: true }).click();
     await expect(panel).toBeHidden();
@@ -72,14 +74,16 @@ for (const viewport of [
       ),
     ).toBe(true);
     await page.screenshot({
-      path: `/private/tmp/ochen-ui-${viewport.width}-${viewport.height}.png`,
+      path: testInfo.outputPath(
+        `viewport-${viewport.width}-${viewport.height}.png`,
+      ),
     });
   });
 }
 
 test("variant previews collapse after selection, reopen unchanged and preserve undo", async ({
   page,
-}) => {
+}, testInfo) => {
   await start(page);
   // The components path is deterministic and never calls a paid AI provider.
   await page.getByRole("tab", { name: "Предметы", exact: true }).click();
@@ -114,7 +118,7 @@ test("variant previews collapse after selection, reopen unchanged and preserve u
   const previews = await variants
     .locator(".variant-preview")
     .evaluateAll((nodes) => nodes.map((n) => n.innerHTML));
-  await page.screenshot({ path: "/private/tmp/ochen-ui-variants-desktop.png" });
+  await page.screenshot({ path: testInfo.outputPath("variants-desktop.png") });
   await second.click();
   await expect(second).toBeHidden();
   const collapsedType = await variants
@@ -130,7 +134,7 @@ test("variant previews collapse after selection, reopen unchanged and preserve u
   expect(collapsedType.weight).toBeGreaterThanOrEqual(600);
   expect(collapsedType.count).toBeGreaterThanOrEqual(13);
   await page.screenshot({
-    path: "/private/tmp/ochen-ui-variants-collapsed.png",
+    path: testInfo.outputPath("variants-collapsed.png"),
   });
   await expect(
     page.getByRole("button", {
@@ -163,6 +167,11 @@ test("variant previews collapse after selection, reopen unchanged and preserve u
     .getByRole("button", { name: "Показать варианты композиции", exact: true })
     .click();
   await expect(second).toBeInViewport();
+  for (const card of await variants.locator(".variant-card").all()) {
+    const number = await card.locator(".variant-number").boundingBox();
+    const preview = await card.locator(".variant-preview").boundingBox();
+    expect(preview!.y - number!.y - number!.height).toBeGreaterThanOrEqual(7);
+  }
   await expect(page.getByTestId("canvas-scroll")).toBeInViewport();
   const canvasSize = await page.getByTestId("canvas-scroll").boundingBox();
   expect(canvasSize!.height).toBeGreaterThanOrEqual(100);
@@ -175,5 +184,5 @@ test("variant previews collapse after selection, reopen unchanged and preserve u
       exact: true,
     }),
   ).toContainText("110%");
-  await page.screenshot({ path: "/private/tmp/ochen-ui-variants-720.png" });
+  await page.screenshot({ path: testInfo.outputPath("variants-720.png") });
 });

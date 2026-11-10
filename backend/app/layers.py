@@ -19,8 +19,12 @@ def needs_shadow_pass(scene: Scene) -> bool:
             (asset["width"], asset["height"]),
             (0, asset["height"]),
         ]
-        if element.shadow and element.shadow.length > 0 and element.shadow.opacity > 0:
-            x, y, w, h = asset["shadow"]["cast_bbox"]
+        if (
+            element.shadow
+            and (element.shadow.length > 0 or element.shadow.x or element.shadow.y)
+            and element.shadow.opacity > 0
+        ):
+            x, y, w, h = asset["shadow"]["projection"]["body_bbox"]
             matrix = shadow_matrix(asset["shadow"], element.shadow)
             a, b, c, d, tx, ty = map(float, matrix[7:-1].split())
             points += [

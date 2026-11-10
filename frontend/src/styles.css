@@ -1981,11 +1981,7 @@ body,
   }
 }
 @media (max-width: 760px) {
-  .variant-card {
-    padding-left: 27px;
-  }
   .variant-card .variant-number {
-    left: 8px;
     font-size: 15px;
   }
 }

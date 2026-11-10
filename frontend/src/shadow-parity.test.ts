@@ -25,7 +25,7 @@ const canonical = (root: Element): unknown => {
           ? String(Math.round(Number(a.value) * 1e6) / 1e6)
           : a.value
         )
-          .replace(/(?<![\d.])-0\.000000(?![\d.])/g, "0.000000")
+          .replace(/(?<![\d.])-0\.(0+)(?![\d.])/g, "0.$1")
           .replace(/url\(#([^)]+)\)/g, (_, id) => `url(#${ids.get(id)})`),
       ])
       .sort((a, b) => a[0].localeCompare(b[0])),
@@ -36,7 +36,7 @@ const canonical = (root: Element): unknown => {
 const parse = (text: string) =>
   new DOMParser().parseFromString(text, "image/svg+xml");
 
-it("all 40 custom shadows match the Python export after masking, anchored deformation and palette mapping", () => {
+it("all 40 custom shadows match the Python export after silhouette projection, occlusion and palette mapping", () => {
   const manifest = JSON.parse(readFileSync("../assets/catalog.json", "utf8"));
   const metadata = JSON.parse(
     readFileSync("../assets/shadow-map.json", "utf8"),

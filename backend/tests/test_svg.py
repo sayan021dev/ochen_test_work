@@ -181,10 +181,16 @@ def test_every_custom_shadow_keeps_source_paths_unique_references_and_palette(as
     )
     result = ET.fromstring(render_scene(value))
     original = parse_safe_svg(asset_for(asset["family"], asset["detail"], asset["role"])["svg"])
-    subjects = result.findall(".//s:g[@data-shadow-subject]", NS)
-    assert len(subjects) == 2
-    assert [p.get("d") for p in subjects[-1].findall(".//s:path", NS)] == [
-        p.get("d") for p in original.findall(".//s:path", NS)
+    body = result.find(".//s:g[@data-shadow-body]", NS)
+    source = body.find("s:g[@data-shadow-subject]", NS)
+    excluded = asset["shadow"].get("body_exclude_path_ids", [])
+    assert [p.get("d") for p in source.findall(".//s:path", NS)] == [
+        p.get("d") for p in original.findall(".//s:path", NS) if p.get("id") not in excluded
+    ]
+    silhouette = result.find(".//s:g[@data-custom-shadow]/s:g[@data-shadow-subject]", NS)
+    assert silhouette is not None
+    assert [p.get("d") for p in silhouette.findall(".//s:path", NS)] == [
+        p.get("d") for p in body.findall(".//s:path", NS)
     ]
     ids = [n.get("id") for n in result.iter() if n.get("id")]
     assert len(ids) == len(set(ids))
@@ -226,7 +232,7 @@ def test_optional_coin_restores_continuous_sidewall_when_fused_shadow_is_hidden(
             )
         )
     )
-    repair = result.find(".//s:g[@data-shadow-body-repair]", NS)
+    repair = result.find(".//s:g[@data-shadow-body]//s:g[@data-shadow-body-repair]", NS)
     assert repair is not None
     path = repair.find("s:path", NS)
     assert path.get("d").count("A") == 2
