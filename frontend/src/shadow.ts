@@ -224,11 +224,24 @@ export function applyCustomShadow(
     sourceMask.append(create("rect", rectAttrs));
     const subtraction = blackCopy(cast, "black");
     subtraction.setAttribute("data-mask-cut", "true");
-    if (effect.receiverOnlyBody)
-      for (const path of subtraction.querySelectorAll("path")) {
-        path.setAttribute("stroke", "black");
-        path.setAttribute("stroke-width", String(meta.outline));
-      }
+    if (
+      effect.receiverOnlyBody &&
+      meta.cast_regions &&
+      meta.preserve_above !== undefined
+    ) {
+      // Alpha * (1 - alpha) cannot fully remove the cast's own AA edge.
+      // A solid reviewed region still retains both the inverse body matte
+      // and the exact regional clip, protecting the original base shading.
+      subtraction.replaceChildren(
+        create("rect", {
+          x: rectAttrs.x,
+          y: rectAttrs.y,
+          width: rectAttrs.width,
+          height: rectAttrs.height,
+          fill: "black",
+        }),
+      );
+    }
     sourceMask.append(subtraction);
     defs.append(sourceMask);
   }

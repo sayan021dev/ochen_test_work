@@ -224,10 +224,21 @@ def with_custom_shadow(
         )
         subtraction = _black_copy(cast, "black")
         subtraction.set("data-mask-cut", "true")
-        if receiver_only_body:
-            for node in subtraction.iter(f"{{{NS}}}path"):
-                node.set("stroke", "black")
-                node.set("stroke-width", str(meta["outline"]))
+        if receiver_only_body and regional_source:
+            # The source cast's partially covered edge cannot subtract itself:
+            # alpha * (1 - alpha) leaves a floating fringe at small scales.
+            # Fill only the reviewed cast region, retaining the inverse body
+            # matte and exact region clip that protect the lamp's base shading.
+            for node in list(subtraction):
+                subtraction.remove(node)
+            ET.SubElement(
+                subtraction,
+                f"{{{NS}}}rect",
+                {
+                    **{key: mask.get(key) for key in ("x", "y", "width", "height")},
+                    "fill": "black",
+                },
+            )
         source_mask.append(subtraction)
     if "sidewall" in meta and not preserve_source:
         cx, cy, rx, ry, depth = meta["sidewall"]
