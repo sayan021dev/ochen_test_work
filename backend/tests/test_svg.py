@@ -135,3 +135,97 @@ def test_local_gradient_mask_clip_and_use_references_remain_independent_and_mask
                 assert match[1] in ids
     assert first.find(".//s:mask/s:rect", NS).get("fill") == "white"
     assert first.find(".//s:stop", NS).get("stop-color") == "#111111"
+
+
+def test_custom_shadow_is_opt_in_and_exported_as_separate_vector_group():
+    custom = {"angle": 90, "length": 1.2, "opacity": 0.4}
+    original = scene(elements=[{"id": "a", "family": "lamp", "x": 0, "y": 0}])
+    modified = scene(elements=[{"id": "a", "family": "lamp", "x": 0, "y": 0, "shadow": custom}])
+    result = ET.fromstring(render_scene(modified))
+    shadow = result.find(".//s:g[@data-custom-shadow]", NS)
+    assert shadow is not None
+    assert shadow.get("opacity") == "0.4"
+    assert shadow.get("transform").startswith("matrix(")
+    assert result.find(".//s:mask", NS) is not None
+    assert not result.findall(".//s:filter", NS)
+    assert "data-custom-shadow" not in render_scene(original)
+    ids = [n.get("id") for n in result.iter() if n.get("id")]
+    assert len(ids) == len(set(ids))
+
+
+@pytest.mark.parametrize(
+    "shadow",
+    [{"angle": -1}, {"angle": 361}, {"length": 3}, {"opacity": 1.1}, {"angle": float("nan")}],
+)
+def test_invalid_custom_shadow_is_rejected(shadow):
+    with pytest.raises(ValidationError):
+        scene(elements=[{"id": "a", "family": "lamp", "x": 0, "y": 0, "shadow": shadow}])
+
+
+@pytest.mark.parametrize("asset", CATALOG, ids=lambda a: a["id"])
+def test_every_custom_shadow_keeps_source_paths_unique_references_and_palette(asset):
+    from app.svg import URL
+
+    value = scene(
+        detail=asset["detail"],
+        elements=[
+            {
+                "id": "one",
+                "family": asset["family"],
+                "role": asset["role"],
+                "x": 0,
+                "y": 0,
+                "shadow": {"angle": 240, "length": 1.3, "opacity": 0.6},
+            }
+        ],
+    )
+    result = ET.fromstring(render_scene(value))
+    original = parse_safe_svg(asset_for(asset["family"], asset["detail"], asset["role"])["svg"])
+    subjects = result.findall(".//s:g[@data-shadow-subject]", NS)
+    assert len(subjects) == 2
+    assert [p.get("d") for p in subjects[-1].findall(".//s:path", NS)] == [
+        p.get("d") for p in original.findall(".//s:path", NS)
+    ]
+    ids = [n.get("id") for n in result.iter() if n.get("id")]
+    assert len(ids) == len(set(ids))
+    for node in result.iter():
+        for val in node.attrib.values():
+            for match in URL.finditer(val):
+                assert match[1] in ids
+    assert not result.findall(".//s:filter", NS) and not result.findall(".//s:image", NS)
+    assert result.find(".//s:g[@data-custom-shadow]", NS).get("opacity") == "0.6"
+
+
+def test_two_custom_instances_have_no_shared_ids_and_default_export_remains_exact():
+    from app.svg import URL
+
+    baseline = scene()
+    before = render_scene(baseline)
+    changed = baseline.model_copy(deep=True)
+    for element in changed.elements:
+        from app.models import Shadow
+
+        element.shadow = Shadow(angle=135)
+    exported = ET.fromstring(render_scene(changed))
+    ids = [n.get("id") for n in exported.iter() if n.get("id")]
+    assert len(ids) == len(set(ids))
+    assert len(exported.findall(".//s:g[@data-custom-shadow]", NS)) == 2
+    for node in exported.iter():
+        for value in node.attrib.values():
+            assert all(m[1] in ids for m in URL.finditer(value))
+    for element in changed.elements:
+        element.shadow = None
+    assert render_scene(changed) == before
+
+
+def test_optional_coin_restores_continuous_sidewall_when_fused_shadow_is_hidden():
+    result = ET.fromstring(
+        render_scene(
+            scene(elements=[{"id": "coin", "family": "coin", "x": 0, "y": 0, "shadow": {}}])
+        )
+    )
+    repair = result.find(".//s:g[@data-shadow-body-repair]", NS)
+    assert repair is not None
+    path = repair.find("s:path", NS)
+    assert path.get("d").count("A") == 2
+    assert path.get("stroke") == PALETTES[0]["background"][3]

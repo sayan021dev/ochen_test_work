@@ -1,4 +1,5 @@
 import type { Palette } from "./types";
+import { applyCustomShadow, type ShadowEffect } from "./shadow";
 
 const original = {
   background: ["#D7CDF5", "#AA9BF0", "#7864D7", "#181817"],
@@ -9,8 +10,10 @@ export function prepareAsset(
   source: string,
   palette: Palette,
   prefix: string,
+  effect?: ShadowEffect,
 ): string {
   const document = new DOMParser().parseFromString(source, "image/svg+xml");
+  if (effect) applyCustomShadow(document, effect);
   const ids = new Map<string, string>();
   document
     .querySelectorAll("[id]")

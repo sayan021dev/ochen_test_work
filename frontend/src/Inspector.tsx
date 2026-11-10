@@ -21,12 +21,14 @@ function NumberField({
   min,
   max,
   onCommit,
+  disabled = false,
 }: {
   label: string;
   value: number;
   min: number;
   max: number;
   onCommit: (value: number) => void;
+  disabled?: boolean;
 }) {
   const [draft, setDraft] = useState(String(Math.round(value * 100) / 100));
   useEffect(() => setDraft(String(Math.round(value * 100) / 100)), [value]);
@@ -38,15 +40,18 @@ function NumberField({
       <input
         aria-label={label}
         type="number"
+        disabled={disabled}
         min={min}
         max={max}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
           const n = Number(draft);
-          if (draft.trim() && Number.isFinite(n))
-            onCommit(Math.min(max, Math.max(min, n)));
-          else setDraft(String(value));
+          if (draft.trim() && Number.isFinite(n)) {
+            const actual = Math.min(max, Math.max(min, n));
+            setDraft(String(actual));
+            onCommit(actual);
+          } else setDraft(String(value));
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
@@ -126,6 +131,119 @@ export function Inspector({
             >
               Фоновый
             </button>
+          </div>
+          <div className="shadow-settings">
+            <label className="shadow-toggle">
+              <input
+                type="checkbox"
+                aria-label="Своя тень"
+                checked={!!element.shadow}
+                disabled={element.locked}
+                onChange={(event) =>
+                  state.patchElement(element.id, {
+                    shadow: event.target.checked
+                      ? { angle: 35, length: 1, opacity: 0.35 }
+                      : null,
+                  })
+                }
+              />
+              <span>
+                <strong>Своя тень</strong>
+                <small>Дополнительный режим</small>
+              </span>
+              <span className="outline-pill">β</span>
+            </label>
+            {element.shadow ? (
+              <>
+                <p className="shadow-hint">
+                  Художественная проекция. Направление задаётся относительно
+                  предмета; длина — условный масштаб.
+                </p>
+                <div className="shadow-fields">
+                  <div>
+                    <span className="field-label">
+                      Направление от предмета, °
+                    </span>
+                    <NumberField
+                      label="Направление тени"
+                      value={element.shadow.angle}
+                      min={0}
+                      max={360}
+                      disabled={element.locked}
+                      onCommit={(angle) =>
+                        !element.locked &&
+                        state.patchElement(element.id, {
+                          shadow: { ...element.shadow!, angle },
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <span className="field-label">Длина, %</span>
+                    <NumberField
+                      label="Длина тени"
+                      value={element.shadow.length * 100}
+                      min={0}
+                      max={200}
+                      disabled={element.locked}
+                      onCommit={(length) =>
+                        !element.locked &&
+                        state.patchElement(element.id, {
+                          shadow: { ...element.shadow!, length: length / 100 },
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <span className="field-label">Непрозрачность, %</span>
+                    <NumberField
+                      label="Непрозрачность тени"
+                      value={element.shadow.opacity * 100}
+                      min={0}
+                      max={100}
+                      disabled={element.locked}
+                      onCommit={(opacity) =>
+                        !element.locked &&
+                        state.patchElement(element.id, {
+                          shadow: {
+                            ...element.shadow!,
+                            opacity: opacity / 100,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="shadow-presets" aria-label="Направления тени">
+                  {[
+                    [0, "Вправо"],
+                    [90, "Вниз"],
+                    [180, "Влево"],
+                    [270, "Вверх"],
+                  ].map(([angle, name]) => (
+                    <button
+                      key={angle}
+                      disabled={element.locked}
+                      aria-label={`Тень ${String(name).toLowerCase()}`}
+                      title={String(name)}
+                      onClick={() =>
+                        state.patchElement(element.id, {
+                          shadow: { ...element.shadow!, angle: Number(angle) },
+                        })
+                      }
+                    >
+                      <span style={{ transform: `rotate(${angle}deg)` }}>
+                        →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="shadow-hint">
+                Сейчас используется исходная тень из библиотеки.
+              </p>
+            )}
           </div>
           <span className="field-label">ПОЛОЖЕНИЕ И ПОВОРОТ</span>
           <div className="position-grid">

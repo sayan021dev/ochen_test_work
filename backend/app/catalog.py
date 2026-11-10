@@ -6,7 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 ASSET_ROOT = ROOT / "assets"
 _manifest = json.loads((ASSET_ROOT / "catalog.json").read_text())
-CATALOG = _manifest["assets"]
+SHADOWS = json.loads((ASSET_ROOT / "shadow-map.json").read_text())
+CATALOG = [{**asset, "shadow": SHADOWS[asset["id"]]} for asset in _manifest["assets"]]
 PALETTES = _manifest["palettes"]
 FAMILIES = list(dict.fromkeys(asset["family"] for asset in CATALOG))
 

@@ -45,3 +45,29 @@ def test_book_keeps_loose_source_contours_and_lamp_is_not_redrawn():
     assert [p.get("d") for p in lamp.findall(".//s:path", NS)] == [
         p.get("d") for p in original_lamp.findall(".//s:path", NS)
     ]
+
+
+def test_custom_shadow_metadata_covers_exact_catalog_and_binds_to_source_hashes():
+    from app.catalog import CATALOG
+
+    metadata = json.loads((ROOT / "assets/shadow-map.json").read_text())
+    assert set(metadata) == {a["id"] for a in CATALOG}
+    for a in CATALOG:
+        entry = metadata[a["id"]]
+        ids = {n.get("id") for n in ET.parse(ROOT / "assets" / a["file"]).getroot().iter()}
+        assert entry["source_sha256"] == a["sha256"]
+        assert entry["body_path_ids"] and set(entry["body_path_ids"]) <= ids
+        assert set(entry.get("erase_path_ids", [])) <= ids
+        assert entry["width"] > 0 and entry["height"] > 0
+
+
+def test_diagonal_pen_shadow_anchor_is_on_its_body_hull():
+    import math
+
+    from app.catalog import CATALOG
+
+    for asset in CATALOG:
+        if asset["family"] != "pen":
+            continue
+        meta = asset["shadow"]
+        assert min(math.dist(meta["anchor"], point) for point in meta["hull"]) < 0.01

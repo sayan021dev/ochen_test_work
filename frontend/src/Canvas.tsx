@@ -2,7 +2,13 @@ import { memo, useMemo, useRef } from "react";
 import { useStore } from "zustand";
 import type { createEditorStore } from "./state";
 import { prepareAsset } from "./svg";
-import { FORMATS, type Asset, type Palette, type Scene } from "./types";
+import {
+  FORMATS,
+  type Asset,
+  type Palette,
+  type Scene,
+  type Shadow,
+} from "./types";
 
 export type EditorStore = ReturnType<typeof createEditorStore>;
 type Assets = { assets: Asset[]; sources: Record<string, string> };
@@ -11,14 +17,32 @@ const Artwork = memo(function Artwork({
   source,
   palette,
   id,
+  shadow,
+  asset,
 }: {
   source: string;
   palette: Palette;
   id: string;
+  shadow?: Shadow | null;
+  asset: Asset;
 }) {
   const markup = useMemo(
-    () => prepareAsset(source, palette, id),
-    [source, palette, id],
+    () =>
+      prepareAsset(
+        source,
+        palette,
+        id,
+        shadow
+          ? {
+              settings: shadow,
+              metadata: asset.shadow,
+              role: asset.role,
+              width: asset.width,
+              height: asset.height,
+            }
+          : undefined,
+      ),
+    [source, palette, id, shadow, asset],
   );
   return <g fill="none" dangerouslySetInnerHTML={{ __html: markup }} />;
 });
@@ -70,6 +94,8 @@ export function Illustration({
                   source={sources[asset.id]}
                   palette={scene.palette}
                   id={`${prefix}-${e.id}`}
+                  shadow={e.shadow}
+                  asset={asset}
                 />
               </g>
             );

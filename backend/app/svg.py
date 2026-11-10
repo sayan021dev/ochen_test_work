@@ -9,6 +9,7 @@ from defusedxml.common import DefusedXmlException
 
 from app.catalog import PALETTES, asset_for
 from app.models import Scene
+from app.shadow import with_custom_shadow
 
 NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", NS)
@@ -138,9 +139,10 @@ def render_scene(scene: Scene) -> str:
         if element.hidden:
             continue
         asset = asset_for(element.family, scene.detail, element.role)
-        source = recolor_and_namespace(
-            parse_safe_svg(asset["svg"]), scene.palette.model_dump(), "i_" + element.id
-        )
+        original = parse_safe_svg(asset["svg"])
+        if element.shadow is not None:
+            original = with_custom_shadow(original, asset, element.shadow)
+        source = recolor_and_namespace(original, scene.palette.model_dump(), "i_" + element.id)
         group = ET.SubElement(
             artwork,
             f"{{{NS}}}g",

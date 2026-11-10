@@ -88,3 +88,29 @@ describe("editor regressions", () => {
     expect(store.getState().future).toHaveLength(0);
   });
 });
+
+it("optional shadow survives duplicate, role/detail changes and undo without modifying the original instance", () => {
+  const store = createEditorStore(defaultScene(palette));
+  const element = store.getState().scene.elements[0];
+  store.getState().select(element.id);
+  store
+    .getState()
+    .patchElement(element.id, {
+      shadow: { angle: 140, length: 1.5, opacity: 0.6 },
+    });
+  store.getState().duplicate();
+  const copy = store.getState().scene.elements.at(-1)!;
+  expect(copy.shadow).toEqual({ angle: 140, length: 1.5, opacity: 0.6 });
+  store
+    .getState()
+    .patchElement(copy.id, {
+      shadow: { ...copy.shadow!, angle: 20 },
+      role: "background",
+    });
+  store.getState().setDetail("S");
+  expect(store.getState().scene.elements[0].shadow?.angle).toBe(140);
+  expect(store.getState().scene.elements.at(-1)?.shadow?.angle).toBe(20);
+  store.getState().undo();
+  store.getState().undo();
+  expect(store.getState().scene.elements.at(-1)?.shadow?.angle).toBe(140);
+});

@@ -431,3 +431,51 @@ test("a save conflict blocks gallery navigation and JSON replacement until a cop
   );
   await expect(page.getByRole("alert")).toContainText("Сначала сохраните");
 });
+
+test("custom shadow is a separate opt-in feature with history, persistence and vector export", async ({
+  page,
+}) => {
+  const art = page.getByTestId("artboard");
+  const original = await art.locator('[data-family="lamp"]').innerHTML();
+  await page.getByRole("button", { name: "Слой Лампа", exact: true }).click();
+  await page.getByLabel("Своя тень").check();
+  await expect(art.locator("[data-custom-shadow]")).toHaveCount(1);
+  await page.getByLabel("Направление тени").fill("140");
+  await page.getByLabel("Направление тени").blur();
+  await page.getByLabel("Длина тени").fill("150");
+  await page.getByLabel("Длина тени").blur();
+  await page.getByLabel("Непрозрачность тени").fill("60");
+  await page.getByLabel("Непрозрачность тени").blur();
+  await expect(art.locator("[data-custom-shadow]")).toHaveAttribute(
+    "opacity",
+    "0.6",
+  );
+  await page.getByRole("button", { name: "Отменить", exact: true }).click();
+  await expect(art.locator("[data-custom-shadow]")).toHaveAttribute(
+    "opacity",
+    "0.35",
+  );
+  await page
+    .getByRole("button", { name: "Сохранить проект", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Сохранено" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(art.locator("[data-custom-shadow]")).toHaveCount(1);
+  await page.getByRole("button", { name: "Детализация S" }).click();
+  await expect(art.locator("[data-custom-shadow]")).toHaveCount(1);
+  const pending = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Скачать SVG", exact: true }).click();
+  const stream = await (await pending).createReadStream();
+  let svg = "";
+  for await (const chunk of stream!) svg += chunk;
+  expect(svg).toContain("data-custom-shadow");
+  expect(svg).toContain("<mask");
+  expect(svg).not.toMatch(/<image|<filter/);
+  await page.getByRole("button", { name: "Детализация L" }).click();
+  await page.getByRole("button", { name: "Слой Лампа", exact: true }).click();
+  await page.getByLabel("Своя тень").uncheck();
+  await expect(art.locator("[data-custom-shadow]")).toHaveCount(0);
+  expect(await art.locator('[data-family="lamp"]').innerHTML()).toBe(original);
+});

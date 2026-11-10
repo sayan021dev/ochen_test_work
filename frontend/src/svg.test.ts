@@ -66,3 +66,23 @@ it("namespaces quoted URLs, masks, clips and href independently without recolori
   expect(one.querySelector("mask rect")?.getAttribute("fill")).toBe("white");
   expect(one.querySelector("stop")?.getAttribute("stop-color")).toBe("#555555");
 });
+
+it("custom shadow is opt-in, vector-only, and keeps original mode reversible", () => {
+  const map = JSON.parse(
+    readFileSync(resolve(process.cwd(), "../assets/shadow-map.json"), "utf8"),
+  );
+  const effect = {
+    settings: { angle: 90, length: 1.2, opacity: 0.4 },
+    metadata: map["l-main-lamp"],
+    role: "main" as const,
+    width: 1000,
+    height: 1000,
+  };
+  const original = prepareAsset(source, palette, "plain");
+  const changed = prepareAsset(source, palette, "custom", effect);
+  expect(changed).toContain('data-custom-shadow="true"');
+  expect(changed).toContain('opacity="0.4"');
+  expect(changed).toContain("<mask");
+  expect(changed).not.toContain("<filter");
+  expect(prepareAsset(source, palette, "plain")).toBe(original);
+});

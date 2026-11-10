@@ -21,6 +21,12 @@ class Palette(Model):
     object: list[Color] = Field(min_length=4, max_length=4)
 
 
+class Shadow(Model):
+    angle: Finite = Field(default=35, ge=0, le=360)
+    length: Finite = Field(default=1, ge=0, le=2)
+    opacity: Finite = Field(default=0.35, ge=0, le=1)
+
+
 class Element(Model):
     id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")
     family: Family
@@ -30,6 +36,7 @@ class Element(Model):
     angle: Finite = Field(default=0.0, ge=-360, le=360)
     hidden: bool = False
     locked: bool = False
+    shadow: Shadow | None = None
 
 
 class Scene(Model):

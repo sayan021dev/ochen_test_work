@@ -10,6 +10,19 @@ export type Family =
   | "folder"
   | "pen";
 export type Detail = "L" | "S";
+export type Shadow = { angle: number; length: number; opacity: number };
+export type ShadowMetadata = {
+  source_sha256: string;
+  body_path_ids: string[];
+  anchor: [number, number];
+  width: number;
+  height: number;
+  outline: number;
+  preserve_above?: number;
+  hull?: [number, number][];
+  erase_path_ids?: string[];
+  sidewall?: [number, number, number, number, number];
+};
 export type Format = "square" | "landscape" | "portrait";
 export type Palette = {
   id: string;
@@ -26,6 +39,7 @@ export type Element = {
   angle: number;
   hidden: boolean;
   locked: boolean;
+  shadow?: Shadow | null;
 };
 export type Scene = {
   version: 1;
@@ -48,6 +62,7 @@ export type Asset = {
   url: string;
   source_node_id: string;
   sha256: string;
+  shadow: ShadowMetadata;
 };
 export type Bootstrap = {
   csrf_token: string;

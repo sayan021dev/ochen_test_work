@@ -1558,3 +1558,78 @@ dialog::backdrop {
     transition: none !important;
   }
 }
+
+.shadow-settings {
+  margin: 18px 0;
+  padding: 12px;
+  background: #28282c;
+  border: 1px solid #3d3d43;
+  border-radius: 9px;
+}
+.shadow-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+.shadow-toggle input {
+  accent-color: var(--pink);
+}
+.shadow-toggle strong {
+  display: block;
+  font-size: 12px;
+}
+.shadow-toggle small {
+  display: block;
+  color: #a2a2ac;
+  font-size: 10px;
+  margin-top: 3px;
+}
+.shadow-toggle .outline-pill {
+  margin-left: auto;
+  color: var(--pink);
+  padding: 1px 6px;
+}
+.shadow-hint {
+  color: #b6b6c0;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+.shadow-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.shadow-fields .field-label {
+  margin: 0 0 4px;
+  font-size: 10px;
+}
+.shadow-fields .number-field {
+  width: 100%;
+}
+.shadow-fields .number-field > span:first-child {
+  display: none;
+}
+.shadow-presets {
+  display: flex;
+  gap: 5px;
+  margin-top: 12px;
+}
+.shadow-presets button {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  padding: 5px;
+  background: #35353a;
+  border: 1px solid #4b4b52;
+  border-radius: 5px;
+  color: #eee;
+}
+.shadow-presets button:hover {
+  border-color: var(--pink);
+}
+.shadow-presets span {
+  display: block;
+}
