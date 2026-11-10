@@ -1,0 +1,32 @@
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Frontend
+node_modules/
+dist/
+.next/
+coverage/
+playwright-report/
+test-results/
+
+# Local data and temporary research
+data/
+tmp/
+*.log
+.DS_Store
+.idea/
+.vscode/
