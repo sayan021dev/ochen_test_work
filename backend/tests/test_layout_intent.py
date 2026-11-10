@@ -52,6 +52,36 @@ CASES = [
     ("phone behind book", ["phone", "book"], [("phone", "behind", ["book"])]),
     ("pen in front of folder", ["pen", "folder"], [("pen", "in_front_of", ["folder"])]),
     (
+        "лампа позади кошелька и монеты",
+        ["lamp", "wallet", "coin"],
+        [("lamp", "behind", ["wallet", "coin"])],
+    ),
+    (
+        "lamp in front of wallet and coin",
+        ["lamp", "wallet", "coin"],
+        [("lamp", "in_front_of", ["wallet", "coin"])],
+    ),
+    (
+        "лампа позади кошелька и монеты, кошелек ниже монеты",
+        ["lamp", "wallet", "coin"],
+        [("lamp", "behind", ["wallet", "coin"]), ("wallet", "below", ["coin"])],
+    ),
+    (
+        "lamp behind wallet and coin, wallet below coin",
+        ["lamp", "wallet", "coin"],
+        [("lamp", "behind", ["wallet", "coin"]), ("wallet", "below", ["coin"])],
+    ),
+    (
+        "лампа перед кошельком и монетой, кошелек ниже монеты",
+        ["lamp", "wallet", "coin"],
+        [("lamp", "in_front_of", ["wallet", "coin"]), ("wallet", "below", ["coin"])],
+    ),
+    (
+        "lamp in front of wallet and coin, wallet below coin",
+        ["lamp", "wallet", "coin"],
+        [("lamp", "in_front_of", ["wallet", "coin"]), ("wallet", "below", ["coin"])],
+    ),
+    (
         "книга и лампа слева от монеты",
         ["book", "lamp", "coin"],
         [("book", "left_of", ["coin"]), ("lamp", "left_of", ["coin"])],
@@ -168,14 +198,22 @@ def test_component_mode_accepts_relations_and_inflections(prompt, families, expe
     assert not unknown
 
 
-def test_contradictory_relations_report_error_instead_of_ignoring_request():
+@pytest.mark.parametrize(
+    "prompt,families",
+    [
+        ("книга слева от монеты, монета слева от книги", ["book", "coin"]),
+        ("lamp behind wallet, wallet behind lamp", ["lamp", "wallet"]),
+        ("lamp behind wallet, lamp left of wallet", ["lamp", "wallet"]),
+    ],
+)
+def test_contradictory_relations_report_error_instead_of_ignoring_request(prompt, families):
     request = ComposeRequest(
-        prompt="книга слева от монеты, монета слева от книги",
+        prompt=prompt,
         mode="components",
         palette=PALETTES[0],
     )
-    with pytest.raises(ValueError, match="Противоречивое"):
-        compose_variants(["book", "coin"], request)
+    with pytest.raises(ValueError, match="Противоречив"):
+        compose_variants(families, request)
 
 
 @pytest.mark.parametrize(

@@ -261,7 +261,13 @@ def _coordinates(count, edges):
 
 
 def pack(
-    dimensions: list[dict], families: list[str], intent: LayoutIntent, aspect: float, variant: int
+    dimensions: list[dict],
+    families: list[str],
+    intent: LayoutIntent,
+    aspect: float,
+    variant: int,
+    *,
+    _flexible_overlap: bool = False,
 ) -> tuple[list[Box], list[str]]:
     """Pack source bounds using difference constraints and explicit contact groups.
 
@@ -274,7 +280,8 @@ def pack(
     heights = [a["height"] for a in dimensions]
     gap = max(max(widths), max(heights)) * (0.045 + variant * 0.012)
     contact = [r for r in intent.relations if r.relation in {"on", "behind", "in_front_of"}]
-    # Equality edges make each explicitly contacting pair one rigid group.
+    # Prefer the established centered contact composition. If it cannot satisfy
+    # the request, behind/front may slide while preserving visible intersection.
     xedges, yedges = [], []
     zedges = []
     contact_offsets = {}
@@ -319,8 +326,14 @@ def pack(
                 if r.relation == "on"
                 else (heights[j] - heights[i]) / 2 - min(heights[i], heights[j]) * 0.15
             )
-            xedges.extend([(j, i, dx), (i, j, -dx)])
-            yedges.extend([(j, i, dy), (i, j, -dy)])
+            if _flexible_overlap and r.relation != "on":
+                overlap_x = min(widths[i], widths[j]) * 0.05
+                overlap_y = min(heights[i], heights[j]) * 0.05
+                xedges.extend([(j, i, overlap_x - widths[i]), (i, j, overlap_x - widths[j])])
+                yedges.extend([(j, i, overlap_y - heights[i]), (i, j, overlap_y - heights[j])])
+            else:
+                xedges.extend([(j, i, dx), (i, j, -dx)])
+                yedges.extend([(j, i, dy), (i, j, -dy)])
             zedges.append((i, j) if r.relation == "behind" else (j, i))
     for r in intent.relations:
         i = lookup[r.subject]
@@ -386,6 +399,8 @@ def pack(
 
     boxes = solve(xedges, yedges)
     if boxes is None:
+        if not _flexible_overlap and any(r.relation != "on" for r in contact):
+            return pack(dimensions, families, intent, aspect, variant, _flexible_overlap=True)
         raise ValueError(
             "Противоречивое размещение предметов. Уточните пространственные отношения."
         )
@@ -422,6 +437,8 @@ def pack(
             if result is not None:
                 options.append((score(result), xe, ye, result))
         if not options:
+            if not _flexible_overlap and any(r.relation != "on" for r in contact):
+                return pack(dimensions, families, intent, aspect, variant, _flexible_overlap=True)
             raise ValueError("Не удалось разместить предметы без наложений. Уточните отношения.")
         _, xedges, yedges, boxes = min(options, key=lambda item: item[0])
     # Topological ordering keeps a placed-on object above its support, regardless of roles.
