@@ -14,6 +14,7 @@ import {
   framePoint,
   selectionFrame,
   inverseElementPoint,
+  needsShadowPass,
   type SelectionFrame,
   elementTransform,
   resizeElement,
@@ -24,7 +25,7 @@ import {
 import type { Element } from "./types";
 import { useStore } from "zustand";
 import type { createEditorStore } from "./state";
-import { prepareAsset } from "./svg";
+import { prepareAsset, prepareAssetLayer } from "./svg";
 import {
   FORMATS,
   type Asset,
@@ -42,30 +43,47 @@ const Artwork = memo(function Artwork({
   id,
   shadow,
   asset,
+  pass = "all",
 }: {
   source: string;
   palette: Palette;
   id: string;
   shadow?: Shadow | null;
   asset: Asset;
+  pass?: "all" | "body" | "shadow";
 }) {
   const markup = useMemo(
     () =>
-      prepareAsset(
-        source,
-        palette,
-        id,
-        shadow
-          ? {
-              settings: shadow,
+      pass !== "all"
+        ? prepareAssetLayer(
+            source,
+            palette,
+            id,
+            {
+              settings: shadow ?? { angle: 0, length: 1, opacity: 1 },
               metadata: asset.shadow,
               role: asset.role,
               width: asset.width,
               height: asset.height,
-            }
-          : undefined,
-      ),
-    [source, palette, id, shadow, asset],
+            },
+            pass,
+            !!shadow,
+          )
+        : prepareAsset(
+            source,
+            palette,
+            id,
+            shadow
+              ? {
+                  settings: shadow,
+                  metadata: asset.shadow,
+                  role: asset.role,
+                  width: asset.width,
+                  height: asset.height,
+                }
+              : undefined,
+          ),
+    [source, palette, id, shadow, asset, pass],
   );
   return <g fill="none" dangerouslySetInnerHTML={{ __html: markup }} />;
 });
@@ -76,6 +94,7 @@ export function Illustration({
   sources,
   prefix = "preview",
 }: Assets & { scene: Scene; prefix?: string }) {
+  const split = needsShadowPass(scene, assets);
   return (
     <>
       {!scene.transparent && (
@@ -95,6 +114,37 @@ export function Illustration({
         </clipPath>
       </defs>
       <g clipPath={`url(#${prefix}-clip)`}>
+        {split && (
+          <g data-scene-shadows="true">
+            {scene.elements
+              .filter((e) => !e.hidden)
+              .map((e) => {
+                const asset = assets.find(
+                  (a) =>
+                    a.family === e.family &&
+                    a.detail === scene.detail &&
+                    a.role === e.role,
+                );
+                if (!asset || !sources[asset.id]) return null;
+                return (
+                  <g
+                    key={e.id}
+                    data-shadow-owner-id={e.id}
+                    transform={elementTransform(scene, e)}
+                  >
+                    <Artwork
+                      source={sources[asset.id]}
+                      palette={scene.palette}
+                      id={`${prefix}-${e.id}-cast`}
+                      shadow={e.shadow}
+                      asset={asset}
+                      pass="shadow"
+                    />
+                  </g>
+                );
+              })}
+          </g>
+        )}
         {scene.elements
           .filter((e) => !e.hidden)
           .map((e) => {
@@ -119,6 +169,7 @@ export function Illustration({
                   id={`${prefix}-${e.id}`}
                   shadow={e.shadow}
                   asset={asset}
+                  pass={split ? "body" : "all"}
                 />
               </g>
             );
@@ -164,54 +215,90 @@ function pickPart(
       .map((node) => node.closest("[data-element-id]"))
       .filter(Boolean),
   );
-  const groups = [
+  const candidates = [
     ...stage.querySelectorAll<SVGGElement>("[data-element-id]"),
-  ].reverse();
-  for (const group of groups) {
-    const e = scene.elements.find(
-      (item) => item.id === group.dataset.elementId,
-    )!;
-    if (!e.shadow) {
-      if (nativeHits.has(group)) return { e, part: "object" as const };
+  ]
+    .reverse()
+    .map((group) => {
+      const e = scene.elements.find(
+        (item) => item.id === group.dataset.elementId,
+      )!;
+      const mask = group.querySelector<SVGElement>("mask");
+      const local = inverseElementPoint(e, scene.scale, location);
+      const p = new DOMPoint(local.x, local.y);
+      const bodyMask = (point: DOMPoint) =>
+        !!mask &&
+        containsInk(mask.firstElementChild as SVGElement, point, true) &&
+        !(
+          mask.children[1] &&
+          containsInk(mask.children[1] as SVGElement, point, true)
+        );
+      const castOwner =
+        stage.querySelector<SVGGElement>(
+          `[data-shadow-owner-id="${CSS.escape(e.id)}"]`,
+        ) ?? group;
+      const layer = castOwner.querySelector<SVGGElement>(
+        "[data-custom-shadow],[data-source-shadow]",
+      );
+      const subject = layer?.querySelector<SVGElement>("[data-shadow-subject]");
+      const clipId = subject?.parentElement
+        ?.getAttribute("clip-path")
+        ?.match(/url\(#([^)]*)\)/)?.[1];
+      const clip = clipId
+        ? stage.querySelector<SVGElement>(`#${CSS.escape(clipId)}`)
+        : null;
+      const sourceInk = (point: DOMPoint) =>
+        !bodyMask(point) &&
+        containsInk(subject ?? null, point) &&
+        (!clip || containsInk(clip, point));
+      return { group, e, mask, p, bodyMask, layer, sourceInk };
+    });
+  // Painted subjects win over every shadow, regardless of the owner's order.
+  for (const c of candidates) {
+    const s = c.e.shadow;
+    const preservesSource =
+      !s ||
+      (s.angle % 360 === 0 &&
+        s.length === 1 &&
+        s.opacity === 1 &&
+        !(s.x ?? 0) &&
+        !(s.y ?? 0) &&
+        (s.scale_x ?? 1) === 1 &&
+        (s.scale_y ?? 1) === 1);
+    if (
+      nativeHits.has(c.group) &&
+      (!c.mask || (preservesSource ? !c.sourceInk(c.p) : c.bodyMask(c.p)))
+    )
+      return { e: c.e, part: "object" as const };
+  }
+  for (const c of candidates) {
+    const { e, layer, bodyMask } = c;
+    if (!layer) {
+      if (nativeHits.has(c.group)) return { e, part: "object" as const };
       continue;
     }
+    const settings = e.shadow ?? { angle: 0, length: 1, opacity: 1 };
+    if (settings.length <= 0 || settings.opacity <= 0) continue;
+    const matrix = layer.transform.baseVal.getItem(0).matrix;
+    if (Math.abs(matrix.a * matrix.d - matrix.b * matrix.c) < 1e-12) continue;
+    const p = c.p.matrixTransform(matrix.inverse());
+    const bridge = layer.querySelector<SVGElement>("[data-shadow-bridge]");
+    if (bridge && !bodyMask(c.p) && containsInk(bridge, p))
+      return { e, part: e.shadow ? ("shadow" as const) : ("object" as const) };
     const a = assets.find(
       (a) =>
         a.family === e.family && a.detail === scene.detail && a.role === e.role,
     )!;
-    const mask = group.querySelector("mask");
-    const layer = group.querySelector<SVGGElement>("[data-custom-shadow]");
-    if (!mask || !layer) continue;
-    const local = inverseElementPoint(e, scene.scale, location);
-    const bodyMask = (p: DOMPoint) =>
-      containsInk(mask.firstElementChild as SVGElement, p, true) &&
-      !(
-        mask.children[1] && containsInk(mask.children[1] as SVGElement, p, true)
-      );
-    if (nativeHits.has(group) && bodyMask(new DOMPoint(local.x, local.y)))
-      return { e, part: "object" as const };
     const box = a.shadow.cast_bbox;
-    if (e.shadow.length > 0 && e.shadow.opacity > 0 && box) {
-      const matrix = layer.transform.baseVal.getItem(0).matrix;
-      if (matrix.a * matrix.d === matrix.b * matrix.c) continue;
-      const p = new DOMPoint(local.x, local.y).matrixTransform(
-        matrix.inverse(),
-      );
-      if (
-        p.x >= box[0] &&
-        p.x <= box[0] + box[2] &&
-        p.y >= box[1] &&
-        p.y <= box[1] + box[3] &&
-        !bodyMask(p) &&
-        containsInk(layer.querySelector("[data-shadow-subject]"), p)
-      ) {
-        const clip = group.querySelector<SVGElement>("clipPath");
-        if (!clip || containsInk(clip, p))
-          return { e, part: "shadow" as const };
-      }
-    }
-    if (nativeHits.has(group) && layer.getAttribute("display") === "none")
-      return { e, part: "object" as const };
+    if (
+      box &&
+      p.x >= box[0] &&
+      p.x <= box[0] + box[2] &&
+      p.y >= box[1] &&
+      p.y <= box[1] + box[3] &&
+      c.sourceInk(p)
+    )
+      return { e, part: e.shadow ? ("shadow" as const) : ("object" as const) };
   }
 }
 

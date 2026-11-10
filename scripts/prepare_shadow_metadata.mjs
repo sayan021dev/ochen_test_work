@@ -41,6 +41,13 @@ const castIndices = {
   pen: [0],
 };
 const castRegions = {
+  // The fused lamp underpaint includes the stem and left base outline. Only
+  // the reviewed right-hand floor polygon is an original ground shadow.
+  lamp: [[
+    [0.40,0.69],[0.54,0.65],[0.92,0.83],[0.92,0.89],
+    [0.67,1.02],[0.37,1.02],[0.37,0.985],[0.64,0.875],
+    [0.645,0.795],[0.445,0.705],
+  ]],
   headphones: [
     [
       [-0.01, 0.46],
@@ -287,7 +294,7 @@ try {
         .reduce((a, b) => (b[1] > a[1] ? b : a));
       entry.anchor = contact;
     }
-    entry.cast_bbox = await page.evaluate(
+    const measurement = await page.evaluate(
       async ({ source, asset, entry }) => {
         const doc = new DOMParser().parseFromString(source, "image/svg+xml");
         applyCustomShadow(doc, {
@@ -298,24 +305,29 @@ try {
           height: asset.height,
         });
         const root = doc.documentElement;
-        root.lastElementChild.remove(); // isolate the real cast, including both masks/clip
         root.querySelector("[data-custom-shadow]").setAttribute("opacity", "1");
-        const image = new Image();
-        image.src =
-          "data:image/svg+xml;charset=utf-8," +
-          encodeURIComponent(new XMLSerializer().serializeToString(root));
-        await image.decode();
+        const bodyRoot = root.cloneNode(true);
+        bodyRoot.querySelector("[data-custom-shadow]").remove();
+        bodyRoot.lastElementChild.remove();
+        const matteRect = doc.createElementNS("http://www.w3.org/2000/svg", "rect");
+        for (const [key,value] of Object.entries({x:0,y:0,width:asset.width,height:asset.height,fill:"white",mask:"url(#custom-body-mask)"}))
+          matteRect.setAttribute(key,String(value));
+        bodyRoot.append(matteRect);
+        root.lastElementChild.remove(); // isolate the real cast, including both masks/clip
         const canvas = document.createElement("canvas");
         canvas.width = Math.ceil(asset.width);
         canvas.height = Math.ceil(asset.height);
         const context = canvas.getContext("2d");
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        const pixels = context.getImageData(
-          0,
-          0,
-          canvas.width,
-          canvas.height,
-        ).data;
+        const raster = async svg => {
+          const image = new Image();
+          image.src = "data:image/svg+xml;charset=utf-8," +
+            encodeURIComponent(new XMLSerializer().serializeToString(svg));
+          await image.decode();
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          return context.getImageData(0, 0, canvas.width, canvas.height).data;
+        };
+        const pixels = await raster(root), bodyPixels = await raster(bodyRoot);
         let left = canvas.width,
           top = canvas.height,
           right = -1,
@@ -332,15 +344,127 @@ try {
           throw new Error("Empty original cast: " + asset.id);
         const sx = asset.width / canvas.width,
           sy = asset.height / canvas.height;
-        return [
-          left * sx,
-          top * sy,
-          (right - left + 1) * sx,
-          (bottom - top + 1) * sy,
-        ];
+        // Measure only the local boundary between the original cast and body.
+        // Edges are kept separate across gaps and concavities (earphone cups,
+        // puzzle pieces): no object-wide hull or invented hidden silhouette.
+        const alpha = (data, x, y) => x < 0 || y < 0 || x >= canvas.width || y >= canvas.height
+          ? 0 : data[(y * canvas.width + x) * 4 + 3];
+        const horizontal = new Map(), vertical = new Map();
+        const add = (map, key, start) => {
+          if (!map.has(key)) map.set(key, []);
+          map.get(key).push(start);
+        };
+        for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) {
+          if (alpha(pixels, x, y) < 128) continue;
+          for (const [dx, dy] of [[0,-1],[1,0],[0,1],[-1,0]]) {
+            if (alpha(pixels, x + dx, y + dy) >= 128) continue;
+            // Some reviewed casts start just outside the visible outline (the
+            // folder's lower edge is ~10 L pixels away). Keep the search local
+            // to that outline width, then anchor on the nearest body perimeter.
+            const reach = Math.ceil(entry.outline * 5);
+            let touchesBody = false;
+            for (let oy = -reach; oy <= reach && !touchesBody; oy++)
+              for (let ox = -reach; ox <= reach; ox++)
+                if (ox*ox + oy*oy <= reach*reach && alpha(bodyPixels, x + dx + ox, y + dy + oy) >= 128) {
+                  touchesBody = true;
+                  break;
+                }
+            if (!touchesBody) continue;
+            if (dy) add(horizontal, y + (dy > 0 ? 1 : 0), x);
+            else add(vertical, x + (dx > 0 ? 1 : 0), y);
+          }
+        }
+        const edges = [];
+        const merge = (map, horizontal) => {
+          for (const [fixed, values] of [...map].sort((a,b) => a[0]-b[0])) {
+            const sorted = [...new Set(values)].sort((a,b) => a-b);
+            for (let index = 0; index < sorted.length;) {
+              const start = sorted[index];
+              let end = start + 1;
+              while (++index < sorted.length && sorted[index] === end) end++;
+              edges.push(horizontal
+                ? [start, fixed, end, fixed]
+                : [fixed, start, fixed, end]);
+            }
+          }
+        };
+        merge(horizontal, true);
+        merge(vertical, false);
+        // Trace connected contact runs, then remove raster stair steps within
+        // one sample pixel. Each run stays local; disconnected contacts never
+        // get joined by simplification. Original SVG path data is untouched.
+        const neighbors = new Map(), key = p => p.join(",");
+        edges.forEach((edge, index) => {
+          for (const point of [edge.slice(0,2), edge.slice(2)]) {
+            if (!neighbors.has(key(point))) neighbors.set(key(point), []);
+            neighbors.get(key(point)).push(index);
+          }
+        });
+        const simplify = points => {
+          if (points.length < 3) return points;
+          const first = points[0], last = points.at(-1),
+            dx = last[0] - first[0], dy = last[1] - first[1], squared = dx*dx + dy*dy;
+          let distance = 0, split = 0;
+          for (let index = 1; index < points.length - 1; index++) {
+            const point = points[index], t = squared
+              ? Math.max(0, Math.min(1, ((point[0]-first[0])*dx+(point[1]-first[1])*dy)/squared)) : 0,
+              error = Math.hypot(point[0]-first[0]-t*dx, point[1]-first[1]-t*dy);
+            if (error > distance) { distance = error; split = index; }
+          }
+          return distance <= 0.7 ? [first,last]
+            : [...simplify(points.slice(0,split+1)).slice(0,-1), ...simplify(points.slice(split))];
+        };
+        const visited = new Set(), simplified = [];
+        const trace = (firstIndex, start) => {
+          const points = [start];
+          let index = firstIndex, current = start;
+          while (!visited.has(index)) {
+            visited.add(index);
+            const edge = edges[index], next = key(edge.slice(0,2)) === key(current) ? edge.slice(2) : edge.slice(0,2);
+            points.push(next);
+            const adjacent = neighbors.get(key(next));
+            if (adjacent.length !== 2) break;
+            const candidate = adjacent.find(n => !visited.has(n));
+            if (candidate === undefined) break;
+            current = next;
+            index = candidate;
+          }
+          const run = simplify(points);
+          for (let i = 1; i < run.length; i++) simplified.push([...run[i-1], ...run[i]]);
+        };
+        edges.forEach((edge,index) => {
+          if (visited.has(index)) return;
+          for (const point of [edge.slice(0,2),edge.slice(2)])
+            if (neighbors.get(key(point)).length !== 2) { trace(index, point); break; }
+        });
+        edges.forEach((edge,index) => { if (!visited.has(index)) trace(index,edge.slice(0,2)); });
+        if (!simplified.length) throw new Error("No original attachment contact: " + asset.id);
+        const nearestBody = ([x,y]) => {
+          const reach = Math.ceil(entry.outline * 5);
+          let best = Infinity, nearest = [x,y];
+          for (let oy = -reach; oy <= reach; oy++) for (let ox = -reach; ox <= reach; ox++) {
+            const px = Math.round(x) + ox, py = Math.round(y) + oy;
+            if (alpha(bodyPixels,px,py) < 128) continue;
+            const distance = (px + 0.5 - x)**2 + (py + 0.5 - y)**2;
+            if (distance < best) { best = distance; nearest = [px + 0.5, py + 0.5]; }
+          }
+          return nearest;
+        };
+        const roundEdge = edge => edge.map((n,i) => Math.round(n * (i % 2 ? sy : sx) * 1e6) / 1e6);
+        const paired = simplified.map(edge => ({
+          cast: edge,
+          body: [...nearestBody(edge.slice(0,2)), ...nearestBody(edge.slice(2))],
+        }));
+        return {
+          cast_bbox: [left * sx, top * sy, (right - left + 1) * sx, (bottom - top + 1) * sy],
+          attachment_edges: paired.map(pair => roundEdge(pair.body)),
+          attachment_cast_edges: paired.map(pair => roundEdge(pair.cast)),
+          attachment_overlap: Math.max(sx, sy) * 3,
+        };
       },
       { source: readFileSync(`assets/${asset.file}`, "utf8"), asset, entry },
     );
+    Object.assign(entry, measurement);
     result[asset.id] = entry;
   }
   writeFileSync(

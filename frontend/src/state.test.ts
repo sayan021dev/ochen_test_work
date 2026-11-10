@@ -160,3 +160,25 @@ it("a replacement browser session detaches ownership while preserving scene and 
     store.getState().savedVersion,
   );
 });
+it("detail changes keep a dragged shadow's displacement in scene pixels", () => {
+  const store = createEditorStore(defaultScene(palette));
+  const first = store.getState().scene.elements[0];
+  store
+    .getState()
+    .patchElement(first.id, {
+      shadow: { angle: 25, length: 1.2, opacity: 0.7, x: 100, y: -60 },
+    });
+  const before = store.getState().scene;
+  store.getState().setDetail("S");
+  const after = store.getState().scene;
+  expect(after.elements[0].shadow!.x! * after.scale).toBeCloseTo(
+    before.elements[0].shadow!.x! * before.scale,
+  );
+  expect(after.elements[0].shadow!.y! * after.scale).toBeCloseTo(
+    before.elements[0].shadow!.y! * before.scale,
+  );
+  store.getState().setDetail("L");
+  expect(store.getState().scene.elements[0].shadow).toEqual(
+    before.elements[0].shadow,
+  );
+});

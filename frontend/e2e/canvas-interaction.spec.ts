@@ -17,7 +17,13 @@ async function castPixel(page: Page) {
     .getByTestId("artboard")
     .locator('[data-family="lamp"]')
     .evaluate(async (node) => {
-      const source = node.querySelector<SVGGElement>("[data-custom-shadow]")!;
+      const shadowOwner =
+        node.ownerSVGElement!.querySelector(
+          `[data-shadow-owner-id="${(node as SVGGElement).dataset.elementId}"]`,
+        ) ?? node;
+      const source = shadowOwner.querySelector<SVGGElement>(
+        "[data-custom-shadow]",
+      )!;
       const layer = source.cloneNode(true) as SVGGElement;
       layer.removeAttribute("display");
       layer.removeAttribute("transform");
@@ -26,7 +32,7 @@ async function castPixel(page: Page) {
       svg.setAttribute("width", "946");
       svg.setAttribute("height", "1129");
       svg.setAttribute("fill", "none");
-      svg.append(node.querySelector("defs")!.cloneNode(true), layer);
+      svg.append(shadowOwner.querySelector("defs")!.cloneNode(true), layer);
       const img = new Image();
       img.src =
         "data:image/svg+xml;charset=utf-8," +
@@ -66,7 +72,7 @@ test("clicking source shadow ink, dragging, stretching and rotating preserve its
   await page.getByLabel("Своя тень", { exact: true }).check();
   const board = page.getByTestId("artboard"),
     owner = board.locator('[data-family="lamp"]'),
-    cast = owner.locator("[data-custom-shadow]");
+    cast = board.locator("[data-custom-shadow]");
   const ownerMatrix = await owner.getAttribute("transform"),
     initial = await cast.getAttribute("transform");
   const from = await castPixel(page);

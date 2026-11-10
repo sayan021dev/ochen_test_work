@@ -58,3 +58,38 @@ export function prepareAsset(
     .map((e) => new XMLSerializer().serializeToString(e))
     .join("");
 }
+
+export function prepareAssetLayer(
+  source: string,
+  palette: Palette,
+  prefix: string,
+  effect: ShadowEffect,
+  layer: "body" | "shadow",
+  custom = true,
+): string {
+  const markup = prepareAsset(source, palette, prefix, {
+    ...effect,
+    separateLayers: true,
+    preserveSource: !custom,
+  });
+  const root = new DOMParser().parseFromString(
+    `<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`,
+    "image/svg+xml",
+  ).documentElement;
+  if (!custom) {
+    const cast = root.querySelector("[data-custom-shadow]");
+    cast?.removeAttribute("data-custom-shadow");
+    cast?.setAttribute("data-source-shadow", "true");
+  }
+  return [...root.children]
+    .filter(
+      (node) =>
+        node.localName === "defs" ||
+        (layer === "shadow" && node.hasAttribute("data-source-shadow")) ||
+        node.hasAttribute(
+          layer === "body" ? "data-shadow-body" : "data-custom-shadow",
+        ),
+    )
+    .map((node) => new XMLSerializer().serializeToString(node))
+    .join("");
+}

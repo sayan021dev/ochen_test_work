@@ -74,6 +74,26 @@ export function sceneBounds(scene: Scene, assets: Asset[]) {
     bottom: Math.max(...pts.map((p) => p.y)),
   };
 }
+
+export function needsShadowPass(scene: Scene, assets: Asset[]): boolean {
+  const boxes = scene.elements
+    .filter((e) => !e.hidden)
+    .flatMap((e) => {
+      const bounds = sceneBounds({ ...scene, elements: [e] }, assets);
+      return bounds ? [bounds] : [];
+    });
+  return boxes.some((a, i) =>
+    boxes
+      .slice(i + 1)
+      .some(
+        (b) =>
+          a.left < b.right + 2 &&
+          a.right + 2 > b.left &&
+          a.top < b.bottom + 2 &&
+          a.bottom + 2 > b.top,
+      ),
+  );
+}
 export function centerForFormat(
   scene: Scene,
   format: Format,

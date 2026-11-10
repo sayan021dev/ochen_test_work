@@ -221,7 +221,9 @@ def test_two_custom_instances_have_no_shared_ids_and_default_export_remains_exac
 def test_optional_coin_restores_continuous_sidewall_when_fused_shadow_is_hidden():
     result = ET.fromstring(
         render_scene(
-            scene(elements=[{"id": "coin", "family": "coin", "x": 0, "y": 0, "shadow": {}}])
+            scene(
+                elements=[{"id": "coin", "family": "coin", "x": 0, "y": 0, "shadow": {"angle": 30}}]
+            )
         )
     )
     repair = result.find(".//s:g[@data-shadow-body-repair]", NS)

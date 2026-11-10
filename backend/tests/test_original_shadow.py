@@ -34,8 +34,8 @@ def test_default_transform_keeps_original_footprint_and_color(asset):
     ]
     assert cast.get("display") == "none"
     body = result[-1]
-    assert body.get("mask") == "none"
-    assert body.find("s:g[@data-shadow-subject]", NS) is not None
+    assert body.get("mask") is None
+    assert body.get("data-shadow-body") == "true"
     assert all(
         repair.get("display") == "none"
         for repair in body.findall("s:g[@data-shadow-body-repair]", NS)
@@ -98,8 +98,10 @@ def test_cast_source_is_reviewed_ground_paths_not_full_body_outlines(asset):
     assert set(meta["cast_path_ids"]).isdisjoint(meta["body_path_ids"])
     result = with_custom_shadow(source, asset, Shadow(angle=90, length=1, opacity=0.5))
     cast = result.find(".//s:g[@data-custom-shadow]", NS)
-    assert [p.get("d") for p in cast.findall(".//s:path", NS)] == [p.get("d") for p in expected]
-    if asset["family"] in {"headphones", "pen", "wallet"}:
+    assert [
+        p.get("d") for p in cast.find(".//s:g[@data-shadow-subject]", NS).findall(".//s:path", NS)
+    ] == [p.get("d") for p in expected]
+    if asset["family"] in {"headphones", "pen", "wallet", "lamp"}:
         regions = result.find(".//s:clipPath[@id='custom-cast-region']", NS)
         assert regions is not None
         assert len(regions) == (2 if asset["family"] == "headphones" else 1)
@@ -161,3 +163,92 @@ def test_original_cast_has_mask_aware_selection_bounds(asset):
     assert y + height <= asset["height"] + 0.001
     if asset["family"] == "headphones":
         assert y > asset["height"] * 0.3
+
+
+@pytest.mark.parametrize("asset", CATALOG, ids=lambda a: a["id"])
+def test_contact_edges_are_measured_locally_not_a_whole_subject_hull(asset):
+    edges = asset["shadow"]["attachment_edges"]
+    assert edges
+    for x1, y1, x2, y2 in edges:
+        assert 0 <= x1 <= asset["width"] and 0 <= x2 <= asset["width"]
+        assert 0 <= y1 <= asset["height"] and 0 <= y2 <= asset["height"]
+    assert len(edges) == len(asset["shadow"]["attachment_cast_edges"])
+    assert all(edge[:2] != edge[2:] for edge in asset["shadow"]["attachment_cast_edges"])
+
+
+@pytest.mark.parametrize(
+    "settings", [Shadow(x=90, y=40), Shadow(angle=65), Shadow(scale_x=1.8, scale_y=0.4)]
+)
+def test_shadow_bridge_fixes_contact_edge_and_fills_to_moved_footprint(settings):
+    asset = next(a for a in CATALOG if a["id"] == "l-main-folder")
+    result = with_custom_shadow(original_asset(asset), asset, settings)
+    bridge = result.find(".//s:g[@data-shadow-attachment]", NS)
+    assert bridge is not None
+    assert bridge.get("mask") == "url(#custom-bridge-mask)"
+    mesh = bridge.find("s:path[@data-shadow-mesh]", NS)
+    assert mesh is not None and mesh.get("fill-rule") == "nonzero"
+    assert mesh.get("fill") == mesh.get("stroke") == "#181817"
+    a, b, c, d, e, f = map(float, shadow_matrix(asset["shadow"], settings)[7:-1].split())
+    allowed = set()
+    for edge, cast_edge in zip(
+        asset["shadow"]["attachment_edges"], asset["shadow"]["attachment_cast_edges"], strict=True
+    ):
+        for x, y in (edge[:2], edge[2:]):
+            allowed.add(f"{x:.6f},{y:.6f}")
+        for x, y in (cast_edge[:2], cast_edge[2:]):
+            allowed.add(f"{a * x + c * y + e:.6f},{b * x + d * y + f:.6f}")
+    points = mesh.get("d").replace("M", "").replace("L", "").replace("Z", "").split()
+    assert points and set(points) <= allowed
+
+
+def test_separated_identity_exposes_real_body_and_cast_for_scene_shadow_pass():
+    asset = next(a for a in CATALOG if a["id"] == "l-main-folder")
+    result = with_custom_shadow(original_asset(asset), asset, Shadow(), separate_layers=True)
+    assert result.find("s:g[@data-custom-shadow]", NS).get("display") != "none"
+    assert result.find("s:g[@data-shadow-body]", NS).get("mask") == "url(#custom-source-body-mask)"
+    assert result.find(".//s:g[@data-shadow-bridge]", NS) is None
+    assert result.find(".//s:g[@data-shadow-body-repair]", NS) is None
+
+
+@pytest.mark.parametrize("offset", [(5000, 0), (-5000, 0), (0, 5000), (0, -5000)])
+def test_bridge_mask_covers_fixed_and_far_transformed_contact(offset):
+    asset = next(a for a in CATALOG if a["id"] == "s-main-coin")
+    settings = Shadow(x=offset[0], y=offset[1], angle=130, scale_x=6, scale_y=6)
+    result = with_custom_shadow(original_asset(asset), asset, settings)
+    mask = result.find(".//s:mask[@id='custom-bridge-mask']", NS)
+    left, top = float(mask.get("x")), float(mask.get("y"))
+    right, bottom = left + float(mask.get("width")), top + float(mask.get("height"))
+    assert {key: mask.get(key) for key in ("x", "y", "width", "height")} == {
+        key: mask[0].get(key) for key in ("x", "y", "width", "height")
+    }
+    mesh = result.find(".//s:path[@data-shadow-mesh]", NS)
+    for point in mesh.get("d").replace("M", "").replace("L", "").replace("Z", "").split():
+        x, y = map(float, point.split(","))
+        assert left < x < right
+        assert top < y < bottom
+
+
+@pytest.mark.parametrize("asset", CATALOG, ids=lambda a: a["id"])
+def test_preserve_source_split_retains_complete_original_without_artistic_repairs(asset):
+    original = original_asset(asset)
+    result = with_custom_shadow(
+        original, asset, Shadow(), separate_layers=True, preserve_source=True
+    )
+    body = result.find("s:g[@data-shadow-body]", NS)
+    assert body.get("mask") == "url(#custom-source-body-mask)"
+    source = body.find("s:g[@data-shadow-subject]", NS)
+    expected = [
+        (p.get("d"), p.get("fill"), p.get("stroke")) for p in original.findall(".//s:path", NS)
+    ]
+    assert [
+        (p.get("d"), p.get("fill"), p.get("stroke")) for p in source.findall(".//s:path", NS)
+    ] == expected
+    assert result.find(".//s:g[@data-shadow-bridge]", NS) is None
+    assert result.find(".//s:g[@data-shadow-body-repair]", NS) is None
+    subtraction = result.find(".//s:mask[@id='custom-source-body-mask']/s:g", NS)
+    assert subtraction.get("mask") == "url(#custom-cast-mask)"
+    assert [p.get("d") for p in subtraction.findall(".//s:path", NS)] == [
+        p.get("d")
+        for p in original.findall(".//s:path", NS)
+        if p.get("id") in asset["shadow"]["cast_path_ids"]
+    ]

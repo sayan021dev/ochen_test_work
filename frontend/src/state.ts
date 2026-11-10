@@ -262,6 +262,18 @@ export function createEditorStore(initial: Scene) {
         s.change({
           ...s.scene,
           detail,
+          elements: s.scene.elements.map((e) =>
+            e.shadow
+              ? {
+                  ...e,
+                  shadow: {
+                    ...e.shadow,
+                    x: bounded((e.shadow.x ?? 0) * (detail === "S" ? 0.5 : 2)),
+                    y: bounded((e.shadow.y ?? 0) * (detail === "S" ? 0.5 : 2)),
+                  },
+                }
+              : e,
+          ),
           scale: Math.max(
             0.03,
             Math.min(8, s.scene.scale * (detail === "S" ? 2 : 0.5)),

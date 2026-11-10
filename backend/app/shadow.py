@@ -30,8 +30,23 @@ def shadow_matrix(metadata: dict, shadow: Shadow) -> str:
     return "matrix(" + " ".join(f"{n:.6f}" for n in values) + ")"
 
 
-def with_custom_shadow(root: ET.Element, asset: dict, shadow: Shadow) -> ET.Element:
+def with_custom_shadow(
+    root: ET.Element,
+    asset: dict,
+    shadow: Shadow,
+    *,
+    separate_layers: bool = False,
+    preserve_source: bool = False,
+) -> ET.Element:
     meta = asset["shadow"]
+    identity = (
+        shadow.angle % 360 == 0
+        and shadow.length == 1
+        and shadow.opacity == 1
+        and getattr(shadow, "x", 0) == getattr(shadow, "y", 0) == 0
+        and getattr(shadow, "scale_x", 1) == getattr(shadow, "scale_y", 1) == 1
+    )
+    preserve_source = preserve_source or (separate_layers and identity)
     original = copy.deepcopy(root)
     paths = {n.get("id"): n for n in original.iter() if n.tag == f"{{{NS}}}path"}
     defs = ET.Element(f"{{{NS}}}defs")
@@ -149,10 +164,32 @@ def with_custom_shadow(root: ET.Element, asset: dict, shadow: Shadow) -> ET.Elem
         cast.set("clip-path", "url(#custom-cast-region)")
     for node in cast_source.iter():
         node.attrib.pop("id", None)
-    body = ET.Element(f"{{{NS}}}g", {"mask": "url(#custom-body-mask)"})
+    body = ET.Element(f"{{{NS}}}g", {"mask": "url(#custom-body-mask)", "data-shadow-body": "true"})
     subject = ET.SubElement(body, f"{{{NS}}}g", {"data-shadow-subject": "true"})
     subject.extend(list(original))
-    if "sidewall" in meta:
+    if preserve_source:
+        # Subtract only the actual reviewed cast paint from the complete source.
+        # Using the artistic body matte here would lose outlines and fused ink.
+        source_mask = ET.SubElement(
+            defs, f"{{{NS}}}mask", {**mask.attrib, "id": "custom-source-body-mask"}
+        )
+        ET.SubElement(
+            source_mask,
+            f"{{{NS}}}rect",
+            {
+                **{key: mask.get(key) for key in ("x", "y", "width", "height")},
+                "fill": "white",
+            },
+        )
+        subtraction = copy.deepcopy(cast)
+        for node in subtraction.iter():
+            if node.tag == f"{{{NS}}}path":
+                node.set("fill", "black")
+                if node.get("stroke") not in (None, "none"):
+                    node.set("stroke", "black")
+        source_mask.append(subtraction)
+        body.set("mask", "url(#custom-source-body-mask)")
+    if "sidewall" in meta and not preserve_source:
         cx, cy, rx, ry, depth = meta["sidewall"]
 
         # The original coin wall is fused with the cast shadow. Reclose its lower arc
@@ -190,18 +227,91 @@ def with_custom_shadow(root: ET.Element, asset: dict, shadow: Shadow) -> ET.Elem
         },
     )
     layer.append(cast)
-    if (
-        shadow.angle % 360 == 0
-        and shadow.length == 1
-        and shadow.opacity == 1
-        and getattr(shadow, "x", 0) == getattr(shadow, "y", 0) == 0
-        and getattr(shadow, "scale_x", 1) == getattr(shadow, "scale_y", 1) == 1
-    ):
+    # The source contact stays fixed. Only the outer footprint moves: sweep each
+    # measured local contact edge to its transformed position. This is a filled
+    # continuation of the original cast, never a second silhouette of the body.
+    a, b, c, d, e, f = map(float, shadow_matrix(meta, shadow)[7:-1].split())
+    determinant = a * d - b * c
+    if abs(determinant) > 1e-12 and not preserve_source:
+        inverse_values = [d, -b, -c, a, c * f - d * e, b * e - a * f]
+        inverse_transform = (
+            "matrix(" + " ".join(f"{value / determinant:.6f}" for value in inverse_values) + ")"
+        )
+        overlap = meta.get("attachment_overlap", 1) * max(1, math.hypot(a, b), math.hypot(c, d))
+        # Unlike the cast's source-space mask, the bridge is drawn in fixed
+        # asset coordinates. Its mask must span the translated outer footprint.
+        corners = [
+            (0, 0),
+            (asset["width"], 0),
+            (0, asset["height"]),
+            (asset["width"], asset["height"]),
+        ]
+        covered = corners + [(a * x + c * y + e, b * x + d * y + f) for x, y in corners]
+        margin = overlap + 2
+        left = min(x for x, y in covered) - margin
+        top = min(y for x, y in covered) - margin
+        bounds = {
+            "x": str(left),
+            "y": str(top),
+            "width": str(max(x for x, y in covered) - left + margin),
+            "height": str(max(y for x, y in covered) - top + margin),
+        }
+        bridge_mask = copy.deepcopy(inverse)
+        bridge_mask.set("id", "custom-bridge-mask")
+        bridge_mask.attrib.update(bounds)
+        bridge_mask[0].attrib.update(bounds)
+        defs.append(bridge_mask)
+        bridge = ET.SubElement(
+            layer,
+            f"{{{NS}}}g",
+            {
+                "data-shadow-attachment": "true",
+                "data-shadow-bridge": "true",
+                "transform": inverse_transform,
+                "mask": "url(#custom-bridge-mask)",
+            },
+        )
+        color = paths[meta["cast_path_ids"][0]].get("fill", "#181817")
+        edges = meta.get("attachment_edges", [])
+        cast_edges = meta.get("attachment_cast_edges", edges)
+        commands = []
+        for (x1, y1, x2, y2), (cx1, cy1, cx2, cy2) in zip(edges, cast_edges, strict=True):
+            points = [
+                (x1, y1),
+                (x2, y2),
+                (a * cx2 + c * cy2 + e, b * cx2 + d * cy2 + f),
+                (a * cx1 + c * cy1 + e, b * cx1 + d * cy1 + f),
+            ]
+            # A single compound fill rasterizes the union once. Normalize triangle
+            # winding so adjacent cells cannot cancel or expose antialias seams.
+            for triangle in ([points[0], points[1], points[2]], [points[0], points[2], points[3]]):
+                p, q, r = triangle
+                area = (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+                if abs(area) < 1e-10:
+                    continue
+                if area < 0:
+                    triangle.reverse()
+                commands.append("M" + " L".join(f"{x:.6f},{y:.6f}" for x, y in triangle) + " Z")
+        ET.SubElement(
+            bridge,
+            f"{{{NS}}}path",
+            {
+                "data-shadow-mesh": "true",
+                "d": " ".join(commands),
+                "fill": color,
+                "fill-rule": "nonzero",
+                "stroke": color,
+                "stroke-width": str(overlap),
+                "stroke-linejoin": "round",
+            },
+        )
+    if not separate_layers and identity:
         # The identity control renders the original exactly once. This avoids
         # mask-edge antialias seams and keeps the original transparent coin wall.
         layer.set("display", "none")
-        body.set("mask", "none")
-        for repair in body.findall(f"{{{NS}}}g[@data-shadow-body-repair]"):
-            repair.set("display", "none")
+        for child in original:
+            child.set("data-shadow-body", "true")
+            result.append(child)
+        return result
     result.append(body)
     return result

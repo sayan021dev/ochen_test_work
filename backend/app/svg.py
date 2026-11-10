@@ -8,7 +8,8 @@ from defusedxml import ElementTree as SafeET
 from defusedxml.common import DefusedXmlException
 
 from app.catalog import PALETTES, asset_for
-from app.models import Scene
+from app.layers import needs_shadow_pass
+from app.models import Scene, Shadow
 from app.shadow import with_custom_shadow
 
 NS = "http://www.w3.org/2000/svg"
@@ -135,28 +136,63 @@ def render_scene(scene: Scene) -> str:
     clip = ET.SubElement(definitions, f"{{{NS}}}clipPath", {"id": "scene-clip"})
     ET.SubElement(clip, f"{{{NS}}}rect", {"width": str(width), "height": str(height)})
     artwork = ET.SubElement(root, f"{{{NS}}}g", {"clip-path": "url(#scene-clip)"})
-    for element in scene.elements:
-        if element.hidden:
-            continue
-        asset = asset_for(element.family, scene.detail, element.role)
-        original = parse_safe_svg(asset["svg"])
-        if element.shadow is not None:
-            original = with_custom_shadow(original, asset, element.shadow)
-        source = recolor_and_namespace(original, scene.palette.model_dump(), "i_" + element.id)
-        sx, sy = scene.scale * element.scale_x, scene.scale * element.scale_y
-        scale = str(sx) if sx == sy else f"{sx} {sy}"
-        group = ET.SubElement(
-            artwork,
-            f"{{{NS}}}g",
-            {
-                "data-element-id": element.id,
-                "data-family": element.family,
-                "data-source-node": asset["source_node_id"],
-                "data-role": element.role,
-                "transform": (
-                    f"translate({element.x} {element.y}) rotate({element.angle}) scale({scale})"
-                ),
-            },
-        )
-        group.extend(list(source))
+    split = needs_shadow_pass(scene)
+    passes = ["shadow", "body"] if split else ["all"]
+    shadow_pass = (
+        ET.SubElement(artwork, f"{{{NS}}}g", {"data-scene-shadows": "true"}) if split else None
+    )
+    for paint_pass in passes:
+        for element in scene.elements:
+            if element.hidden:
+                continue
+            asset = asset_for(element.family, scene.detail, element.role)
+            original = parse_safe_svg(asset["svg"])
+            if split or element.shadow is not None:
+                original = with_custom_shadow(
+                    original,
+                    asset,
+                    element.shadow or Shadow(),
+                    separate_layers=split,
+                    preserve_source=element.shadow is None,
+                )
+            source = recolor_and_namespace(
+                original,
+                scene.palette.model_dump(),
+                "i_" + element.id + ("_cast" if paint_pass == "shadow" else ""),
+            )
+            if split and element.shadow is None:
+                for node in source:
+                    if node.get("data-custom-shadow") is not None:
+                        del node.attrib["data-custom-shadow"]
+                        node.set("data-source-shadow", "true")
+            sx, sy = scene.scale * element.scale_x, scene.scale * element.scale_y
+            scale = str(sx) if sx == sy else f"{sx} {sy}"
+            group = ET.SubElement(
+                shadow_pass if paint_pass == "shadow" else artwork,
+                f"{{{NS}}}g",
+                {
+                    **(
+                        {"data-shadow-owner-id": element.id}
+                        if paint_pass == "shadow"
+                        else {
+                            "data-element-id": element.id,
+                            "data-family": element.family,
+                            "data-source-node": asset["source_node_id"],
+                            "data-role": element.role,
+                        }
+                    ),
+                    "transform": (
+                        f"translate({element.x} {element.y}) rotate({element.angle}) scale({scale})"
+                    ),
+                },
+            )
+            group.extend(
+                node
+                for node in source
+                if paint_pass == "all"
+                or node.tag == f"{{{NS}}}defs"
+                or (paint_pass == "shadow" and node.get("data-source-shadow") is not None)
+                or node.get("data-custom-shadow" if paint_pass == "shadow" else "data-shadow-body")
+                is not None
+            )
     return ET.tostring(root, encoding="unicode")

@@ -34,6 +34,8 @@ export type ShadowMetadata = {
   cast_path_ids?: string[];
   cast_regions?: [number, number][][];
   cast_bbox?: [number, number, number, number];
+  attachment_edges?: [number, number, number, number][];
+  attachment_cast_edges?: [number, number, number, number][];
 };
 export type Format =
   | "square"
