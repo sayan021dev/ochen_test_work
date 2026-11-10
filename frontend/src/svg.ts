@@ -16,17 +16,32 @@ export function prepareAsset(
     .querySelectorAll("[id]")
     .forEach((e, i) => ids.set(e.id, `i_${prefix}_${i}`));
   document.querySelectorAll("*").forEach((element) => {
+    const localID = (id: string) => {
+      const value = ids.get(id);
+      if (!value) throw new Error("Неизвестная ссылка SVG");
+      return value;
+    };
     for (const attribute of [...element.attributes]) {
       const { name, value } = attribute;
       if (name === "id") element.setAttribute(name, ids.get(value)!);
       else if (name === "href" || name === "xlink:href")
-        element.setAttribute(name, `#${ids.get(value.slice(1))}`);
-      else if (value.includes("url(#"))
+        element.setAttributeNS(
+          attribute.namespaceURI,
+          name,
+          `#${localID(value.slice(1))}`,
+        );
+      else if (value.includes("url("))
         element.setAttribute(
           name,
-          value.replace(/url\(#([^)]+)\)/g, (_, id) => `url(#${ids.get(id)})`),
+          value.replace(
+            /url\(\s*['"]?#([^)'"\s]+)['"]?\s*\)/g,
+            (_, id) => `url(#${localID(id)})`,
+          ),
         );
-      else if (["fill", "stroke", "stop-color"].includes(name)) {
+      else if (
+        ["fill", "stroke", "stop-color"].includes(name) &&
+        !element.closest("mask,clipPath")
+      ) {
         const normalized =
           value.toLowerCase() === "white" ? "#FFFFFF" : value.toUpperCase();
         for (const role of ["background", "object"] as const) {

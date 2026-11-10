@@ -34,11 +34,37 @@ import {
   FORMATS,
   type Bootstrap,
   type Composition,
+  type Palette,
   type Project,
+  type Scene,
 } from "./types";
 
 const errorMessage = (e: unknown) =>
   e instanceof Error ? e.message : "Не удалось выполнить действие";
+
+const unchanged = (
+  store: EditorStore,
+  snapshot: ReturnType<EditorStore["getState"]>,
+) => {
+  const current = store.getState();
+  return (
+    current.documentEpoch === snapshot.documentEpoch &&
+    current.scene === snapshot.scene
+  );
+};
+
+function canonicalPalette(palette: Palette, originals: Palette[]): Palette {
+  const sameColors = (p: Palette) =>
+    JSON.stringify([p.background, p.object]) ===
+    JSON.stringify([palette.background, palette.object]);
+  const original = originals.find(sameColors);
+  if (original) return original;
+  // Stable content ID keeps all original palettes available even when an imported ID collides.
+  let hash = 2166136261;
+  for (const c of JSON.stringify([palette.background, palette.object]))
+    hash = Math.imul(hash ^ c.charCodeAt(0), 16777619);
+  return { ...palette, id: `custom-${(hash >>> 0).toString(16)}` };
+}
 
 export default function App() {
   const [data, setData] = useState<Bootstrap | null>(null),
@@ -124,9 +150,37 @@ function Editor({
     helpDialog = useRef<HTMLDialogElement>(null),
     projectInput = useRef<HTMLInputElement>(null);
   const savingRef = useRef(false),
-    restored = useRef(false);
+    restored = useRef(false),
+    busyRef = useRef(false),
+    paletteRequest = useRef(0),
+    navigationRequest = useRef(0);
   const dirty = state.changeVersion !== state.savedVersion;
   const [width, height] = FORMATS[scene.format];
+
+  const registerPalette = useCallback(
+    (loaded: Scene) => {
+      const palette = canonicalPalette(loaded.palette, data.palettes);
+      setPalettes((ps) => [...ps.filter((p) => p.id !== palette.id), palette]);
+      return { ...loaded, palette };
+    },
+    [data.palettes],
+  );
+
+  const canLeave = () => {
+    const current = store.getState();
+    if (
+      current.changeVersion !== current.savedVersion ||
+      current.dragBaseline ||
+      conflict
+    ) {
+      setShowProjects(false);
+      setError(
+        "Сначала сохраните текущий проект. При конфликте сохраните копию; JSON можно скачать как резервную копию.",
+      );
+      return false;
+    }
+    return true;
+  };
 
   const save = useCallback(
     async (copy = false) => {
@@ -154,9 +208,11 @@ function Editor({
           setConflict(false);
         }
       } catch (e) {
-        setSaveStatus("Не сохранено");
-        setError(errorMessage(e));
-        if (e instanceof ApiError && e.status === 409) setConflict(true);
+        if (store.getState().documentEpoch === epoch) {
+          setSaveStatus("Не сохранено");
+          setError(errorMessage(e));
+          if (e instanceof ApiError && e.status === 409) setConflict(true);
+        }
       } finally {
         savingRef.current = false;
         setSaving(false);
@@ -168,6 +224,7 @@ function Editor({
   useEffect(() => {
     if (restored.current) return;
     restored.current = true;
+    const snapshot = store.getState();
     const id =
       new URLSearchParams(location.search).get("project") ??
       localStorage.getItem("ochen:last-project");
@@ -175,18 +232,23 @@ function Editor({
       void api
         .project(id)
         .then((p) => {
-          store.getState().hydrate(p.scene, p.id, p.revision);
+          if (!unchanged(store, snapshot)) {
+            setError(
+              "Сцена изменилась во время загрузки. Ваши правки сохранены в редакторе.",
+            );
+            return;
+          }
+          store.getState().hydrate(registerPalette(p.scene), p.id, p.revision);
           setSaveStatus("Сохранено");
-          if (!palettes.some((a) => a.id === p.scene.palette.id))
-            setPalettes((ps) => [...ps, p.scene.palette]);
         })
         .catch(() => {
+          if (!unchanged(store, snapshot)) return;
           localStorage.removeItem("ochen:last-project");
           setError(
             "Сохранённый проект недоступен в этой сессии. Открыта стартовая композиция.",
           );
         });
-  }, [store, palettes]);
+  }, [store, registerPalette]);
 
   useEffect(() => {
     if (!dirty || conflict || saving || busy || state.dragBaseline) return;
@@ -288,10 +350,13 @@ function Editor({
   }, [showHelp]);
 
   const generate = async () => {
+    if (busyRef.current) return;
     if (!prompt.trim()) {
       setError("Опишите идею или перечислите предметы.");
       return;
     }
+    const snapshot = store.getState();
+    busyRef.current = true;
     setBusy(true);
     setError("");
     try {
@@ -305,14 +370,21 @@ function Editor({
         backgrounds,
         use_ai: useAI,
       });
-      state.change(result.scenes[0]);
-      state.select(null);
+      if (!unchanged(store, snapshot)) {
+        setError(
+          "Сцена изменилась во время подбора. Ваши правки сохранены; запустите подбор ещё раз.",
+        );
+        return;
+      }
+      store.getState().change(result.scenes[0]);
+      store.getState().select(null);
       setComposition(result);
       setZoom(1);
       setLeftOpen(false);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   };
@@ -331,6 +403,8 @@ function Editor({
       "сложено-проект.json",
     );
   const importPalette = async (file: File) => {
+    const requestId = ++paletteRequest.current;
+    const epoch = store.getState().documentEpoch;
     try {
       if (file.size > 20000)
         throw new Error("Файл палитры слишком большой. Максимум 20 КБ.");
@@ -339,37 +413,69 @@ function Editor({
         ...store.getState().scene,
         palette: candidate,
       });
-      state.change(validated);
-      setPalettes((p) => [
-        ...p.filter((a) => a.id !== validated.palette.id),
-        validated.palette,
-      ]);
+      if (
+        requestId !== paletteRequest.current ||
+        epoch !== store.getState().documentEpoch
+      )
+        return;
+      const palette = registerPalette(validated).palette;
+      store.getState().change({ ...store.getState().scene, palette });
       setError("");
     } catch (e) {
+      if (
+        requestId !== paletteRequest.current ||
+        epoch !== store.getState().documentEpoch
+      )
+        return;
       setError(errorMessage(e));
     }
   };
   const importProject = async (file: File) => {
+    if (!canLeave()) return;
+    const snapshot = store.getState();
+    const requestId = ++navigationRequest.current;
     try {
       if (file.size > 262144)
         throw new Error("Файл проекта слишком большой. Максимум 256 КБ.");
       const validated = await api.validate(JSON.parse(await file.text()));
-      store.getState().hydrate(validated);
-      store.getState().change({ ...validated });
+      if (requestId !== navigationRequest.current) return;
+      if (!unchanged(store, snapshot)) {
+        setError(
+          "Сцена изменилась во время импорта. Сначала сохраните правки.",
+        );
+        return;
+      }
+      store.getState().importScene(registerPalette(validated));
+      localStorage.removeItem("ochen:last-project");
+      history.replaceState({}, "", "/");
       setSaveStatus("Импортирован · сохраните проект");
       setConflict(false);
       setComposition(null);
       setError("");
-      if (!palettes.some((p) => p.id === validated.palette.id))
-        setPalettes((p) => [...p, validated.palette]);
     } catch (e) {
+      if (
+        requestId !== navigationRequest.current ||
+        snapshot.documentEpoch !== store.getState().documentEpoch
+      )
+        return;
       setError(errorMessage(e));
     }
   };
   const openProject = async (id: string) => {
+    if (!canLeave()) return;
+    const snapshot = store.getState();
+    const requestId = ++navigationRequest.current;
     try {
       const p = await api.project(id);
-      state.hydrate(p.scene, p.id, p.revision);
+      if (requestId !== navigationRequest.current) return;
+      if (!unchanged(store, snapshot)) {
+        setShowProjects(false);
+        setError(
+          "Сцена изменилась во время загрузки. Сначала сохраните правки.",
+        );
+        return;
+      }
+      store.getState().hydrate(registerPalette(p.scene), p.id, p.revision);
       setSaveStatus("Сохранено");
       setConflict(false);
       setComposition(null);
@@ -380,15 +486,18 @@ function Editor({
       url.searchParams.set("project", p.id);
       history.replaceState({}, "", url);
     } catch (e) {
+      if (
+        requestId !== navigationRequest.current ||
+        snapshot.documentEpoch !== store.getState().documentEpoch
+      )
+        return;
       setError(errorMessage(e));
     }
   };
   const newProject = () => {
-    if (dirty) {
-      setError("Сначала сохраните текущий проект или скачайте JSON.");
-      return;
-    }
-    state.hydrate(defaultScene(palettes[0]));
+    if (!canLeave()) return;
+    navigationRequest.current++;
+    state.hydrate(defaultScene(data.palettes[0]));
     localStorage.removeItem("ochen:last-project");
     history.replaceState({}, "", "/");
     setSaveStatus("Не сохранено");

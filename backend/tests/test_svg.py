@@ -114,3 +114,24 @@ def test_palette_validation_and_non_mutation():
     for palette in PALETTES:
         render_scene(scene(palette=palette))
     assert PALETTES[0] == original
+
+
+def test_local_gradient_mask_clip_and_use_references_remain_independent_and_mask_is_neutral():
+    from pathlib import Path
+
+    from app.svg import URL, recolor_and_namespace
+
+    source = parse_safe_svg((Path(__file__).parent / "fixtures/references.svg").read_text())
+    palette = {**PALETTES[0], "object": ["#111111", "#222222", "#333333", "#444444"]}
+    first = recolor_and_namespace(source, palette, "one")
+    second = recolor_and_namespace(source, palette, "two")
+    ids = {n.get("id") for n in first.iter() if n.get("id")}
+    assert ids.isdisjoint({n.get("id") for n in second.iter() if n.get("id")})
+    for node in first.iter():
+        for key, value in node.attrib.items():
+            if key.split("}")[-1] == "href":
+                assert value[1:] in ids
+            for match in URL.finditer(value):
+                assert match[1] in ids
+    assert first.find(".//s:mask/s:rect", NS).get("fill") == "white"
+    assert first.find(".//s:stop", NS).get("stop-color") == "#111111"

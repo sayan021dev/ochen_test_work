@@ -75,6 +75,12 @@ def recolor_and_namespace(root: ET.Element, palette: dict, prefix: str) -> ET.El
         for role in ("background", "object")
         for i, color in enumerate(PALETTES[0][role])
     }
+    neutral = {
+        child
+        for node in result.iter()
+        if node.tag in {f"{{{NS}}}mask", f"{{{NS}}}clipPath"}
+        for child in node.iter()
+    }
     for node in result.iter():
         for key, value in list(node.attrib.items()):
             if key == "id":
@@ -91,7 +97,7 @@ def recolor_and_namespace(root: ET.Element, palette: dict, prefix: str) -> ET.El
                     return f"url(#{ids[match[1]]})"
 
                 node.set(key, URL.sub(reference, value))
-            elif key in ("fill", "stroke", "stop-color"):
+            elif key in ("fill", "stroke", "stop-color") and node not in neutral:
                 normalized = ALIASES.get(value.lower(), value.upper())
                 if normalized in colors:
                     role, index = colors[normalized]

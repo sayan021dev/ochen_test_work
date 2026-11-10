@@ -255,3 +255,179 @@ test("concurrent edits cause a recoverable conflict instead of overwriting anoth
   expect(second.url()).not.toBe(page.url());
   await second.close();
 });
+
+test("late generation preserves edits and repeated keyboard submission makes one request", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let calls = 0;
+  await page.route("**/api/compose", async (route) => {
+    calls++;
+    const response = await route.fetch();
+    await gate;
+    await route.fulfill({ response });
+  });
+  await page.getByRole("tab", { name: "Предметы", exact: true }).click();
+  await page.getByLabel("Описание композиции").fill("книга, лампа");
+  await page.getByLabel("Описание композиции").press("Control+Enter");
+  await expect.poll(() => calls).toBe(1);
+  await page.getByLabel("Описание композиции").press("Control+Enter");
+  await page.getByLabel("Название проекта").fill("Моя новая правка");
+  release();
+  await expect(
+    page.getByRole("button", { name: "Собрать композицию", exact: true }),
+  ).toBeEnabled();
+  await expect(page.getByLabel("Название проекта")).toHaveValue(
+    "Моя новая правка",
+  );
+  expect(calls).toBe(1);
+});
+
+test("delayed initial restore cannot replace edits made while it loads", async ({
+  page,
+}) => {
+  await page
+    .getByRole("button", { name: "Сохранить проект", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Сохранено" }),
+  ).toBeVisible();
+  let release!: () => void;
+  let received!: () => void;
+  const started = new Promise<void>((resolve) => {
+    received = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/projects/*", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const response = await route.fetch();
+    received();
+    await gate;
+    await route.fulfill({ response });
+  });
+  await page.reload();
+  await started;
+  await page.getByLabel("Название проекта").fill("Правка до восстановления");
+  release();
+  await expect(page.getByRole("alert")).toContainText("изменилась");
+  await expect(page.getByLabel("Название проекта")).toHaveValue(
+    "Правка до восстановления",
+  );
+});
+
+test("palette validation merges only colors and preserves the three original palettes", async ({
+  page,
+}) => {
+  let release!: () => void;
+  let received!: () => void;
+  const started = new Promise<void>((resolve) => {
+    received = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/validate", async (route) => {
+    const response = await route.fetch();
+    received();
+    await gate;
+    await route.fulfill({ response });
+  });
+  const builtin = await page
+    .getByRole("button", { name: "Палитра Сирень" })
+    .count();
+  expect(builtin).toBe(1);
+  await page.getByLabel("Импорт палитры").setInputFiles({
+    name: "custom.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        id: "lilac",
+        name: "Своя",
+        background: ["#123456", "#234567", "#345678", "#456789"],
+        object: ["#ABCDEF", "#BCDEFA", "#CDEFAB", "#FFFFFF"],
+      }),
+    ),
+  });
+  await started;
+  await page.getByLabel("Название проекта").fill("Не потерять название");
+  release();
+  await expect(
+    page.getByTestId("artboard").locator("[data-background]"),
+  ).toHaveAttribute("fill", "#123456");
+  await expect(page.getByLabel("Название проекта")).toHaveValue(
+    "Не потерять название",
+  );
+  await expect(
+    page.getByRole("button", { name: "Палитра Сирень" }),
+  ).toBeVisible();
+});
+
+test("JSON import creates a dirty new project, autosaves it, and restores it by its own URL", async ({
+  page,
+}) => {
+  await page
+    .getByRole("button", { name: "Сохранить проект", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Сохранено" }),
+  ).toBeVisible();
+  const oldURL = page.url();
+  const id = new URL(oldURL).searchParams.get("project");
+  const existing = await (await page.request.get(`/api/projects/${id}`)).json();
+  existing.scene.title = "Импортированный проект";
+  await page.getByLabel("Импорт проекта").setInputFiles({
+    name: "project.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(existing.scene)),
+  });
+  await expect(page.getByLabel("Название проекта")).toHaveValue(
+    "Импортированный проект",
+  );
+  await expect(page).not.toHaveURL(oldURL);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Сохранено" }),
+  ).toBeVisible();
+  expect(new URL(page.url()).searchParams.get("project")).not.toBe(id);
+  await page.reload();
+  await expect(page.getByLabel("Название проекта")).toHaveValue(
+    "Импортированный проект",
+  );
+});
+
+test("a save conflict blocks gallery navigation and JSON replacement until a copy is saved", async ({
+  page,
+}) => {
+  await page
+    .getByRole("button", { name: "Сохранить проект", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Сохранено" }),
+  ).toBeVisible();
+  await page.route("**/api/projects/*", (route) =>
+    route.request().method() === "PUT"
+      ? route.fulfill({
+          status: 409,
+          contentType: "application/json",
+          body: JSON.stringify({ detail: "Проект изменён в другой вкладке" }),
+        })
+      : route.continue(),
+  );
+  await page.getByLabel("Название проекта").fill("Несохранённые правки");
+  await page
+    .getByRole("button", { name: "Сохранить проект", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("другой вкладке");
+  await page.getByRole("button", { name: "Мои работы" }).click();
+  await page
+    .getByRole("button", { name: /Тихое место для больших идей/ })
+    .click();
+  await expect(page.getByLabel("Название проекта")).toHaveValue(
+    "Несохранённые правки",
+  );
+  await expect(page.getByRole("alert")).toContainText("Сначала сохраните");
+});

@@ -71,6 +71,7 @@ type EditorState = {
   finishDrag: () => void;
   cancelDrag: () => void;
   hydrate: (scene: Scene, id?: string, revision?: number) => void;
+  importScene: (scene: Scene) => void;
   saved: (id: string, revision: number, version: number) => void;
 };
 const same = (a: Scene, b: Scene) => JSON.stringify(a) === JSON.stringify(b);
@@ -240,6 +241,10 @@ export function createEditorStore(initial: Scene) {
         savedVersion: 0,
         documentEpoch: s.documentEpoch + 1,
       })),
+    importScene: (scene) => {
+      get().hydrate(scene);
+      set({ changeVersion: 1, savedVersion: 0 });
+    },
     saved: (id, revision, version) =>
       set({ projectId: id, serverRevision: revision, savedVersion: version }),
   }));

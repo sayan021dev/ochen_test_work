@@ -62,11 +62,21 @@ class OpenAISelector:
             )
             response.raise_for_status()
             data = response.json()
+            if not isinstance(data, dict):
+                raise TypeError("Invalid response envelope")
             if data.get("status") != "completed":
                 raise AIError("Модель не завершила подбор. Попробуйте уточнить идею.")
+            output = data.get("output", [])
+            if not isinstance(output, list) or any(not isinstance(i, dict) for i in output):
+                raise TypeError("Invalid response output")
+            for item in output:
+                if item.get("type") == "message":
+                    parts = item.get("content", [])
+                    if not isinstance(parts, list) or any(not isinstance(c, dict) for c in parts):
+                        raise TypeError("Invalid message content")
             content = [
                 c
-                for item in data.get("output", [])
+                for item in output
                 if item.get("type") == "message"
                 for c in item.get("content", [])
             ]

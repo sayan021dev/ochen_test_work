@@ -57,6 +57,11 @@ def test_model_receives_only_catalog_and_returns_validated_ids():
 @pytest.mark.parametrize(
     "response",
     [
+        None,
+        [],
+        {"status": "completed", "output": [None]},
+        {"status": "completed", "output": [{"type": "message", "content": [None]}]},
+        {"status": "completed", "output": [{"type": "message", "content": None}]},
         response_payload({"families": ["dragon"], "explanation": "bad"}),
         {"status": "incomplete", "output": []},
         {

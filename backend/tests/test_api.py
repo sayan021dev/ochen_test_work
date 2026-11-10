@@ -75,6 +75,40 @@ def test_project_roundtrip_revision_and_session_isolation(client, app):
         assert other.get("/api/projects").json() == []
 
 
+def test_save_returns_its_written_revision_even_when_another_tab_commits_next(client, app):
+    from app.db import Project
+    from sqlalchemy import event, update
+    from sqlalchemy.orm import Session
+
+    scene = composition(client)
+    created = client.post("/api/projects", json={"scene": scene}).json()
+    later = {**scene, "title": "Later tab"}
+
+    def write_next(_):
+        with app.state.engine.begin() as connection:
+            connection.execute(
+                update(Project).where(Project.id == created["id"]).values(scene=later, revision=3)
+            )
+
+    event.listen(Session, "after_commit", write_next, once=True)
+    try:
+        response = client.put(
+            f"/api/projects/{created['id']}", json={"scene": scene, "revision": 1}
+        )
+        assert response.status_code == 200
+        assert response.json()["revision"] == 2
+        assert response.json()["scene"] == scene
+        assert client.get(f"/api/projects/{created['id']}").json()["revision"] == 3
+        assert (
+            client.put(
+                f"/api/projects/{created['id']}", json={"scene": scene, "revision": 2}
+            ).status_code
+            == 409
+        )
+    finally:
+        event.remove(Session, "after_commit", write_next)
+
+
 def test_missing_csrf_and_foreign_origin_cannot_write(client):
     payload = {"prompt": "лампа", "mode": "components", "palette": PALETTES[0]}
     assert (
@@ -204,3 +238,61 @@ def test_real_ai_route_validates_response_caches_selection_and_limits_cost(
             client.post("/api/compose", json={**payload, "prompt": "Другая идея"}).status_code
             == 429
         )
+
+
+def test_overlapping_ai_requests_are_rejected_before_budget_and_active_slot_is_released(tmp_path):
+    import asyncio
+
+    import httpx
+
+    application = create_app(
+        Settings(
+            _env_file=None,
+            database_url=f"sqlite:///{tmp_path}/overlap.db",
+            openai_api_key="fake",
+            http_proxy="",
+            ai_request_limit=2,
+            ai_session_limit=2,
+        )
+    )
+    Base.metadata.create_all(application.state.engine)
+
+    async def run():
+        started, release = asyncio.Event(), asyncio.Event()
+        calls = []
+
+        class DelayedAI:
+            async def select(self, prompt):
+                calls.append(prompt)
+                started.set()
+                await release.wait()
+                return ["book"], "Тестовый подбор"
+
+        async with application.router.lifespan_context(application):
+            application.state.ai = DelayedAI()
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=application), base_url="http://testserver"
+            ) as client:
+                client.headers["X-CSRF-Token"] = (await client.get("/api/bootstrap")).json()[
+                    "csrf_token"
+                ]
+                payload = {"prompt": "Идея", "palette": PALETTES[0]}
+                first = asyncio.create_task(client.post("/api/compose", json=payload))
+                await asyncio.wait_for(started.wait(), 2)
+                try:
+                    rejected = await client.post("/api/compose", json=payload)
+                    assert rejected.status_code == 429
+                    assert calls == ["Идея"]
+                finally:
+                    release.set()
+                    finished = await first
+                assert finished.status_code == 200
+                assert (
+                    await client.post("/api/compose", json={**payload, "prompt": "Ещё идея"})
+                ).status_code == 200
+                assert (
+                    await client.post("/api/compose", json={**payload, "prompt": "Третья идея"})
+                ).status_code == 429
+                assert not application.state.ai_active_owners
+
+    asyncio.run(run())

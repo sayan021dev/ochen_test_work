@@ -39,6 +39,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Иллюстрации · Очень", version="0.1.0", lifespan=lifespan)
     app.state.engine = make_engine(config.database_url)
     app.state.ai_cache = {}
+    # One worker in V1: check + add happen without an await on its event loop.
+    # Reject before reserving budget, so repeated clicks cannot spend extra tokens.
+    app.state.ai_active_owners = set()
     app.mount("/assets/library", StaticFiles(directory=ASSET_ROOT / "library"), name="artwork")
 
     @app.middleware("http")
@@ -121,13 +124,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 if cache_key in app.state.ai_cache:
                     families, explanation = app.state.ai_cache[cache_key]
                 else:
-                    reserve_ai_request(
-                        app.state.engine,
-                        request.state.owner,
-                        config.ai_request_limit,
-                        config.ai_session_limit,
-                    )
-                    families, explanation = await app.state.ai.select(payload.prompt)
+                    active = app.state.ai_active_owners
+                    owner = request.state.owner
+                    if owner in active or len(active) >= 2:
+                        raise HTTPException(429, "Подбор уже выполняется. Дождитесь результата.")
+                    active.add(owner)
+                    try:
+                        reserve_ai_request(
+                            app.state.engine,
+                            owner,
+                            config.ai_request_limit,
+                            config.ai_session_limit,
+                        )
+                        families, explanation = await app.state.ai.select(payload.prompt)
+                    finally:
+                        active.discard(owner)
                     if len(app.state.ai_cache) >= 64:
                         app.state.ai_cache.pop(next(iter(app.state.ai_cache)))
                     app.state.ai_cache[cache_key] = (families, explanation)
@@ -226,8 +237,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     revision=Project.revision + 1,
                     updated_at=datetime.now(UTC),
                 )
-                .returning(Project.id)
-            ).scalar_one_or_none()
+                .returning(Project.id, Project.scene, Project.revision, Project.updated_at)
+            ).one_or_none()
             if result is None:
                 exists = db.scalar(
                     select(Project.id).where(
@@ -240,8 +251,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     if exists
                     else "Проект не найден",
                 )
+            written = representation(result)
             db.commit()
-            return representation(db.get(Project, project_id))
+            return written
 
     frontend = ROOT / "frontend" / "dist"
     if frontend.is_dir():

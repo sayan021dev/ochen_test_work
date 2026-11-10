@@ -10,6 +10,17 @@ const palette: Palette = {
 };
 
 describe("editor regressions", () => {
+  it("imported scenes become a new unsaved document even when content is identical", () => {
+    const store = createEditorStore(defaultScene(palette));
+    store.getState().hydrate(store.getState().scene, "old-project", 9);
+    const epoch = store.getState().documentEpoch;
+    store.getState().importScene(store.getState().scene);
+    expect(store.getState().projectId).toBeNull();
+    expect(store.getState().documentEpoch).toBeGreaterThan(epoch);
+    expect(store.getState().changeVersion).not.toBe(
+      store.getState().savedVersion,
+    );
+  });
   it("duplicates with a new instance ID, then undo/redo restores content and order", () => {
     const store = createEditorStore(defaultScene(palette));
     const first = store.getState().scene.elements[0];

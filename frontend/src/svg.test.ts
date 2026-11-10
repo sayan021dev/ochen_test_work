@@ -37,3 +37,32 @@ it("preview preserves source geometry, resolves local IDs and colors from origin
   );
   expect(prepareAsset(source, palette, "a")).toBe(a);
 });
+
+it("namespaces quoted URLs, masks, clips and href independently without recoloring mask alpha", () => {
+  const fixture = readFileSync(
+    resolve(process.cwd(), "../backend/tests/fixtures/references.svg"),
+    "utf8",
+  );
+  const parse = (prefix: string) =>
+    new DOMParser().parseFromString(
+      `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">${prepareAsset(fixture, palette, prefix)}</svg>`,
+      "image/svg+xml",
+    );
+  const one = parse("one"),
+    two = parse("two");
+  const ids = new Set([...one.querySelectorAll("[id]")].map((e) => e.id));
+  expect([...two.querySelectorAll("[id]")].every((e) => !ids.has(e.id))).toBe(
+    true,
+  );
+  for (const node of one.querySelectorAll("*"))
+    for (const attribute of [...node.attributes]) {
+      if (attribute.localName === "href")
+        expect(ids.has(attribute.value.slice(1))).toBe(true);
+      for (const match of attribute.value.matchAll(
+        /url\(\s*['"]?#([^)'"\s]+)['"]?\s*\)/g,
+      ))
+        expect(ids.has(match[1])).toBe(true);
+    }
+  expect(one.querySelector("mask rect")?.getAttribute("fill")).toBe("white");
+  expect(one.querySelector("stop")?.getAttribute("stop-color")).toBe("#555555");
+});
