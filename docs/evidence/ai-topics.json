@@ -1,0 +1,86 @@
+[
+  {
+    "topic": "Фокус на главном",
+    "ok": true,
+    "families": [
+      "headphones",
+      "lamp",
+      "puzzle"
+    ],
+    "seconds": 3.97
+  },
+  {
+    "topic": "Программирование на Python",
+    "ok": true,
+    "families": [
+      "book",
+      "phone",
+      "puzzle",
+      "pen"
+    ],
+    "seconds": 2.37
+  },
+  {
+    "topic": "Как научиться программировать",
+    "ok": true,
+    "families": [
+      "book",
+      "pen",
+      "puzzle",
+      "phone"
+    ],
+    "seconds": 2.29
+  },
+  {
+    "topic": "Медицина будущего",
+    "ok": true,
+    "families": [
+      "phone",
+      "puzzle",
+      "lamp",
+      "flowers"
+    ],
+    "seconds": 2.76
+  },
+  {
+    "topic": "Безопасность API",
+    "ok": true,
+    "families": [
+      "phone",
+      "folder",
+      "puzzle"
+    ],
+    "seconds": 2.6
+  },
+  {
+    "topic": "Как всё успеть?",
+    "ok": true,
+    "families": [
+      "folder",
+      "lamp",
+      "headphones",
+      "puzzle"
+    ],
+    "seconds": 2.73
+  },
+  {
+    "topic": "Здоровье планеты",
+    "ok": true,
+    "families": [
+      "flowers",
+      "puzzle",
+      "book"
+    ],
+    "seconds": 2.87
+  },
+  {
+    "topic": "Вдохновение и творческий беспорядок",
+    "ok": true,
+    "families": [
+      "lamp",
+      "pen",
+      "puzzle"
+    ],
+    "seconds": 2.48
+  }
+]
