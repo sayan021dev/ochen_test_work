@@ -104,7 +104,7 @@ test("variant previews collapse after selection, reopen unchanged and preserve u
   for (const card of await variants.locator(".variant-card").all()) {
     const number = await card.locator(".variant-number").boundingBox();
     const preview = await card.locator(".variant-preview").boundingBox();
-    expect(preview!.x - number!.x - number!.width).toBeGreaterThanOrEqual(7);
+    expect(preview!.y - number!.y - number!.height).toBeGreaterThanOrEqual(7);
   }
   const original = await page
     .getByTestId("artboard")
