@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "title": "Диагностика координат: лампа, кошелек, монета",
+  "format": "portrait",
+  "detail": "L",
+  "scale": 1.0,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "reference-0",
+      "family": "lamp",
+      "role": "background",
+      "x": -140.43819729450752,
+      "y": -588.4491568495368,
+      "angle": 0.0,
+      "scale_x": 0.9999996502129221,
+      "scale_y": 0.9999996502129221,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-1",
+      "family": "coin",
+      "role": "main",
+      "x": 435.50996275850684,
+      "y": 562.5533789040819,
+      "angle": 0.0,
+      "scale_x": 1.000000866067133,
+      "scale_y": 1.000000866067133,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-2",
+      "family": "wallet",
+      "role": "main",
+      "x": 35.12155611781782,
+      "y": 708.9675274109122,
+      "angle": 0.0,
+      "scale_x": 0.9999995057367667,
+      "scale_y": 0.9999995057367667,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

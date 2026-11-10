@@ -1,0 +1,1189 @@
+{
+  "source_file": "dnuDZosHkN6ajkhiVfavRw",
+  "source_page": "21:2",
+  "source_section": "25:11069",
+  "source_sha256": "5463a642d1115ae4f734ae6a85025c535181739296ff5228f388b05bc16c6c3f",
+  "provider_calls": 0,
+  "examples": [
+    {
+      "id": "square-phone-puzzle",
+      "prompt": "телефон, пазлы",
+      "format": "square",
+      "size": [
+        1000.0,
+        1000.0
+      ],
+      "families": [
+        "phone",
+        "puzzle"
+      ],
+      "source_bounds": [
+        3462.0,
+        663.0,
+        1000.0,
+        1000.0
+      ],
+      "reference": "square-phone-puzzle-reference.svg",
+      "replay": "square-phone-puzzle-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-phone",
+          "family": "phone",
+          "role": "main",
+          "x": 3535.1191732478624,
+          "y": 1047.4476435166807,
+          "scale": 1.0000006107743697,
+          "matched_long_paths": 22,
+          "matching_paint_paths": 22,
+          "max_control_point_rms": 0.00429195995498991,
+          "order": 10
+        },
+        {
+          "asset": "l-main-puzzle",
+          "family": "puzzle",
+          "role": "main",
+          "x": 3793.156395284906,
+          "y": 823.988813599221,
+          "scale": 1.000002200533794,
+          "matched_long_paths": 9,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.004161477367448018,
+          "order": 165
+        }
+      ],
+      "variants": {
+        "L": [
+          "square-phone-puzzle-L-1.svg",
+          "square-phone-puzzle-L-2.svg",
+          "square-phone-puzzle-L-3.svg"
+        ],
+        "S": [
+          "square-phone-puzzle-S-1.svg",
+          "square-phone-puzzle-S-2.svg",
+          "square-phone-puzzle-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "square-book-phone",
+      "prompt": "книга, телефон",
+      "format": "square",
+      "size": [
+        1000.0,
+        1000.0
+      ],
+      "families": [
+        "book",
+        "phone"
+      ],
+      "source_bounds": [
+        4550.0,
+        663.0,
+        1000.0,
+        1000.0
+      ],
+      "reference": "square-book-phone-reference.svg",
+      "replay": "square-book-phone-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-book",
+          "family": "book",
+          "role": "main",
+          "x": 3910.345342390397,
+          "y": 674.667472155307,
+          "scale": 1.0000008408022483,
+          "matched_long_paths": 8,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.004718259300655221,
+          "order": 6
+        },
+        {
+          "asset": "l-main-phone",
+          "family": "phone",
+          "role": "main",
+          "x": 4694.429406687259,
+          "y": 871.2164381297312,
+          "scale": 1.0000007643585447,
+          "matched_long_paths": 22,
+          "matching_paint_paths": 22,
+          "max_control_point_rms": 0.004586762000518682,
+          "order": 47
+        }
+      ],
+      "variants": {
+        "L": [
+          "square-book-phone-L-1.svg",
+          "square-book-phone-L-2.svg",
+          "square-book-phone-L-3.svg"
+        ],
+        "S": [
+          "square-book-phone-S-1.svg",
+          "square-book-phone-S-2.svg",
+          "square-book-phone-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "square-folder-wallet-coin",
+      "prompt": "папка, кошелек, монета",
+      "format": "square",
+      "size": [
+        1000.0,
+        1000.0
+      ],
+      "families": [
+        "folder",
+        "wallet",
+        "coin"
+      ],
+      "source_bounds": [
+        5638.0,
+        663.0,
+        1000.0,
+        1000.0
+      ],
+      "reference": "square-folder-wallet-coin-reference.svg",
+      "replay": "square-folder-wallet-coin-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-folder",
+          "family": "folder",
+          "role": "main",
+          "x": 5668.616311745128,
+          "y": 662.9999644872596,
+          "scale": 0.9999986207191962,
+          "matched_long_paths": 5,
+          "matching_paint_paths": 2,
+          "max_control_point_rms": 0.004185689448444705,
+          "order": 5
+        },
+        {
+          "asset": "l-main-wallet",
+          "family": "wallet",
+          "role": "main",
+          "x": 5458.418865708092,
+          "y": 1180.0050487397489,
+          "scale": 0.9999967058070434,
+          "matched_long_paths": 8,
+          "matching_paint_paths": 6,
+          "max_control_point_rms": 0.004987404637096809,
+          "order": 27
+        },
+        {
+          "asset": "l-main-coin",
+          "family": "coin",
+          "role": "main",
+          "x": 6124.518276665083,
+          "y": 1387.9781071694993,
+          "scale": 0.9999981837403675,
+          "matched_long_paths": 16,
+          "matching_paint_paths": 16,
+          "max_control_point_rms": 0.004105497660230345,
+          "order": 101
+        }
+      ],
+      "variants": {
+        "L": [
+          "square-folder-wallet-coin-L-1.svg",
+          "square-folder-wallet-coin-L-2.svg",
+          "square-folder-wallet-coin-L-3.svg"
+        ],
+        "S": [
+          "square-folder-wallet-coin-S-1.svg",
+          "square-folder-wallet-coin-S-2.svg",
+          "square-folder-wallet-coin-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "square-flowers-headphones",
+      "prompt": "цветы, наушники",
+      "format": "square",
+      "size": [
+        1000.0,
+        1000.0
+      ],
+      "families": [
+        "flowers",
+        "headphones"
+      ],
+      "source_bounds": [
+        3462.0,
+        1776.0,
+        1000.0,
+        1000.0
+      ],
+      "reference": "square-flowers-headphones-reference.svg",
+      "replay": "square-flowers-headphones-replay.svg",
+      "poses": [
+        {
+          "asset": "l-background-flowers",
+          "family": "flowers",
+          "role": "background",
+          "x": 3429.131690266494,
+          "y": 1402.4468087609657,
+          "scale": 1.0000005991496532,
+          "matched_long_paths": 9,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.004597014826029308,
+          "order": 8
+        },
+        {
+          "asset": "l-main-headphones",
+          "family": "headphones",
+          "role": "main",
+          "x": 3654.4060434452126,
+          "y": 2058.3016402417315,
+          "scale": 0.9999994657076725,
+          "matched_long_paths": 14,
+          "matching_paint_paths": 13,
+          "max_control_point_rms": 0.004790776233670443,
+          "order": 48
+        }
+      ],
+      "variants": {
+        "L": [
+          "square-flowers-headphones-L-1.svg",
+          "square-flowers-headphones-L-2.svg",
+          "square-flowers-headphones-L-3.svg"
+        ],
+        "S": [
+          "square-flowers-headphones-S-1.svg",
+          "square-flowers-headphones-S-2.svg",
+          "square-flowers-headphones-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "square-lamp-wallet-coin",
+      "prompt": "лампа, кошелек, монета",
+      "format": "square",
+      "size": [
+        1000.0,
+        1000.0
+      ],
+      "families": [
+        "lamp",
+        "wallet",
+        "coin"
+      ],
+      "source_bounds": [
+        4550.0,
+        1776.0,
+        1000.0,
+        1000.0
+      ],
+      "reference": "square-lamp-wallet-coin-reference.svg",
+      "replay": "square-lamp-wallet-coin-replay.svg",
+      "poses": [
+        {
+          "asset": "l-background-lamp",
+          "family": "lamp",
+          "role": "background",
+          "x": 4462.067164707652,
+          "y": 1170.346742066151,
+          "scale": 0.9999994835289634,
+          "matched_long_paths": 3,
+          "matching_paint_paths": 2,
+          "max_control_point_rms": 0.0045722682082894785,
+          "order": 5
+        },
+        {
+          "asset": "l-main-wallet",
+          "family": "wallet",
+          "role": "main",
+          "x": 4684.840656463398,
+          "y": 2319.978517649236,
+          "scale": 0.9999975042596829,
+          "matched_long_paths": 8,
+          "matching_paint_paths": 3,
+          "max_control_point_rms": 0.0036463688792306415,
+          "order": 19
+        },
+        {
+          "asset": "l-main-coin",
+          "family": "coin",
+          "role": "main",
+          "x": 5157.484379043632,
+          "y": 2213.356385369084,
+          "scale": 0.9999984601328646,
+          "matched_long_paths": 16,
+          "matching_paint_paths": 16,
+          "max_control_point_rms": 0.003926179167255261,
+          "order": 106
+        }
+      ],
+      "variants": {
+        "L": [
+          "square-lamp-wallet-coin-L-1.svg",
+          "square-lamp-wallet-coin-L-2.svg",
+          "square-lamp-wallet-coin-L-3.svg"
+        ],
+        "S": [
+          "square-lamp-wallet-coin-S-1.svg",
+          "square-lamp-wallet-coin-S-2.svg",
+          "square-lamp-wallet-coin-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "square-book-puzzle-pen",
+      "prompt": "книга, пазлы, ручка",
+      "format": "square",
+      "size": [
+        1000.0,
+        1000.0
+      ],
+      "families": [
+        "book",
+        "puzzle",
+        "pen"
+      ],
+      "source_bounds": [
+        5638.0,
+        1776.0,
+        1000.0,
+        1000.0
+      ],
+      "reference": "square-book-puzzle-pen-reference.svg",
+      "replay": "square-book-puzzle-pen-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-pen",
+          "family": "pen",
+          "role": "main",
+          "x": 5731.795075845265,
+          "y": 2430.8877999842707,
+          "scale": 1.000000878920976,
+          "matched_long_paths": 4,
+          "matching_paint_paths": 1,
+          "max_control_point_rms": 0.0043189974557212895,
+          "order": 5
+        },
+        {
+          "asset": "l-background-book",
+          "family": "book",
+          "role": "background",
+          "x": 5517.276900001959,
+          "y": 1543.898140709227,
+          "scale": 1.0000011899606458,
+          "matched_long_paths": 11,
+          "matching_paint_paths": 11,
+          "max_control_point_rms": 0.004519382921352256,
+          "order": 30
+        },
+        {
+          "asset": "l-main-puzzle",
+          "family": "puzzle",
+          "role": "main",
+          "x": 5705.321630242583,
+          "y": 1888.281232027244,
+          "scale": 0.999998835121468,
+          "matched_long_paths": 9,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.0036333224785940255,
+          "order": 75
+        }
+      ],
+      "variants": {
+        "L": [
+          "square-book-puzzle-pen-L-1.svg",
+          "square-book-puzzle-pen-L-2.svg",
+          "square-book-puzzle-pen-L-3.svg"
+        ],
+        "S": [
+          "square-book-puzzle-pen-S-1.svg",
+          "square-book-puzzle-pen-S-2.svg",
+          "square-book-puzzle-pen-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "landscape-phone-puzzle",
+      "prompt": "телефон, пазлы",
+      "format": "landscape",
+      "size": [
+        1200.0,
+        630.0
+      ],
+      "families": [
+        "phone",
+        "puzzle"
+      ],
+      "source_bounds": [
+        3462.0,
+        3377.0,
+        1200.0,
+        630.0
+      ],
+      "reference": "landscape-phone-puzzle-reference.svg",
+      "replay": "landscape-phone-puzzle-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-phone",
+          "family": "phone",
+          "role": "main",
+          "x": 3566.7983026386096,
+          "y": 3529.846772595144,
+          "scale": 1.0000006945016726,
+          "matched_long_paths": 22,
+          "matching_paint_paths": 22,
+          "max_control_point_rms": 0.004385783640103489,
+          "order": 10
+        },
+        {
+          "asset": "l-main-puzzle",
+          "family": "puzzle",
+          "role": "main",
+          "x": 4090.9262801649525,
+          "y": 3445.601019217893,
+          "scale": 1.0000004485243026,
+          "matched_long_paths": 9,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.003830815859553789,
+          "order": 165
+        }
+      ],
+      "variants": {
+        "L": [
+          "landscape-phone-puzzle-L-1.svg",
+          "landscape-phone-puzzle-L-2.svg",
+          "landscape-phone-puzzle-L-3.svg"
+        ],
+        "S": [
+          "landscape-phone-puzzle-S-1.svg",
+          "landscape-phone-puzzle-S-2.svg",
+          "landscape-phone-puzzle-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "landscape-book-phone",
+      "prompt": "книга, телефон",
+      "format": "landscape",
+      "size": [
+        1200.0,
+        630.0
+      ],
+      "families": [
+        "book",
+        "phone"
+      ],
+      "source_bounds": [
+        4762.0,
+        3377.0,
+        1200.0,
+        630.0
+      ],
+      "reference": "landscape-book-phone-reference.svg",
+      "replay": "landscape-book-phone-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-book",
+          "family": "book",
+          "role": "main",
+          "x": 4381.385413335272,
+          "y": 3056.036614000218,
+          "scale": 0.999999385732627,
+          "matched_long_paths": 11,
+          "matching_paint_paths": 11,
+          "max_control_point_rms": 0.0041092413563463505,
+          "order": 5
+        },
+        {
+          "asset": "l-main-phone",
+          "family": "phone",
+          "role": "main",
+          "x": 5272.322982489482,
+          "y": 3358.0556694557918,
+          "scale": 0.9999991394398566,
+          "matched_long_paths": 22,
+          "matching_paint_paths": 22,
+          "max_control_point_rms": 0.00494433941631689,
+          "order": 53
+        }
+      ],
+      "variants": {
+        "L": [
+          "landscape-book-phone-L-1.svg",
+          "landscape-book-phone-L-2.svg",
+          "landscape-book-phone-L-3.svg"
+        ],
+        "S": [
+          "landscape-book-phone-S-1.svg",
+          "landscape-book-phone-S-2.svg",
+          "landscape-book-phone-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "landscape-folder-wallet-coin",
+      "prompt": "папка, кошелек, монета",
+      "format": "landscape",
+      "size": [
+        1200.0,
+        630.0
+      ],
+      "families": [
+        "folder",
+        "wallet",
+        "coin"
+      ],
+      "source_bounds": [
+        6062.0,
+        3377.0,
+        1200.0,
+        630.0
+      ],
+      "reference": "landscape-folder-wallet-coin-reference.svg",
+      "replay": "landscape-folder-wallet-coin-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-folder",
+          "family": "folder",
+          "role": "main",
+          "x": 6260.142089005122,
+          "y": 3175.2509848020904,
+          "scale": 1.0000007119883352,
+          "matched_long_paths": 5,
+          "matching_paint_paths": 2,
+          "max_control_point_rms": 0.004014228861915213,
+          "order": 5
+        },
+        {
+          "asset": "l-main-coin",
+          "family": "coin",
+          "role": "main",
+          "x": 6478.506881574889,
+          "y": 3808.57903353897,
+          "scale": 1.000002262691488,
+          "matched_long_paths": 16,
+          "matching_paint_paths": 16,
+          "max_control_point_rms": 0.0040158195613795925,
+          "order": 27
+        },
+        {
+          "asset": "l-main-wallet",
+          "family": "wallet",
+          "role": "main",
+          "x": 5848.091691221773,
+          "y": 3581.4299641222797,
+          "scale": 1.0000006101906536,
+          "matched_long_paths": 8,
+          "matching_paint_paths": 6,
+          "max_control_point_rms": 0.003203300724008184,
+          "order": 162
+        }
+      ],
+      "variants": {
+        "L": [
+          "landscape-folder-wallet-coin-L-1.svg",
+          "landscape-folder-wallet-coin-L-2.svg",
+          "landscape-folder-wallet-coin-L-3.svg"
+        ],
+        "S": [
+          "landscape-folder-wallet-coin-S-1.svg",
+          "landscape-folder-wallet-coin-S-2.svg",
+          "landscape-folder-wallet-coin-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "landscape-flowers-headphones",
+      "prompt": "цветы, наушники",
+      "format": "landscape",
+      "size": [
+        1200.0,
+        630.0
+      ],
+      "families": [
+        "flowers",
+        "headphones"
+      ],
+      "source_bounds": [
+        3462.0,
+        4161.0,
+        1200.0,
+        630.0
+      ],
+      "reference": "landscape-flowers-headphones-reference.svg",
+      "replay": "landscape-flowers-headphones-replay.svg",
+      "poses": [
+        {
+          "asset": "l-background-flowers",
+          "family": "flowers",
+          "role": "background",
+          "x": 3364.167723682629,
+          "y": 3782.103128055298,
+          "scale": 1.0000039455472476,
+          "matched_long_paths": 9,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.005161728822668965,
+          "order": 10
+        },
+        {
+          "asset": "l-main-headphones",
+          "family": "headphones",
+          "role": "main",
+          "x": 3783.196192967429,
+          "y": 4238.323259216857,
+          "scale": 0.9999992957040894,
+          "matched_long_paths": 14,
+          "matching_paint_paths": 13,
+          "max_control_point_rms": 0.0048172318494051625,
+          "order": 44
+        }
+      ],
+      "variants": {
+        "L": [
+          "landscape-flowers-headphones-L-1.svg",
+          "landscape-flowers-headphones-L-2.svg",
+          "landscape-flowers-headphones-L-3.svg"
+        ],
+        "S": [
+          "landscape-flowers-headphones-S-1.svg",
+          "landscape-flowers-headphones-S-2.svg",
+          "landscape-flowers-headphones-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "landscape-lamp-wallet-coin",
+      "prompt": "лампа, кошелек, монета",
+      "format": "landscape",
+      "size": [
+        1200.0,
+        630.0
+      ],
+      "families": [
+        "lamp",
+        "wallet",
+        "coin"
+      ],
+      "source_bounds": [
+        4762.0,
+        4161.0,
+        1200.0,
+        630.0
+      ],
+      "reference": "landscape-lamp-wallet-coin-reference.svg",
+      "replay": "landscape-lamp-wallet-coin-replay.svg",
+      "poses": [
+        {
+          "asset": "l-background-lamp",
+          "family": "lamp",
+          "role": "background",
+          "x": 4742.635156134307,
+          "y": 3369.2055160181317,
+          "scale": 0.9999988270522374,
+          "matched_long_paths": 3,
+          "matching_paint_paths": 2,
+          "max_control_point_rms": 0.004976384851750854,
+          "order": 5
+        },
+        {
+          "asset": "l-main-coin",
+          "family": "coin",
+          "role": "main",
+          "x": 5660.912078572699,
+          "y": 4289.944841103346,
+          "scale": 1.000001544567895,
+          "matched_long_paths": 16,
+          "matching_paint_paths": 16,
+          "max_control_point_rms": 0.004505634101824981,
+          "order": 16
+        },
+        {
+          "asset": "l-main-wallet",
+          "family": "wallet",
+          "role": "main",
+          "x": 5061.714874547997,
+          "y": 4451.7896628908275,
+          "scale": 0.999997981622514,
+          "matched_long_paths": 8,
+          "matching_paint_paths": 3,
+          "max_control_point_rms": 0.0039649422499270755,
+          "order": 151
+        }
+      ],
+      "variants": {
+        "L": [
+          "landscape-lamp-wallet-coin-L-1.svg",
+          "landscape-lamp-wallet-coin-L-2.svg",
+          "landscape-lamp-wallet-coin-L-3.svg"
+        ],
+        "S": [
+          "landscape-lamp-wallet-coin-S-1.svg",
+          "landscape-lamp-wallet-coin-S-2.svg",
+          "landscape-lamp-wallet-coin-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "landscape-book-puzzle-pen",
+      "prompt": "книга, пазлы, ручка",
+      "format": "landscape",
+      "size": [
+        1200.0,
+        630.0
+      ],
+      "families": [
+        "book",
+        "puzzle",
+        "pen"
+      ],
+      "source_bounds": [
+        6062.0,
+        4161.0,
+        1200.0,
+        630.0
+      ],
+      "reference": "landscape-book-puzzle-pen-reference.svg",
+      "replay": "landscape-book-puzzle-pen-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-pen",
+          "family": "pen",
+          "role": "main",
+          "x": 6098.595000285849,
+          "y": 4448.4635352289515,
+          "scale": 0.9999996810789169,
+          "matched_long_paths": 4,
+          "matching_paint_paths": 1,
+          "max_control_point_rms": 0.004486498821676306,
+          "order": 5
+        },
+        {
+          "asset": "l-background-book",
+          "family": "book",
+          "role": "background",
+          "x": 6266.666922615423,
+          "y": 3770.7962291495737,
+          "scale": 0.9999999827129941,
+          "matched_long_paths": 10,
+          "matching_paint_paths": 10,
+          "max_control_point_rms": 0.004155999024981858,
+          "order": 29
+        },
+        {
+          "asset": "l-main-puzzle",
+          "family": "puzzle",
+          "role": "main",
+          "x": 6460.591619037023,
+          "y": 4097.715762037369,
+          "scale": 0.9999990028369069,
+          "matched_long_paths": 9,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.004576194178860121,
+          "order": 67
+        }
+      ],
+      "variants": {
+        "L": [
+          "landscape-book-puzzle-pen-L-1.svg",
+          "landscape-book-puzzle-pen-L-2.svg",
+          "landscape-book-puzzle-pen-L-3.svg"
+        ],
+        "S": [
+          "landscape-book-puzzle-pen-S-1.svg",
+          "landscape-book-puzzle-pen-S-2.svg",
+          "landscape-book-puzzle-pen-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "portrait-phone-puzzle",
+      "prompt": "телефон, пазлы",
+      "format": "portrait",
+      "size": [
+        800.0,
+        1200.0
+      ],
+      "families": [
+        "phone",
+        "puzzle"
+      ],
+      "source_bounds": [
+        3467.0,
+        5454.0,
+        800.0,
+        1200.0
+      ],
+      "reference": "portrait-phone-puzzle-reference.svg",
+      "replay": "portrait-phone-puzzle-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-phone",
+          "family": "phone",
+          "role": "main",
+          "x": 3411.8019852926323,
+          "y": 5926.842663946531,
+          "scale": 0.9999995378265353,
+          "matched_long_paths": 22,
+          "matching_paint_paths": 22,
+          "max_control_point_rms": 0.004980383865050007,
+          "order": 11
+        },
+        {
+          "asset": "l-main-puzzle",
+          "family": "puzzle",
+          "role": "main",
+          "x": 3664.170575222268,
+          "y": 5637.092212312386,
+          "scale": 1.0000011920614542,
+          "matched_long_paths": 9,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.004333412959587675,
+          "order": 158
+        }
+      ],
+      "variants": {
+        "L": [
+          "portrait-phone-puzzle-L-1.svg",
+          "portrait-phone-puzzle-L-2.svg",
+          "portrait-phone-puzzle-L-3.svg"
+        ],
+        "S": [
+          "portrait-phone-puzzle-S-1.svg",
+          "portrait-phone-puzzle-S-2.svg",
+          "portrait-phone-puzzle-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "portrait-book-phone",
+      "prompt": "книга, телефон",
+      "format": "portrait",
+      "size": [
+        800.0,
+        1200.0
+      ],
+      "families": [
+        "book",
+        "phone"
+      ],
+      "source_bounds": [
+        4464.5,
+        5454.0,
+        800.0,
+        1200.0
+      ],
+      "reference": "portrait-book-phone-reference.svg",
+      "replay": "portrait-book-phone-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-book",
+          "family": "book",
+          "role": "main",
+          "x": 3785.8367095775875,
+          "y": 5565.667493414484,
+          "scale": 1.000000535660162,
+          "matched_long_paths": 8,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.004876430379134216,
+          "order": 5
+        },
+        {
+          "asset": "l-main-phone",
+          "family": "phone",
+          "role": "main",
+          "x": 4676.774480489218,
+          "y": 5867.687490149618,
+          "scale": 1.00000063239388,
+          "matched_long_paths": 18,
+          "matching_paint_paths": 18,
+          "max_control_point_rms": 0.0041506970438019855,
+          "order": 45
+        }
+      ],
+      "variants": {
+        "L": [
+          "portrait-book-phone-L-1.svg",
+          "portrait-book-phone-L-2.svg",
+          "portrait-book-phone-L-3.svg"
+        ],
+        "S": [
+          "portrait-book-phone-S-1.svg",
+          "portrait-book-phone-S-2.svg",
+          "portrait-book-phone-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "portrait-folder-wallet-coin",
+      "prompt": "папка, кошелек, монета",
+      "format": "portrait",
+      "size": [
+        800.0,
+        1200.0
+      ],
+      "families": [
+        "folder",
+        "wallet",
+        "coin"
+      ],
+      "source_bounds": [
+        5462.0,
+        5454.0,
+        800.0,
+        1200.0
+      ],
+      "reference": "portrait-folder-wallet-coin-reference.svg",
+      "replay": "portrait-folder-wallet-coin-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-folder",
+          "family": "folder",
+          "role": "main",
+          "x": 5418.255736526429,
+          "y": 5450.201709484495,
+          "scale": 0.9999996586189369,
+          "matched_long_paths": 5,
+          "matching_paint_paths": 2,
+          "max_control_point_rms": 0.004930006932012343,
+          "order": 5
+        },
+        {
+          "asset": "l-main-coin",
+          "family": "coin",
+          "role": "main",
+          "x": 5899.1306535705535,
+          "y": 6328.343846673843,
+          "scale": 0.999999868374706,
+          "matched_long_paths": 16,
+          "matching_paint_paths": 16,
+          "max_control_point_rms": 0.004952890201387405,
+          "order": 28
+        },
+        {
+          "asset": "l-main-wallet",
+          "family": "wallet",
+          "role": "main",
+          "x": 5282.873350045942,
+          "y": 6039.023004914407,
+          "scale": 0.999999719145737,
+          "matched_long_paths": 8,
+          "matching_paint_paths": 6,
+          "max_control_point_rms": 0.004686849273709909,
+          "order": 163
+        }
+      ],
+      "variants": {
+        "L": [
+          "portrait-folder-wallet-coin-L-1.svg",
+          "portrait-folder-wallet-coin-L-2.svg",
+          "portrait-folder-wallet-coin-L-3.svg"
+        ],
+        "S": [
+          "portrait-folder-wallet-coin-S-1.svg",
+          "portrait-folder-wallet-coin-S-2.svg",
+          "portrait-folder-wallet-coin-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "portrait-flowers-headphones",
+      "prompt": "цветы, наушники",
+      "format": "portrait",
+      "size": [
+        800.0,
+        1200.0
+      ],
+      "families": [
+        "flowers",
+        "headphones"
+      ],
+      "source_bounds": [
+        3467.0,
+        6946.0,
+        800.0,
+        1200.0
+      ],
+      "reference": "portrait-flowers-headphones-reference.svg",
+      "replay": "portrait-flowers-headphones-replay.svg",
+      "poses": [
+        {
+          "asset": "l-background-flowers",
+          "family": "flowers",
+          "role": "background",
+          "x": 3770.8858750599525,
+          "y": 6755.538612899801,
+          "scale": 1.00000151053397,
+          "matched_long_paths": 12,
+          "matching_paint_paths": 11,
+          "max_control_point_rms": 0.004142631247589725,
+          "order": 11
+        },
+        {
+          "asset": "l-main-headphones",
+          "family": "headphones",
+          "role": "main",
+          "x": 3467.0003021261527,
+          "y": 7433.334959595446,
+          "scale": 0.9999989415417898,
+          "matched_long_paths": 14,
+          "matching_paint_paths": 13,
+          "max_control_point_rms": 0.004928476500861735,
+          "order": 99
+        }
+      ],
+      "variants": {
+        "L": [
+          "portrait-flowers-headphones-L-1.svg",
+          "portrait-flowers-headphones-L-2.svg",
+          "portrait-flowers-headphones-L-3.svg"
+        ],
+        "S": [
+          "portrait-flowers-headphones-S-1.svg",
+          "portrait-flowers-headphones-S-2.svg",
+          "portrait-flowers-headphones-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "portrait-lamp-wallet-coin",
+      "prompt": "лампа, кошелек, монета",
+      "format": "portrait",
+      "size": [
+        800.0,
+        1200.0
+      ],
+      "families": [
+        "lamp",
+        "wallet",
+        "coin"
+      ],
+      "source_bounds": [
+        4464.5,
+        6946.0,
+        800.0,
+        1200.0
+      ],
+      "reference": "portrait-lamp-wallet-coin-reference.svg",
+      "replay": "portrait-lamp-wallet-coin-replay.svg",
+      "poses": [
+        {
+          "asset": "l-background-lamp",
+          "family": "lamp",
+          "role": "background",
+          "x": 4324.0618027054925,
+          "y": 6357.550843150463,
+          "scale": 0.9999996502129221,
+          "matched_long_paths": 3,
+          "matching_paint_paths": 2,
+          "max_control_point_rms": 0.003939770280499417,
+          "order": 5
+        },
+        {
+          "asset": "l-main-coin",
+          "family": "coin",
+          "role": "main",
+          "x": 4900.009962758507,
+          "y": 7508.553378904082,
+          "scale": 1.000000866067133,
+          "matched_long_paths": 16,
+          "matching_paint_paths": 16,
+          "max_control_point_rms": 0.00499258432477216,
+          "order": 20
+        },
+        {
+          "asset": "l-main-wallet",
+          "family": "wallet",
+          "role": "main",
+          "x": 4499.621556117818,
+          "y": 7654.967527410912,
+          "scale": 0.9999995057367667,
+          "matched_long_paths": 8,
+          "matching_paint_paths": 3,
+          "max_control_point_rms": 0.0029533848803781444,
+          "order": 155
+        }
+      ],
+      "variants": {
+        "L": [
+          "portrait-lamp-wallet-coin-L-1.svg",
+          "portrait-lamp-wallet-coin-L-2.svg",
+          "portrait-lamp-wallet-coin-L-3.svg"
+        ],
+        "S": [
+          "portrait-lamp-wallet-coin-S-1.svg",
+          "portrait-lamp-wallet-coin-S-2.svg",
+          "portrait-lamp-wallet-coin-S-3.svg"
+        ]
+      }
+    },
+    {
+      "id": "portrait-book-puzzle-pen",
+      "prompt": "книга, пазлы, ручка",
+      "format": "portrait",
+      "size": [
+        800.0,
+        1200.0
+      ],
+      "families": [
+        "book",
+        "puzzle",
+        "pen"
+      ],
+      "source_bounds": [
+        5462.0,
+        6946.0,
+        800.0,
+        1200.0
+      ],
+      "reference": "portrait-book-puzzle-pen-reference.svg",
+      "replay": "portrait-book-puzzle-pen-replay.svg",
+      "poses": [
+        {
+          "asset": "l-main-pen",
+          "family": "pen",
+          "role": "main",
+          "x": 5483.4634060385815,
+          "y": 7773.91610449191,
+          "scale": 0.9999999074587951,
+          "matched_long_paths": 4,
+          "matching_paint_paths": 1,
+          "max_control_point_rms": 0.0048243222624106,
+          "order": 5
+        },
+        {
+          "asset": "l-background-book",
+          "family": "book",
+          "role": "background",
+          "x": 5210.764435447914,
+          "y": 6817.077323271976,
+          "scale": 0.999999873005666,
+          "matched_long_paths": 11,
+          "matching_paint_paths": 11,
+          "max_control_point_rms": 0.0026841417768460277,
+          "order": 29
+        },
+        {
+          "asset": "l-main-puzzle",
+          "family": "puzzle",
+          "role": "main",
+          "x": 5438.563052172498,
+          "y": 7142.254668118192,
+          "scale": 1.0000007322873976,
+          "matched_long_paths": 9,
+          "matching_paint_paths": 8,
+          "max_control_point_rms": 0.0036790620789178526,
+          "order": 71
+        }
+      ],
+      "variants": {
+        "L": [
+          "portrait-book-puzzle-pen-L-1.svg",
+          "portrait-book-puzzle-pen-L-2.svg",
+          "portrait-book-puzzle-pen-L-3.svg"
+        ],
+        "S": [
+          "portrait-book-puzzle-pen-S-1.svg",
+          "portrait-book-puzzle-pen-S-2.svg",
+          "portrait-book-puzzle-pen-S-3.svg"
+        ]
+      }
+    }
+  ],
+  "replay_is_generation": false
+}

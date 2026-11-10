@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "title": "Диагностика координат: цветы, наушники",
+  "format": "portrait",
+  "detail": "L",
+  "scale": 1.0,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "reference-0",
+      "family": "flowers",
+      "role": "background",
+      "x": 303.88587505995247,
+      "y": -190.46138710019932,
+      "angle": 0.0,
+      "scale_x": 1.00000151053397,
+      "scale_y": 1.00000151053397,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-1",
+      "family": "headphones",
+      "role": "main",
+      "x": 0.0003021261527464958,
+      "y": 487.334959595446,
+      "angle": 0.0,
+      "scale_x": 0.9999989415417898,
+      "scale_y": 0.9999989415417898,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

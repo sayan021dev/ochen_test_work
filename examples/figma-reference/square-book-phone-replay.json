@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "title": "Диагностика координат: книга, телефон",
+  "format": "square",
+  "detail": "L",
+  "scale": 1.0,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "reference-0",
+      "family": "book",
+      "role": "main",
+      "x": -639.654657609603,
+      "y": 11.667472155306996,
+      "angle": 0.0,
+      "scale_x": 1.0000008408022483,
+      "scale_y": 1.0000008408022483,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-1",
+      "family": "phone",
+      "role": "main",
+      "x": 144.42940668725896,
+      "y": 208.21643812973116,
+      "angle": 0.0,
+      "scale_x": 1.0000007643585447,
+      "scale_y": 1.0000007643585447,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

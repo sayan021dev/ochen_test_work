@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "title": "книга, пазлы, ручка",
+  "format": "square",
+  "detail": "S",
+  "scale": 1.1480797571785377,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "book",
+      "role": "main",
+      "x": 85.0,
+      "y": 111.0123,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "item-2",
+      "family": "puzzle",
+      "role": "main",
+      "x": 179.2103,
+      "y": 709.0065,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "item-3",
+      "family": "pen",
+      "role": "main",
+      "x": 528.9317,
+      "y": 709.0065,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

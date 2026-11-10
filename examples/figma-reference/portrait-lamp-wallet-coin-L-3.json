@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "title": "лампа, кошелек, монета",
+  "format": "portrait",
+  "detail": "L",
+  "scale": 0.6191003465405538,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "lamp",
+      "role": "main",
+      "x": 107.1831,
+      "y": 397.3142,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "item-2",
+      "family": "wallet",
+      "role": "main",
+      "x": 317.7095,
+      "y": 103.7307,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "item-3",
+      "family": "coin",
+      "role": "main",
+      "x": 92.0,
+      "y": 103.7307,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

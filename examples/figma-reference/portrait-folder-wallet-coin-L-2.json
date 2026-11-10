@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "title": "папка, кошелек, монета",
+  "format": "portrait",
+  "detail": "L",
+  "scale": 0.5158716570889256,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "folder",
+      "role": "main",
+      "x": 80.0,
+      "y": 309.664,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "item-2",
+      "family": "wallet",
+      "role": "main",
+      "x": 329.5774,
+      "y": 685.891,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "item-3",
+      "family": "coin",
+      "role": "main",
+      "x": 145.2091,
+      "y": 685.891,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

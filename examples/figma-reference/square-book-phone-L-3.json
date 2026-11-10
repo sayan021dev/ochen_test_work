@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "title": "книга, телефон",
+  "format": "square",
+  "detail": "L",
+  "scale": 0.5006182634442434,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "book",
+      "role": "main",
+      "x": 138.0799,
+      "y": 396.064,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "item-2",
+      "family": "phone",
+      "role": "main",
+      "x": 300.6209,
+      "y": 115.0,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

@@ -1,0 +1,1254 @@
+{
+  "reference_count": 18,
+  "algorithm_count": 108,
+  "provider_calls": 0,
+  "raster_max_dimension": 320,
+  "mismatch_threshold": "RGBA difference >16/255; foreground difference from #D7CDF5 >12/255",
+  "exact_algorithm_matches": 0,
+  "exact_replay_matches": 0,
+  "note": "Diagnostic raster measurement only; deliverable compositions remain editable SVG.",
+  "examples": [
+    {
+      "id": "square-phone-puzzle",
+      "replay": {
+        "width": 320,
+        "height": 320,
+        "changed_pixels": 1596,
+        "changed_percent": 1.559,
+        "mean_rgb_absolute_error": 0.5374,
+        "foreground_iou": 0.9535
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 34510,
+          "changed_percent": 33.701,
+          "mean_rgb_absolute_error": 28.8981,
+          "foreground_iou": 0.3616
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 32614,
+          "changed_percent": 31.85,
+          "mean_rgb_absolute_error": 27.4775,
+          "foreground_iou": 0.375
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 28975,
+          "changed_percent": 28.296,
+          "mean_rgb_absolute_error": 25.599,
+          "foreground_iou": 0.4167
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 34863,
+          "changed_percent": 34.046,
+          "mean_rgb_absolute_error": 28.3989,
+          "foreground_iou": 0.4125
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 32919,
+          "changed_percent": 32.147,
+          "mean_rgb_absolute_error": 27.0006,
+          "foreground_iou": 0.4212
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 29414,
+          "changed_percent": 28.725,
+          "mean_rgb_absolute_error": 25.4479,
+          "foreground_iou": 0.453
+        }
+      ]
+    },
+    {
+      "id": "square-book-phone",
+      "replay": {
+        "width": 320,
+        "height": 320,
+        "changed_pixels": 6389,
+        "changed_percent": 6.239,
+        "mean_rgb_absolute_error": 2.6424,
+        "foreground_iou": 0.8979
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 62731,
+          "changed_percent": 61.261,
+          "mean_rgb_absolute_error": 48.195,
+          "foreground_iou": 0.2406
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 62240,
+          "changed_percent": 60.781,
+          "mean_rgb_absolute_error": 47.015,
+          "foreground_iou": 0.217
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56899,
+          "changed_percent": 55.565,
+          "mean_rgb_absolute_error": 44.2619,
+          "foreground_iou": 0.288
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 64023,
+          "changed_percent": 62.522,
+          "mean_rgb_absolute_error": 48.7266,
+          "foreground_iou": 0.2395
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 63402,
+          "changed_percent": 61.916,
+          "mean_rgb_absolute_error": 47.5299,
+          "foreground_iou": 0.217
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56956,
+          "changed_percent": 55.621,
+          "mean_rgb_absolute_error": 44.1287,
+          "foreground_iou": 0.3079
+        }
+      ]
+    },
+    {
+      "id": "square-folder-wallet-coin",
+      "replay": {
+        "width": 320,
+        "height": 320,
+        "changed_pixels": 38796,
+        "changed_percent": 37.887,
+        "mean_rgb_absolute_error": 5.4106,
+        "foreground_iou": 0.9066
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56664,
+          "changed_percent": 55.336,
+          "mean_rgb_absolute_error": 35.1072,
+          "foreground_iou": 0.3847
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56129,
+          "changed_percent": 54.813,
+          "mean_rgb_absolute_error": 34.4599,
+          "foreground_iou": 0.3736
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 63724,
+          "changed_percent": 62.23,
+          "mean_rgb_absolute_error": 39.612,
+          "foreground_iou": 0.1892
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56704,
+          "changed_percent": 55.375,
+          "mean_rgb_absolute_error": 35.1282,
+          "foreground_iou": 0.3827
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56110,
+          "changed_percent": 54.795,
+          "mean_rgb_absolute_error": 34.3899,
+          "foreground_iou": 0.3729
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 63706,
+          "changed_percent": 62.213,
+          "mean_rgb_absolute_error": 39.6482,
+          "foreground_iou": 0.191
+        }
+      ]
+    },
+    {
+      "id": "square-flowers-headphones",
+      "replay": {
+        "width": 320,
+        "height": 320,
+        "changed_pixels": 4619,
+        "changed_percent": 4.511,
+        "mean_rgb_absolute_error": 1.356,
+        "foreground_iou": 0.9692
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 32021,
+          "changed_percent": 31.271,
+          "mean_rgb_absolute_error": 30.3338,
+          "foreground_iou": 0.1517
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 31453,
+          "changed_percent": 30.716,
+          "mean_rgb_absolute_error": 29.4165,
+          "foreground_iou": 0.1408
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 31449,
+          "changed_percent": 30.712,
+          "mean_rgb_absolute_error": 29.488,
+          "foreground_iou": 0.129
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 32501,
+          "changed_percent": 31.739,
+          "mean_rgb_absolute_error": 30.8602,
+          "foreground_iou": 0.144
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 31846,
+          "changed_percent": 31.1,
+          "mean_rgb_absolute_error": 29.9403,
+          "foreground_iou": 0.135
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 31230,
+          "changed_percent": 30.498,
+          "mean_rgb_absolute_error": 29.1751,
+          "foreground_iou": 0.1293
+        }
+      ]
+    },
+    {
+      "id": "square-lamp-wallet-coin",
+      "replay": {
+        "width": 320,
+        "height": 320,
+        "changed_pixels": 26278,
+        "changed_percent": 25.662,
+        "mean_rgb_absolute_error": 10.4108,
+        "foreground_iou": 0.5179
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 40232,
+          "changed_percent": 39.289,
+          "mean_rgb_absolute_error": 25.8807,
+          "foreground_iou": 0.2019
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 39923,
+          "changed_percent": 38.987,
+          "mean_rgb_absolute_error": 25.9921,
+          "foreground_iou": 0.1833
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 35754,
+          "changed_percent": 34.916,
+          "mean_rgb_absolute_error": 22.293,
+          "foreground_iou": 0.2563
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 40150,
+          "changed_percent": 39.209,
+          "mean_rgb_absolute_error": 25.6582,
+          "foreground_iou": 0.2043
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 40006,
+          "changed_percent": 39.068,
+          "mean_rgb_absolute_error": 26.1466,
+          "foreground_iou": 0.185
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 35777,
+          "changed_percent": 34.938,
+          "mean_rgb_absolute_error": 22.341,
+          "foreground_iou": 0.258
+        }
+      ]
+    },
+    {
+      "id": "square-book-puzzle-pen",
+      "replay": {
+        "width": 320,
+        "height": 320,
+        "changed_pixels": 6479,
+        "changed_percent": 6.327,
+        "mean_rgb_absolute_error": 2.9371,
+        "foreground_iou": 0.8199
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 51585,
+          "changed_percent": 50.376,
+          "mean_rgb_absolute_error": 35.3558,
+          "foreground_iou": 0.2217
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 50586,
+          "changed_percent": 49.4,
+          "mean_rgb_absolute_error": 34.5162,
+          "foreground_iou": 0.1972
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 47801,
+          "changed_percent": 46.681,
+          "mean_rgb_absolute_error": 35.2958,
+          "foreground_iou": 0.2313
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 51692,
+          "changed_percent": 50.48,
+          "mean_rgb_absolute_error": 35.433,
+          "foreground_iou": 0.2213
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 50666,
+          "changed_percent": 49.479,
+          "mean_rgb_absolute_error": 34.5886,
+          "foreground_iou": 0.1969
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 47744,
+          "changed_percent": 46.625,
+          "mean_rgb_absolute_error": 35.2458,
+          "foreground_iou": 0.2347
+        }
+      ]
+    },
+    {
+      "id": "landscape-phone-puzzle",
+      "replay": {
+        "width": 320,
+        "height": 168,
+        "changed_pixels": 1199,
+        "changed_percent": 2.23,
+        "mean_rgb_absolute_error": 0.7406,
+        "foreground_iou": 0.9515
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 21502,
+          "changed_percent": 39.996,
+          "mean_rgb_absolute_error": 33.8846,
+          "foreground_iou": 0.2483
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22497,
+          "changed_percent": 41.847,
+          "mean_rgb_absolute_error": 34.1612,
+          "foreground_iou": 0.2213
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22274,
+          "changed_percent": 41.432,
+          "mean_rgb_absolute_error": 33.8407,
+          "foreground_iou": 0.2135
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22731,
+          "changed_percent": 42.282,
+          "mean_rgb_absolute_error": 34.4915,
+          "foreground_iou": 0.2705
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22735,
+          "changed_percent": 42.29,
+          "mean_rgb_absolute_error": 34.0988,
+          "foreground_iou": 0.2745
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22530,
+          "changed_percent": 41.908,
+          "mean_rgb_absolute_error": 33.8025,
+          "foreground_iou": 0.2641
+        }
+      ]
+    },
+    {
+      "id": "landscape-book-phone",
+      "replay": {
+        "width": 320,
+        "height": 168,
+        "changed_pixels": 3224,
+        "changed_percent": 5.997,
+        "mean_rgb_absolute_error": 2.1412,
+        "foreground_iou": 0.9344
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 30780,
+          "changed_percent": 57.254,
+          "mean_rgb_absolute_error": 46.4287,
+          "foreground_iou": 0.3931
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 43237,
+          "changed_percent": 80.426,
+          "mean_rgb_absolute_error": 62.9698,
+          "foreground_iou": 0.223
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 43073,
+          "changed_percent": 80.121,
+          "mean_rgb_absolute_error": 62.4722,
+          "foreground_iou": 0.2129
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 29916,
+          "changed_percent": 55.647,
+          "mean_rgb_absolute_error": 45.5588,
+          "foreground_iou": 0.4127
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 43244,
+          "changed_percent": 80.439,
+          "mean_rgb_absolute_error": 62.721,
+          "foreground_iou": 0.24
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 43072,
+          "changed_percent": 80.119,
+          "mean_rgb_absolute_error": 62.2391,
+          "foreground_iou": 0.2291
+        }
+      ]
+    },
+    {
+      "id": "landscape-folder-wallet-coin",
+      "replay": {
+        "width": 320,
+        "height": 168,
+        "changed_pixels": 21982,
+        "changed_percent": 40.889,
+        "mean_rgb_absolute_error": 5.6846,
+        "foreground_iou": 0.9203
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 35950,
+          "changed_percent": 66.871,
+          "mean_rgb_absolute_error": 40.9618,
+          "foreground_iou": 0.2019
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 33603,
+          "changed_percent": 62.506,
+          "mean_rgb_absolute_error": 36.7042,
+          "foreground_iou": 0.2714
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 32867,
+          "changed_percent": 61.137,
+          "mean_rgb_absolute_error": 34.4808,
+          "foreground_iou": 0.2741
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 35968,
+          "changed_percent": 66.905,
+          "mean_rgb_absolute_error": 41.1247,
+          "foreground_iou": 0.2029
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 33634,
+          "changed_percent": 62.563,
+          "mean_rgb_absolute_error": 36.8279,
+          "foreground_iou": 0.2729
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 32940,
+          "changed_percent": 61.272,
+          "mean_rgb_absolute_error": 34.478,
+          "foreground_iou": 0.2727
+        }
+      ]
+    },
+    {
+      "id": "landscape-flowers-headphones",
+      "replay": {
+        "width": 320,
+        "height": 168,
+        "changed_pixels": 1914,
+        "changed_percent": 3.56,
+        "mean_rgb_absolute_error": 1.0183,
+        "foreground_iou": 0.9698
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 23977,
+          "changed_percent": 44.6,
+          "mean_rgb_absolute_error": 40.8928,
+          "foreground_iou": 0.2031
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 23151,
+          "changed_percent": 43.064,
+          "mean_rgb_absolute_error": 41.286,
+          "foreground_iou": 0.2055
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22755,
+          "changed_percent": 42.327,
+          "mean_rgb_absolute_error": 40.2509,
+          "foreground_iou": 0.1919
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22985,
+          "changed_percent": 42.755,
+          "mean_rgb_absolute_error": 38.851,
+          "foreground_iou": 0.1961
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22676,
+          "changed_percent": 42.18,
+          "mean_rgb_absolute_error": 40.326,
+          "foreground_iou": 0.1937
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22298,
+          "changed_percent": 41.477,
+          "mean_rgb_absolute_error": 39.318,
+          "foreground_iou": 0.1804
+        }
+      ]
+    },
+    {
+      "id": "landscape-lamp-wallet-coin",
+      "replay": {
+        "width": 320,
+        "height": 168,
+        "changed_pixels": 16221,
+        "changed_percent": 30.173,
+        "mean_rgb_absolute_error": 12.2994,
+        "foreground_iou": 0.5257
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 24568,
+          "changed_percent": 45.699,
+          "mean_rgb_absolute_error": 29.6164,
+          "foreground_iou": 0.1763
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22560,
+          "changed_percent": 41.964,
+          "mean_rgb_absolute_error": 25.8828,
+          "foreground_iou": 0.2255
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22393,
+          "changed_percent": 41.654,
+          "mean_rgb_absolute_error": 25.6005,
+          "foreground_iou": 0.2157
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 24562,
+          "changed_percent": 45.688,
+          "mean_rgb_absolute_error": 29.6416,
+          "foreground_iou": 0.179
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22627,
+          "changed_percent": 42.089,
+          "mean_rgb_absolute_error": 25.9744,
+          "foreground_iou": 0.224
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22435,
+          "changed_percent": 41.732,
+          "mean_rgb_absolute_error": 25.7455,
+          "foreground_iou": 0.2163
+        }
+      ]
+    },
+    {
+      "id": "landscape-book-puzzle-pen",
+      "replay": {
+        "width": 320,
+        "height": 168,
+        "changed_pixels": 3288,
+        "changed_percent": 6.116,
+        "mean_rgb_absolute_error": 3.1185,
+        "foreground_iou": 0.86
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 30951,
+          "changed_percent": 57.573,
+          "mean_rgb_absolute_error": 42.8053,
+          "foreground_iou": 0.2241
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 29003,
+          "changed_percent": 53.949,
+          "mean_rgb_absolute_error": 38.8057,
+          "foreground_iou": 0.2739
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 27999,
+          "changed_percent": 52.081,
+          "mean_rgb_absolute_error": 36.5731,
+          "foreground_iou": 0.2709
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 30910,
+          "changed_percent": 57.496,
+          "mean_rgb_absolute_error": 42.9705,
+          "foreground_iou": 0.2275
+        },
+        {
+          "variant": 2,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 29045,
+          "changed_percent": 54.027,
+          "mean_rgb_absolute_error": 38.9746,
+          "foreground_iou": 0.2741
+        },
+        {
+          "variant": 3,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 28082,
+          "changed_percent": 52.236,
+          "mean_rgb_absolute_error": 36.7441,
+          "foreground_iou": 0.2693
+        }
+      ]
+    },
+    {
+      "id": "portrait-phone-puzzle",
+      "replay": {
+        "width": 213,
+        "height": 320,
+        "changed_pixels": 1180,
+        "changed_percent": 1.731,
+        "mean_rgb_absolute_error": 0.5811,
+        "foreground_iou": 0.9519
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 21292,
+          "changed_percent": 31.238,
+          "mean_rgb_absolute_error": 25.8237,
+          "foreground_iou": 0.2829
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 20951,
+          "changed_percent": 30.738,
+          "mean_rgb_absolute_error": 25.3056,
+          "foreground_iou": 0.2697
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 16875,
+          "changed_percent": 24.758,
+          "mean_rgb_absolute_error": 20.457,
+          "foreground_iou": 0.3716
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 22428,
+          "changed_percent": 32.905,
+          "mean_rgb_absolute_error": 26.1622,
+          "foreground_iou": 0.3084
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 22064,
+          "changed_percent": 32.371,
+          "mean_rgb_absolute_error": 25.6779,
+          "foreground_iou": 0.2922
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 17251,
+          "changed_percent": 25.31,
+          "mean_rgb_absolute_error": 20.381,
+          "foreground_iou": 0.3923
+        }
+      ]
+    },
+    {
+      "id": "portrait-book-phone",
+      "replay": {
+        "width": 213,
+        "height": 320,
+        "changed_pixels": 3716,
+        "changed_percent": 5.452,
+        "mean_rgb_absolute_error": 1.8973,
+        "foreground_iou": 0.9059
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 33622,
+          "changed_percent": 49.328,
+          "mean_rgb_absolute_error": 37.829,
+          "foreground_iou": 0.2663
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 33479,
+          "changed_percent": 49.118,
+          "mean_rgb_absolute_error": 37.0937,
+          "foreground_iou": 0.253
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 37178,
+          "changed_percent": 54.545,
+          "mean_rgb_absolute_error": 39.2037,
+          "foreground_iou": 0.2343
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 33857,
+          "changed_percent": 49.673,
+          "mean_rgb_absolute_error": 38.027,
+          "foreground_iou": 0.2748
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 33690,
+          "changed_percent": 49.428,
+          "mean_rgb_absolute_error": 37.2569,
+          "foreground_iou": 0.2615
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 37160,
+          "changed_percent": 54.519,
+          "mean_rgb_absolute_error": 39.0333,
+          "foreground_iou": 0.2508
+        }
+      ]
+    },
+    {
+      "id": "portrait-folder-wallet-coin",
+      "replay": {
+        "width": 213,
+        "height": 320,
+        "changed_pixels": 23545,
+        "changed_percent": 34.544,
+        "mean_rgb_absolute_error": 4.9502,
+        "foreground_iou": 0.907
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 36714,
+          "changed_percent": 53.864,
+          "mean_rgb_absolute_error": 30.7634,
+          "foreground_iou": 0.2186
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 36904,
+          "changed_percent": 54.143,
+          "mean_rgb_absolute_error": 31.9087,
+          "foreground_iou": 0.1985
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 39562,
+          "changed_percent": 58.043,
+          "mean_rgb_absolute_error": 34.9911,
+          "foreground_iou": 0.0949
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 36761,
+          "changed_percent": 53.933,
+          "mean_rgb_absolute_error": 30.667,
+          "foreground_iou": 0.2188
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 36976,
+          "changed_percent": 54.249,
+          "mean_rgb_absolute_error": 31.984,
+          "foreground_iou": 0.1984
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 39546,
+          "changed_percent": 58.019,
+          "mean_rgb_absolute_error": 35.0019,
+          "foreground_iou": 0.097
+        }
+      ]
+    },
+    {
+      "id": "portrait-flowers-headphones",
+      "replay": {
+        "width": 213,
+        "height": 320,
+        "changed_pixels": 3055,
+        "changed_percent": 4.482,
+        "mean_rgb_absolute_error": 1.2622,
+        "foreground_iou": 0.963
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26230,
+          "changed_percent": 38.483,
+          "mean_rgb_absolute_error": 36.298,
+          "foreground_iou": 0.2063
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 25987,
+          "changed_percent": 38.126,
+          "mean_rgb_absolute_error": 35.9418,
+          "foreground_iou": 0.1916
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 28923,
+          "changed_percent": 42.434,
+          "mean_rgb_absolute_error": 39.3255,
+          "foreground_iou": 0.1135
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 25780,
+          "changed_percent": 37.823,
+          "mean_rgb_absolute_error": 35.6177,
+          "foreground_iou": 0.2051
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 25528,
+          "changed_percent": 37.453,
+          "mean_rgb_absolute_error": 35.2678,
+          "foreground_iou": 0.1899
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 28883,
+          "changed_percent": 42.375,
+          "mean_rgb_absolute_error": 38.5427,
+          "foreground_iou": 0.1156
+        }
+      ]
+    },
+    {
+      "id": "portrait-lamp-wallet-coin",
+      "replay": {
+        "width": 213,
+        "height": 320,
+        "changed_pixels": 17818,
+        "changed_percent": 26.141,
+        "mean_rgb_absolute_error": 10.5855,
+        "foreground_iou": 0.533
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 32823,
+          "changed_percent": 48.156,
+          "mean_rgb_absolute_error": 33.0256,
+          "foreground_iou": 0.2208
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 32587,
+          "changed_percent": 47.81,
+          "mean_rgb_absolute_error": 33.9625,
+          "foreground_iou": 0.2007
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26580,
+          "changed_percent": 38.996,
+          "mean_rgb_absolute_error": 25.9069,
+          "foreground_iou": 0.3386
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 32820,
+          "changed_percent": 48.151,
+          "mean_rgb_absolute_error": 33.2587,
+          "foreground_iou": 0.2223
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 32149,
+          "changed_percent": 47.167,
+          "mean_rgb_absolute_error": 33.4421,
+          "foreground_iou": 0.2021
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26334,
+          "changed_percent": 38.636,
+          "mean_rgb_absolute_error": 25.4528,
+          "foreground_iou": 0.3393
+        }
+      ]
+    },
+    {
+      "id": "portrait-book-puzzle-pen",
+      "replay": {
+        "width": 213,
+        "height": 320,
+        "changed_pixels": 4198,
+        "changed_percent": 6.159,
+        "mean_rgb_absolute_error": 2.8574,
+        "foreground_iou": 0.8172
+      },
+      "L": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 28543,
+          "changed_percent": 41.876,
+          "mean_rgb_absolute_error": 29.4332,
+          "foreground_iou": 0.1867
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 28240,
+          "changed_percent": 41.432,
+          "mean_rgb_absolute_error": 28.7548,
+          "foreground_iou": 0.1645
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26513,
+          "changed_percent": 38.898,
+          "mean_rgb_absolute_error": 28.6968,
+          "foreground_iou": 0.2096
+        }
+      ],
+      "S": [
+        {
+          "variant": 1,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 28588,
+          "changed_percent": 41.942,
+          "mean_rgb_absolute_error": 29.512,
+          "foreground_iou": 0.1864
+        },
+        {
+          "variant": 2,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 28266,
+          "changed_percent": 41.47,
+          "mean_rgb_absolute_error": 28.8201,
+          "foreground_iou": 0.1651
+        },
+        {
+          "variant": 3,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26540,
+          "changed_percent": 38.938,
+          "mean_rgb_absolute_error": 28.8189,
+          "foreground_iou": 0.21
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "title": "Диагностика координат: папка, кошелек, монета",
+  "format": "landscape",
+  "detail": "L",
+  "scale": 1.0,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "reference-0",
+      "family": "folder",
+      "role": "main",
+      "x": 198.14208900512222,
+      "y": -201.74901519790956,
+      "angle": 0.0,
+      "scale_x": 1.0000007119883352,
+      "scale_y": 1.0000007119883352,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-1",
+      "family": "coin",
+      "role": "main",
+      "x": 416.5068815748891,
+      "y": 431.5790335389702,
+      "angle": 0.0,
+      "scale_x": 1.000002262691488,
+      "scale_y": 1.000002262691488,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-2",
+      "family": "wallet",
+      "role": "main",
+      "x": -213.90830877822737,
+      "y": 204.42996412227967,
+      "angle": 0.0,
+      "scale_x": 1.0000006101906536,
+      "scale_y": 1.0000006101906536,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

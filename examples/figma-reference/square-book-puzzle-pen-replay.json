@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "title": "Диагностика координат: книга, пазлы, ручка",
+  "format": "square",
+  "detail": "L",
+  "scale": 1.0,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "reference-0",
+      "family": "pen",
+      "role": "main",
+      "x": 93.79507584526527,
+      "y": 654.8877999842707,
+      "angle": 0.0,
+      "scale_x": 1.000000878920976,
+      "scale_y": 1.000000878920976,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-1",
+      "family": "book",
+      "role": "background",
+      "x": -120.7230999980411,
+      "y": -232.10185929077306,
+      "angle": 0.0,
+      "scale_x": 1.0000011899606458,
+      "scale_y": 1.0000011899606458,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-2",
+      "family": "puzzle",
+      "role": "main",
+      "x": 67.32163024258261,
+      "y": 112.28123202724396,
+      "angle": 0.0,
+      "scale_x": 0.999998835121468,
+      "scale_y": 0.999998835121468,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}

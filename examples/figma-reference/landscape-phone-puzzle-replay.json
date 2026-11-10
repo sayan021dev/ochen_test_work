@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "title": "Диагностика координат: телефон, пазлы",
+  "format": "landscape",
+  "detail": "L",
+  "scale": 1.0,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "light": null,
+  "elements": [
+    {
+      "id": "reference-0",
+      "family": "phone",
+      "role": "main",
+      "x": 104.79830263860958,
+      "y": 152.8467725951441,
+      "angle": 0.0,
+      "scale_x": 1.0000006945016726,
+      "scale_y": 1.0000006945016726,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    },
+    {
+      "id": "reference-1",
+      "family": "puzzle",
+      "role": "main",
+      "x": 628.9262801649525,
+      "y": 68.60101921789283,
+      "angle": 0.0,
+      "scale_x": 1.0000004485243026,
+      "scale_y": 1.0000004485243026,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": []
+    }
+  ]
+}
