@@ -366,3 +366,6 @@ UI-сценариев света проходят, существующий guar
 Визуальная проверка: [сравнение вариантов](evidence/receiver-shadows-chain.png),
 [реальный редактор со светом](evidence/scene-light-editor.png),
 [обычные тени на опорах](evidence/receiver-editor.png).
+
+Linux CI для функционального коммита `9e8f57b` прошёл полностью:
+[run 42891741350](https://github.com/sayan021dev/ochen_test_work/actions/runs/42891741350).

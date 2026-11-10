@@ -40,4 +40,6 @@ Files: config.py, main.py, .env.example; frontend/features.tsx, App.tsx, Canvas.
 ### Task 4: Review, acceptance and release
 
 - [x] Inspect user's chain and varied layouts; frozen full tests once after focused checks.
-- [ ] Update docs/evidence, rebuild local8018, commit/push main and observe CI.
+- [x] Update docs/evidence, rebuild local8018, commit/push main and observe CI.
+
+Functional commit9e8f57b, LinuxCI run42891741350 success. Local1370pytest/134Vitest/49Playwright, branchcoverage96%; Docker8018 smoke save/reload and global-off contact preservation passed.
