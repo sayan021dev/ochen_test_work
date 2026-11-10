@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "title": "кошелёк, монета, папка",
+  "format": "portrait",
+  "detail": "S",
+  "scale": 0.806049305579471,
+  "palette": {
+    "id": "aqua",
+    "name": "Аквамарин",
+    "background": [
+      "#BEEBEB",
+      "#80DADA",
+      "#5ABEBE",
+      "#181817"
+    ],
+    "object": [
+      "#FFD4F2",
+      "#6D7BFC",
+      "#B6C6FE",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "elements": [
+    {
+      "id": "item-3",
+      "family": "folder",
+      "role": "background",
+      "x": 0.0,
+      "y": 383.29,
+      "angle": 0.0,
+      "hidden": false,
+      "locked": false
+    },
+    {
+      "id": "item-1",
+      "family": "wallet",
+      "role": "main",
+      "x": 248.96,
+      "y": 520.14,
+      "angle": 0.0,
+      "hidden": false,
+      "locked": false
+    },
+    {
+      "id": "item-2",
+      "family": "coin",
+      "role": "main",
+      "x": 538.58,
+      "y": 655.62,
+      "angle": 0.0,
+      "hidden": false,
+      "locked": false
+    }
+  ]
+}

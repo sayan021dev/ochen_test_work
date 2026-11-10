@@ -1,0 +1,58 @@
+name: Regression checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: illustrations
+          POSTGRES_PASSWORD: illustrations_local
+          POSTGRES_DB: illustrations
+        ports: ["54329:5432"]
+        options: >-
+          --health-cmd "pg_isready -U illustrations -d illustrations"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+psycopg://illustrations:illustrations_local@127.0.0.1:54329/illustrations
+      OPENAI_API_KEY: ""
+      HTTP_PROXY: ""
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: python -m venv .venv && .venv/bin/pip install -r requirements.lock
+      - run: npm ci --prefix frontend
+      - run: .venv/bin/ruff check backend scripts && .venv/bin/ruff format --check backend scripts
+      - run: .venv/bin/pytest --cov=app --cov-branch --cov-report=term-missing
+      - run: npm --prefix frontend run lint && npm --prefix frontend run build && npm --prefix frontend test
+      - run: .venv/bin/alembic upgrade head
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npx playwright test
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-regressions
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          retention-days: 7

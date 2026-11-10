@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "title": "Собрать знания в систему",
+  "format": "landscape",
+  "detail": "L",
+  "scale": 0.4607519666074812,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "book",
+      "role": "main",
+      "x": 230.9,
+      "y": 90.0,
+      "angle": 0.0,
+      "hidden": false,
+      "locked": false
+    },
+    {
+      "id": "item-2",
+      "family": "puzzle",
+      "role": "main",
+      "x": 774.64,
+      "y": 293.17,
+      "angle": 0.0,
+      "hidden": false,
+      "locked": false
+    }
+  ]
+}

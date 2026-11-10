@@ -1,0 +1,42 @@
+[
+  {
+    "id": "knowledge",
+    "prompt": "Собрать знания в систему",
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "explanation": "Книга символизирует знания, а пазлы — их объединение в целостную систему.",
+    "svg": "knowledge.svg",
+    "project": "knowledge.json",
+    "families": [
+      "book",
+      "puzzle"
+    ]
+  },
+  {
+    "id": "focus",
+    "prompt": "Фокус на главном",
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "explanation": "Наушники передают сосредоточенность, а лампа поддерживает идею ясного внимания к главному.",
+    "svg": "focus.svg",
+    "project": "focus.json",
+    "families": [
+      "headphones",
+      "lamp"
+    ]
+  },
+  {
+    "id": "finance",
+    "prompt": "кошелёк, монета, папка",
+    "provider": "components",
+    "model": null,
+    "explanation": "Подобраны названные предметы из исходной библиотеки.",
+    "svg": "finance.svg",
+    "project": "finance.json",
+    "families": [
+      "folder",
+      "wallet",
+      "coin"
+    ]
+  }
+]

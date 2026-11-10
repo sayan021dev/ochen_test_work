@@ -1,0 +1,6 @@
+{
+  "id": "studio",
+  "name": "Студийная",
+  "background": ["#E8DDE5", "#CFADBF", "#A66B88", "#252127"],
+  "object": ["#F9DBA7", "#FF8BB9", "#FCE8F0", "#FFFFFF"]
+}

@@ -1,5 +1,27 @@
 name: ochen-illustrations
 services:
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:${OCHEN_APP_PORT:-8017}:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://illustrations:${POSTGRES_PASSWORD:-illustrations_local}@db:5432/illustrations
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6-luna}
+      HTTP_PROXY: ${HTTP_PROXY:-}
+      ALLOWED_ORIGINS: '${ALLOWED_ORIGINS:-["http://127.0.0.1:8017","http://localhost:8017","http://127.0.0.1:8018"]}'
+      AI_REQUEST_LIMIT: ${AI_REQUEST_LIMIT:-100}
+      AI_SESSION_LIMIT: ${AI_SESSION_LIMIT:-20}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from http.client import HTTPConnection; c=HTTPConnection('127.0.0.1',8000); c.request('GET','/api/ready'); assert c.getresponse().status==200"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
   db:
     image: postgres:17-alpine
     environment:
