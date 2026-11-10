@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { enterExperiment } from "./helpers/experimental";
 import type { Scene } from "../src/types";
 
 const catalog = JSON.parse(readFileSync("../assets/catalog.json", "utf8"));
@@ -169,6 +170,7 @@ test.beforeEach(async ({ page, context }) => {
   );
   await page.goto("/?project=projection-controls-fixture");
   await expect(owner(page)).toBeVisible();
+  await enterExperiment(page);
   await expect(cast(page)).toHaveAttribute(
     "data-shadow-source",
     "body-silhouette",
@@ -245,6 +247,7 @@ test("projection endpoint, rotation, keyboard, undo and reload keep the support 
     page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   await page.reload();
+  await enterExperiment(page);
   await expect(cast(page)).toHaveAttribute("transform", stretched!);
   await fixedContact(page);
   await page.screenshot({
@@ -341,6 +344,7 @@ test("visible body wins over its projection and legacy offset projections remain
     }),
   );
   await page.reload();
+  await enterExperiment(page);
   await expect(cast(page)).toBeVisible();
   const point = await shadowInk(page);
   await page.mouse.click(point.x, point.y);

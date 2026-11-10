@@ -170,9 +170,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(422, str(exc)) from None
 
     @app.post("/api/export")
-    def export(scene: Scene):
+    def export(scene: Scene, experimental: bool = False):
         return Response(
-            render_scene(scene, custom_shadows_enabled=config.custom_shadows_enabled),
+            render_scene(
+                scene,
+                custom_shadows_enabled=config.custom_shadows_enabled and experimental,
+            ),
             media_type="image/svg+xml",
             headers={"Content-Disposition": 'attachment; filename="composition.svg"'},
         )

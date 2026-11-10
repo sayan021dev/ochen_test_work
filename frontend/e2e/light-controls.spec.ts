@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { enterExperiment } from "./helpers/experimental";
 import type { Scene } from "../src/types";
 const catalog = JSON.parse(readFileSync("../assets/catalog.json", "utf8"));
 const shadows = JSON.parse(readFileSync("../assets/shadow-map.json", "utf8"));
@@ -87,6 +88,7 @@ async function start(page: Page, enabled = true, initial: Scene = base) {
   await page.goto("/?project=light-controls");
   await expect(page.getByLabel("Название проекта")).toHaveValue(initial.title);
   await expect(page.getByTestId("artboard")).toBeVisible();
+  if (enabled) await enterExperiment(page);
   return () => scene;
 }
 async function dragMarker(page: Page, dx: number, dy: number, cancel = false) {
@@ -202,6 +204,7 @@ test("global source drags with one undo, cancels, changes density and survives r
     base.elements[1].shadow,
   );
   await page.reload();
+  await enterExperiment(page);
   await expect(marker).toHaveAttribute("transform", moved!);
   await expect(
     page.getByLabel("Высота источника", { exact: true }),
@@ -388,6 +391,7 @@ for (const enabled of [true, false]) {
     await save();
     const transformed = await owner.getAttribute("transform");
     await page.reload();
+    if (enabled) await enterExperiment(page);
     await expect(owner).toHaveAttribute("transform", transformed!);
     if (!enabled) {
       await page.route("**/api/bootstrap", async (route) => {
@@ -406,6 +410,7 @@ for (const enabled of [true, false]) {
         });
       });
       await page.reload();
+      await enterExperiment(page);
     }
     await page.getByLabel("Общий источник света", { exact: true }).uncheck();
     await save();

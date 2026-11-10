@@ -1,0 +1,312 @@
+.experiment-entry {
+  color: #ffc0dc;
+}
+.app-shell.experimental-workspace {
+  grid-template-rows: 64px 66px minmax(0, 1fr);
+}
+.experiment-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px;
+  background: #33252e;
+  border-bottom: 1px solid #684253;
+}
+.experiment-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffafd0;
+}
+.experiment-banner-title strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+}
+.experiment-banner-title span {
+  display: block;
+  color: #d4bdc7;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.experiment-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.experiment-banner .secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: #44313b;
+  border: 1px solid #725064;
+}
+.experiment-guide {
+  width: min(960px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: inherit;
+  box-shadow: 0 24px 100px #0009;
+}
+.experiment-guide::backdrop {
+  background: #101013bb;
+  backdrop-filter: blur(5px);
+}
+.experiment-guide-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px 28px 20px;
+}
+.experiment-guide-heading .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffafd0;
+}
+.experiment-guide-heading h2 {
+  font-size: 26px;
+  margin-top: 8px;
+  letter-spacing: -0.4px;
+}
+.experiment-guide-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 0 28px 20px;
+}
+.experiment-guide-steps button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
+  padding: 8px;
+  border-radius: 7px;
+}
+.experiment-guide-steps button > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid #54545d;
+  border-radius: 50%;
+  font-size: 11px;
+}
+.experiment-guide-steps [aria-current="step"] {
+  background: var(--pink-soft);
+  color: #ffc4dd;
+}
+.experiment-guide-steps [aria-current="step"] > span:first-child {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: #211920;
+}
+.experiment-guide-image {
+  position: relative;
+  margin: 0 28px;
+  background: #1d1d20;
+  border: 1px solid #48434a;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 840 / 500;
+}
+.experiment-guide-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.experiment-guide-arrow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.experiment-guide-hotspot {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #ffb7d5;
+  border-radius: 50%;
+  color: #20141b;
+  background: var(--pink);
+  font-size: 12px;
+  font-weight: 700;
+  transform: translate(-50%, -50%);
+  box-shadow:
+    0 0 0 5px #ff68a42b,
+    0 2px 9px #0008;
+}
+.experiment-guide-tooltip {
+  position: absolute;
+  left: 16px;
+  bottom: 32px;
+  max-width: 360px;
+  padding: 12px 16px;
+  background: #32252d;
+  border: 1px solid #9b627b;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.experiment-guide-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  padding: 5px 10px;
+  color: #ded5db;
+  background: #1d1d20dd;
+  font-size: 10px;
+  border-top-right-radius: 6px;
+}
+.experiment-guide-copy {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 24px;
+  padding: 24px 28px;
+}
+.experiment-guide-copy h3 {
+  font-size: 21px;
+  line-height: 1.2;
+  margin-top: 8px;
+}
+.experiment-guide-copy p {
+  font-size: 13px;
+  line-height: 1.65;
+}
+.experiment-guide-copy .help-text {
+  margin-top: 9px;
+  color: #b7b0b7;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.experiment-guide-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 28px 24px;
+  border-top: 1px solid var(--line);
+}
+.experiment-guide-footer .primary,
+.experiment-guide-footer .secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 9px 16px;
+}
+.experiment-guide-footer .text-button {
+  font-size: 12px;
+}
+.experiment-guide-focus {
+  outline: 3px solid var(--pink);
+  outline-offset: 5px;
+}
+@media (max-width: 1180px) {
+  .app-shell.experimental-workspace {
+    grid-template-rows: 64px 66px minmax(0, 1fr) 45px;
+  }
+  .experimental-workspace .inspector,
+  .experimental-workspace .left-panel {
+    top: 130px;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell.experimental-workspace {
+    grid-template-rows: 56px 94px minmax(0, 1fr) 48px;
+  }
+  .experiment-banner {
+    padding: 10px 16px;
+    align-items: flex-start;
+  }
+  .experiment-banner-title strong {
+    font-size: 11px;
+  }
+  .experiment-banner-title span {
+    max-width: 150px;
+    line-height: 1.4;
+  }
+  .experiment-banner-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+  }
+  .experiment-banner-actions .text-button {
+    font-size: 10px;
+    padding: 0;
+  }
+  .experiment-banner .secondary {
+    font-size: 10px;
+    padding: 7px;
+  }
+  .experimental-workspace .inspector,
+  .experimental-workspace .left-panel {
+    top: 150px;
+  }
+  .experiment-entry {
+    font-size: 11px;
+    gap: 5px;
+  }
+  .experiment-guide-heading {
+    padding: 20px 16px 16px;
+  }
+  .experiment-guide-heading h2 {
+    font-size: 22px;
+  }
+  .experiment-guide-steps {
+    padding: 0 12px 16px;
+    gap: 2px;
+  }
+  .experiment-guide-steps button {
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px 1px;
+    font-size: 9px;
+  }
+  .experiment-guide-image {
+    margin: 0 12px;
+  }
+  .experiment-guide-copy {
+    padding: 20px 16px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .experiment-guide-copy h3 {
+    font-size: 20px;
+    margin-top: 5px;
+  }
+  .experiment-guide-copy p {
+    font-size: 12px;
+  }
+  .experiment-guide-footer {
+    padding: 12px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .experiment-guide-footer .text-button {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+  .experiment-guide-hotspot {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .experiment-guide * {
+    transition: none;
+  }
+}

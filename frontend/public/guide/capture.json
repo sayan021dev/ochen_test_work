@@ -1,0 +1,55 @@
+{
+  "source": "Native Playwright screenshots of the local editor, 1440×850, deviceScaleFactor 1",
+  "light-enable": {
+    "clip": {
+      "x": 600,
+      "y": 130,
+      "width": 840,
+      "height": 500
+    },
+    "target": [
+      71.85,
+      20.1
+    ],
+    "control": "Общий источник света"
+  },
+  "light-drag": {
+    "clip": {
+      "x": 600,
+      "y": 130,
+      "width": 840,
+      "height": 500
+    },
+    "target": [
+      27.53,
+      53.75
+    ],
+    "control": "Источник света"
+  },
+  "light-fields": {
+    "clip": {
+      "x": 600,
+      "y": 130,
+      "width": 840,
+      "height": 500
+    },
+    "target": [
+      84.35,
+      51.81
+    ],
+    "control": "Высота источника"
+  },
+  "own-shadow": {
+    "clip": {
+      "x": 600,
+      "y": 130,
+      "width": 840,
+      "height": 500
+    },
+    "target": [
+      73.39,
+      67.06
+    ],
+    "control": "Своя тень"
+  }
+}

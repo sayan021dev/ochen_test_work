@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { enterExperiment } from "./helpers/experimental";
 import { readFileSync } from "node:fs";
 const shadowMetadata = JSON.parse(
   readFileSync("../assets/shadow-map.json", "utf8"),
@@ -94,6 +95,7 @@ async function castPixel(page: Page) {
 test("clicking silhouette ink, dragging its vector and rotating preserve its owner and support", async ({
   page,
 }) => {
+  await enterExperiment(page);
   // Isolate the gesture target; other bodies correctly take priority over scene shadows.
   await page.getByRole("button", { name: "Скрыть Книга", exact: true }).click();
   await page

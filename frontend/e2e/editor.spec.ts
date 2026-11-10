@@ -1,3 +1,4 @@
+import { enterExperiment } from "./helpers/experimental";
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page, context }) => {
@@ -456,8 +457,9 @@ test("custom shadow is a separate opt-in feature with history, persistence and v
 }) => {
   const art = page.getByTestId("artboard");
   const original = await art.locator('[data-family="lamp"]').innerHTML();
+  await enterExperiment(page);
   await page.getByRole("button", { name: "Слой Лампа", exact: true }).click();
-  await page.getByLabel("Своя тень").check();
+  await page.getByLabel("Своя тень", { exact: true }).check();
   await expect(art.locator("[data-custom-shadow]")).toHaveCount(1);
   await page.getByLabel("Направление тени").fill("140");
   await page.getByLabel("Направление тени").blur();
@@ -481,6 +483,8 @@ test("custom shadow is a separate opt-in feature with history, persistence and v
     page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   await page.reload();
+  await expect(art.locator("[data-custom-shadow]")).toHaveCount(0);
+  await enterExperiment(page);
   await expect(art.locator("[data-custom-shadow]")).toHaveCount(1);
   await page.getByRole("button", { name: "Детализация S" }).click();
   await expect(art.locator("[data-custom-shadow]")).toHaveCount(1);
@@ -497,7 +501,7 @@ test("custom shadow is a separate opt-in feature with history, persistence and v
   expect(svg).not.toMatch(/<image|<filter/);
   await page.getByRole("button", { name: "Детализация L" }).click();
   await page.getByRole("button", { name: "Слой Лампа", exact: true }).click();
-  await page.getByLabel("Своя тень").uncheck();
+  await page.getByLabel("Своя тень", { exact: true }).uncheck();
   await expect(art.locator("[data-custom-shadow]")).toHaveCount(0);
   expect(await art.locator('[data-family="lamp"]').innerHTML()).toBe(original);
 });

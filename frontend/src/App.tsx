@@ -1,5 +1,7 @@
 import {
   ArrowRight,
+  ArrowLeft,
+  FlaskConical,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -24,7 +26,8 @@ import { useStore } from "zustand";
 import { api, ApiError, download } from "./api";
 import { Canvas, Illustration, type EditorStore } from "./Canvas";
 import { Inspector } from "./Inspector";
-import { ShadowFeaturesProvider, useShadowFeatures } from "./features";
+import { ShadowFeaturesProvider } from "./features";
+import { ExperimentalDialog } from "./ExperimentalDialog";
 import { Library } from "./Library";
 import { PasswordGate } from "./PasswordGate";
 import { PaletteDialog } from "./PaletteDialog";
@@ -158,7 +161,9 @@ function Editor({
   locked: boolean;
   sources: Record<string, string>;
 }) {
-  const { customShadows } = useShadowFeatures();
+  const [experimental, setExperimental] = useState(false);
+  const [showExperimentGuide, setShowExperimentGuide] = useState(false);
+  const customShadows = (data.features?.custom_shadows ?? true) && experimental;
   const [store] = useState(() =>
     createEditorStore(defaultScene(data.palettes[0])),
   );
@@ -468,6 +473,7 @@ function Editor({
       setShowPalette(false);
       setShowWelcome(false);
       setShowHelp(false);
+      setShowExperimentGuide(false);
     }
   }, [locked]);
   useEffect(() => {
@@ -476,6 +482,7 @@ function Editor({
       showProjects ||
       showHelp ||
       showPalette ||
+      experimental ||
       busy ||
       state.dragBaseline ||
       document.cookie
@@ -493,6 +500,7 @@ function Editor({
     showProjects,
     showHelp,
     showPalette,
+    experimental,
     busy,
     state.dragBaseline,
     state.changeVersion,
@@ -561,7 +569,10 @@ function Editor({
   };
   const exportSVG = async () => {
     try {
-      download(await api.export(store.getState().scene), "сложено.svg");
+      download(
+        await api.export(store.getState().scene, customShadows),
+        "сложено.svg",
+      );
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -685,7 +696,7 @@ function Editor({
   };
   if (showProjects)
     return (
-      <>
+      <ShadowFeaturesProvider enabled={false}>
         <ProjectGallery
           projects={projects}
           assets={data.assets}
@@ -708,544 +719,643 @@ function Editor({
             </button>
           </div>
         )}
-      </>
+      </ShadowFeaturesProvider>
     );
 
   return (
-    <div
-      className={`app-shell ${leftOpen ? "left-open" : ""} ${rightOpen ? "right-open" : ""}`}
-    >
-      <header className="app-header">
-        <div className="header-project-actions">
-          <a className="brand" href="/" aria-label="Сложено, главная">
-            <span className="brand-mark">
-              <i />
-              <i />
-              <i />
-            </span>
-            <h1>Сложено</h1>
-          </a>
-          <button
-            className="text-button new-project-button"
-            onClick={newProject}
-            aria-label="Новый проект"
-          >
-            <Plus size={16} />
-            <span>Новый проект</span>
-          </button>
-        </div>
-        <div className="header-actions">
-          <button
-            className="text-button"
-            onClick={openGallery}
-            aria-label="Мои работы"
-          >
-            <FolderOpen size={16} />
-            <span>Мои работы</span>
-          </button>
-          <button
-            className="icon help-button"
-            aria-label="Помощь"
-            onClick={() => setShowHelp(true)}
-          >
-            <CircleHelp size={18} />
-          </button>
-        </div>
-      </header>
-      <aside
-        className="left-panel"
-        id="idea-panel"
-        aria-label="Идея и библиотека"
+    <ShadowFeaturesProvider enabled={customShadows}>
+      <div
+        className={`app-shell ${experimental ? "experimental-workspace" : ""} ${leftOpen ? "left-open" : ""} ${rightOpen ? "right-open" : ""}`}
       >
-        <div className="left-panel-heading">
-          <h2>Идея и предметы</h2>
-          <button
-            className="icon"
-            aria-label="Закрыть библиотеку"
-            onClick={() => setLeftOpen(false)}
-          >
-            <X size={17} />
-          </button>
-        </div>
-        <div className="left-panel-scroll" ref={leftPanelScroll}>
-          <div className="prompt-section">
-            <div className="section-title">
-              <span className="eyebrow">НАЧНИТЕ С ИДЕИ</span>
-            </div>
-            <h2>Что соберём?</h2>
-            <p className="intro-copy">Опишите смысл. Предметы найдутся.</p>
-            <div
-              className="segmented prompt-tabs"
-              role="tablist"
-              aria-label="Сценарий сборки"
+        <header className="app-header">
+          <div className="header-project-actions">
+            <a className="brand" href="/" aria-label="Сложено, главная">
+              <span className="brand-mark">
+                <i />
+                <i />
+                <i />
+              </span>
+              <h1>Сложено</h1>
+            </a>
+            <button
+              className="text-button new-project-button"
+              onClick={newProject}
+              aria-label="Новый проект"
             >
+              <Plus size={16} />
+              <span>Новый проект</span>
+            </button>
+          </div>
+          <div className="header-actions">
+            {!experimental && (data.features?.custom_shadows ?? true) && (
               <button
-                role="tab"
-                aria-selected={mode === "metaphor"}
-                onClick={() => setMode("metaphor")}
-              >
-                <Sparkles size={14} />
-                Идея
-              </button>
-              <button
-                role="tab"
-                aria-selected={mode === "components"}
-                onClick={() => setMode("components")}
-              >
-                <Layers3 size={14} />
-                Предметы
-              </button>
-            </div>
-            <div className="prompt-input">
-              <textarea
-                aria-label="Описание композиции"
-                placeholder={
-                  mode === "metaphor"
-                    ? "Например, «Собрать знания в систему»"
-                    : "Книга, лампа, наушники…"
-                }
-                value={prompt}
-                maxLength={1000}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter")
-                    void generate();
+                className="text-button experiment-entry"
+                aria-label="Открыть эксперимент"
+                onClick={() => {
+                  setExperimental(true);
+                  setShowWelcome(false);
+                  setShowExperimentGuide(true);
+                  state.select(null);
+                  setRightOpen(true);
+                  setLeftOpen(false);
                 }}
-              />
-              <span className="prompt-counter">{prompt.length}/1000</span>
-            </div>
-            <div className="prompt-examples">
-              <span>Попробуйте</span>
-              {(mode === "metaphor"
-                ? ["Фокус на главном", "Собрать знания в систему"]
-                : ["Книга, лампа, наушники", "Кошелёк, монета"]
-              ).map((example) => (
-                <button key={example} onClick={() => setPrompt(example)}>
-                  {example}
-                  <ArrowUpRightIcon />
-                </button>
-              ))}
-            </div>
-            <button
-              className="primary generate-button"
-              disabled={busy}
-              onClick={() => void generate()}
-            >
-              {busy ? (
-                <Loader2 size={17} className="spin" />
-              ) : (
-                <Sparkles size={16} />
-              )}
-              <span>
-                {busy ? "Собираем композицию…" : "Собрать композицию"}
-              </span>
-              {!busy && <ArrowRight size={16} />}
-            </button>
-            <div className="generation-options">
-              <label title="Добавляет в композицию дополнительные предметы заднего плана. Отключите, чтобы оставить только главные объекты.">
-                <input
-                  type="checkbox"
-                  checked={backgrounds}
-                  onChange={(e) => setBackgrounds(e.target.checked)}
-                />
-                Фоновые объекты
-              </label>
-            </div>
-          </div>
-          <Library
-            assets={data.assets}
-            detail={scene.detail}
-            onAdd={(family) => {
-              state.add(family);
-              setLeftOpen(false);
-            }}
-            disabled={busy || scene.elements.length >= 48}
-          />
-        </div>
-      </aside>
-      <main className="workspace" ref={workspace}>
-        <div className="document-toolbar">
-          <label
-            className="document-title"
-            title="Нажмите, чтобы переименовать проект"
-          >
-            <span className="document-icon">
-              <PencilLine size={16} />
-            </span>
-            <input
-              aria-label="Название проекта"
-              value={scene.title}
-              maxLength={120}
-              onChange={(e) => {
-                if (e.target.value.trim())
-                  state.change({ ...scene, title: e.target.value });
-              }}
-            />
-          </label>
-          <div className="document-actions">
-            <button
-              aria-label="Сохранить проект"
-              disabled={saving}
-              className={`save-status ${isSaved ? "is-saved" : "is-unsaved"}`}
-              title={
-                saving
-                  ? "Сохранение выполняется"
-                  : isSaved
-                    ? "Все изменения сохранены · Ctrl / ⌘ + S"
-                    : "Сохранить проект · Ctrl / ⌘ + S"
-              }
-              onClick={() => void save()}
-            >
-              <CheckCircle2 size={16} />
-              <span role="status">
-                {isSaved ? "Сохранено" : "Не сохранено"}
-              </span>
-            </button>
-            <DownloadMenu
-              onSVG={() => void exportSVG()}
-              onJSON={exportProject}
-              onImport={() => {
-                if (canLeave()) projectInput.current?.click();
-              }}
-            />
-          </div>
-        </div>
-        <div className="canvas-toolbar">
-          <label className="canvas-preset">
-            <span>Холст</span>
-            <select
-              aria-label="Размер холста"
-              value={scene.format}
-              onChange={(event) => {
-                state.setFormat(
-                  event.target.value as Format,
-                  data.assets,
-                  customShadows,
-                );
-                setZoom(1);
-              }}
-            >
-              {Object.entries(FORMAT_LABELS).map(([format, label]) => (
-                <option key={format} value={format}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="history-controls">
-            <button
-              className="icon"
-              aria-label="Отменить"
-              title="Отменить · ⌘Z"
-              disabled={!state.past.length}
-              onClick={state.undo}
-            >
-              <Undo2 size={16} />
-            </button>
-            <button
-              className="icon"
-              aria-label="Повторить"
-              title="Повторить · ⇧⌘Z"
-              disabled={!state.future.length}
-              onClick={state.redo}
-            >
-              <Redo2 size={16} />
-            </button>
-          </div>
-        </div>
-        {error && (
-          <div role="alert" className="error-banner">
-            <span>{error}</span>
-            {conflict && (
-              <button onClick={() => void save(true)}>Сохранить копию</button>
+              >
+                <FlaskConical size={16} />
+                <span>Эксперимент</span>
+              </button>
             )}
             <button
-              className="icon"
-              aria-label="Закрыть сообщение"
-              onClick={() => setError("")}
+              className="text-button"
+              onClick={openGallery}
+              aria-label="Мои работы"
             >
-              <X size={15} />
+              <FolderOpen size={16} />
+              <span>Мои работы</span>
+            </button>
+            <button
+              className="icon help-button"
+              aria-label="Помощь"
+              onClick={() => setShowHelp(true)}
+            >
+              <CircleHelp size={18} />
             </button>
           </div>
-        )}
-        <div className="stage-area">
-          <div
-            className={`artboard-space ${scene.transparent ? "checkerboard" : ""} ${busy ? "busy" : ""}`}
-          >
-            <Canvas
-              store={store}
-              assets={data.assets}
-              sources={sources}
-              zoom={zoom}
-              busy={busy}
-              locked={locked}
-              onSelectLight={() => {
-                state.select(null);
-                setRightOpen(true);
-                setLeftOpen(false);
-              }}
-            />
-            {busy && (
-              <div className="composing-overlay">
-                <Loader2 size={22} className="spin" />
-                <span>Подбираем предметы и композицию</span>
-              </div>
-            )}
-          </div>
-          <div className="stage-bottom">
-            <div className="zoom-controls">
-              <button
-                className="icon"
-                aria-label="Уменьшить масштаб просмотра"
-                onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
-              >
-                <ZoomOut size={15} />
-              </button>
-              <button
-                className="zoom-reset"
-                aria-label="Вписать в окно"
-                title="Вписать в окно"
-                onClick={() => setZoom(1)}
-              >
-                {Math.round(zoom * 100)}%
-              </button>
-              <button
-                className="icon"
-                aria-label="Увеличить масштаб просмотра"
-                onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
-              >
-                <ZoomIn size={15} />
-              </button>
-              <button
-                className="icon"
-                aria-label={
-                  fullscreen ? "Выйти из полного экрана" : "Полный экран"
-                }
-                aria-pressed={fullscreen}
-                onClick={() => void toggleFullscreen()}
-              >
-                <Maximize size={13} />
-              </button>
-            </div>
-          </div>
-        </div>
-        {composition && (
+        </header>
+        {experimental && (
           <section
-            className={`composition-bottom ${variantsOpen ? "is-expanded" : "is-collapsed"}`}
-            aria-label="Варианты композиции"
+            className="experiment-banner"
+            aria-label="Экспериментальная мастерская"
           >
-            <div
-              id="composition-variants"
-              className="variants"
-              hidden={!variantsOpen}
-            >
-              <div className="section-title">
-                <h2>Можно и так</h2>
-                <span className="variants-count">3 варианта</span>
+            <div className="experiment-banner-title">
+              <FlaskConical size={18} />
+              <div>
+                <strong>Экспериментальная мастерская</strong>
+                <span>Свет и своя тень · 2D-проекция</span>
               </div>
-              <div className="variant-grid">
-                {composition.scenes.map((variant, i) => (
-                  <button
-                    key={i}
-                    className="variant-card"
-                    aria-label={`Вариант композиции ${i + 1}`}
-                    onClick={() => {
-                      state.change({
-                        ...variant,
-                        palette: scene.palette,
-                        light: scene.light,
-                        detail: scene.detail,
-                        scale:
-                          variant.scale *
-                          (scene.detail !== variant.detail
-                            ? scene.detail === "S"
-                              ? 2
-                              : 0.5
-                            : 1),
-                      });
-                      setVariantsOpen(false);
-                    }}
-                  >
-                    <span className="variant-number">0{i + 1}</span>
-                    <svg
-                      className="variant-preview"
-                      viewBox={`0 0 ${FORMATS[variant.format].join(" ")}`}
-                      aria-hidden="true"
-                    >
-                      <Illustration
-                        scene={{ ...variant, light: scene.light }}
-                        assets={data.assets}
-                        sources={sources}
-                        prefix={`variant-${i}`}
-                      />
-                    </svg>
+            </div>
+            <div className="experiment-banner-actions">
+              <button
+                className="text-button"
+                aria-label="Инструкция по эксперименту"
+                onClick={() => setShowExperimentGuide(true)}
+              >
+                <CircleHelp size={16} />
+                <span>Как это работает</span>
+              </button>
+              <button
+                className="secondary"
+                aria-label="Вернуться в обычный редактор"
+                onClick={() => {
+                  setExperimental(false);
+                  setShowExperimentGuide(false);
+                  state.select(state.selected);
+                }}
+              >
+                <ArrowLeft size={15} />
+                <span>Обычный редактор</span>
+              </button>
+            </div>
+          </section>
+        )}
+        <aside
+          className="left-panel"
+          id="idea-panel"
+          aria-label="Идея и библиотека"
+        >
+          <div className="left-panel-heading">
+            <h2>Идея и предметы</h2>
+            <button
+              className="icon"
+              aria-label="Закрыть библиотеку"
+              onClick={() => setLeftOpen(false)}
+            >
+              <X size={17} />
+            </button>
+          </div>
+          <div className="left-panel-scroll" ref={leftPanelScroll}>
+            <div className="prompt-section">
+              <div className="section-title">
+                <span className="eyebrow">НАЧНИТЕ С ИДЕИ</span>
+              </div>
+              <h2>Что соберём?</h2>
+              <p className="intro-copy">Опишите смысл. Предметы найдутся.</p>
+              <div
+                className="segmented prompt-tabs"
+                role="tablist"
+                aria-label="Сценарий сборки"
+              >
+                <button
+                  role="tab"
+                  aria-selected={mode === "metaphor"}
+                  onClick={() => setMode("metaphor")}
+                >
+                  <Sparkles size={14} />
+                  Идея
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={mode === "components"}
+                  onClick={() => setMode("components")}
+                >
+                  <Layers3 size={14} />
+                  Предметы
+                </button>
+              </div>
+              <div className="prompt-input">
+                <textarea
+                  aria-label="Описание композиции"
+                  placeholder={
+                    mode === "metaphor"
+                      ? "Например, «Собрать знания в систему»"
+                      : "Книга, лампа, наушники…"
+                  }
+                  value={prompt}
+                  maxLength={1000}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter")
+                      void generate();
+                  }}
+                />
+                <span className="prompt-counter">{prompt.length}/1000</span>
+              </div>
+              <div className="prompt-examples">
+                <span>Попробуйте</span>
+                {(mode === "metaphor"
+                  ? ["Фокус на главном", "Собрать знания в систему"]
+                  : ["Книга, лампа, наушники", "Кошелёк, монета"]
+                ).map((example) => (
+                  <button key={example} onClick={() => setPrompt(example)}>
+                    {example}
+                    <ArrowUpRightIcon />
                   </button>
                 ))}
               </div>
-            </div>
-            <button
-              className="variants-toggle"
-              aria-label={
-                variantsOpen
-                  ? "Скрыть варианты композиции"
-                  : "Показать варианты композиции"
-              }
-              aria-expanded={variantsOpen}
-              aria-controls="composition-variants"
-              onClick={() => setVariantsOpen(!variantsOpen)}
-            >
-              {!variantsOpen && (
+              <button
+                className="primary generate-button"
+                disabled={busy}
+                onClick={() => void generate()}
+              >
+                {busy ? (
+                  <Loader2 size={17} className="spin" />
+                ) : (
+                  <Sparkles size={16} />
+                )}
                 <span>
-                  Можно и так <small>3 варианта</small>
+                  {busy ? "Собираем композицию…" : "Собрать композицию"}
                 </span>
+                {!busy && <ArrowRight size={16} />}
+              </button>
+              <div className="generation-options">
+                <label title="Добавляет в композицию дополнительные предметы заднего плана. Отключите, чтобы оставить только главные объекты.">
+                  <input
+                    type="checkbox"
+                    checked={backgrounds}
+                    onChange={(e) => setBackgrounds(e.target.checked)}
+                  />
+                  Фоновые объекты
+                </label>
+              </div>
+            </div>
+            <Library
+              assets={data.assets}
+              detail={scene.detail}
+              onAdd={(family) => {
+                state.add(family);
+                setLeftOpen(false);
+              }}
+              disabled={busy || scene.elements.length >= 48}
+            />
+          </div>
+        </aside>
+        <main className="workspace" ref={workspace}>
+          <div className="document-toolbar">
+            <label
+              className="document-title"
+              title="Нажмите, чтобы переименовать проект"
+            >
+              <span className="document-icon">
+                <PencilLine size={16} />
+              </span>
+              <input
+                aria-label="Название проекта"
+                value={scene.title}
+                maxLength={120}
+                onChange={(e) => {
+                  if (e.target.value.trim())
+                    state.change({ ...scene, title: e.target.value });
+                }}
+              />
+            </label>
+            <div className="document-actions">
+              <button
+                aria-label="Сохранить проект"
+                disabled={saving}
+                className={`save-status ${isSaved ? "is-saved" : "is-unsaved"}`}
+                title={
+                  saving
+                    ? "Сохранение выполняется"
+                    : isSaved
+                      ? "Все изменения сохранены · Ctrl / ⌘ + S"
+                      : "Сохранить проект · Ctrl / ⌘ + S"
+                }
+                onClick={() => void save()}
+              >
+                <CheckCircle2 size={16} />
+                <span role="status">
+                  {isSaved ? "Сохранено" : "Не сохранено"}
+                </span>
+              </button>
+              <DownloadMenu
+                onSVG={() => void exportSVG()}
+                onJSON={exportProject}
+                onImport={() => {
+                  if (canLeave()) projectInput.current?.click();
+                }}
+              />
+            </div>
+          </div>
+          <div className="canvas-toolbar">
+            <label className="canvas-preset">
+              <span>Холст</span>
+              <select
+                aria-label="Размер холста"
+                value={scene.format}
+                onChange={(event) => {
+                  state.setFormat(
+                    event.target.value as Format,
+                    data.assets,
+                    customShadows,
+                  );
+                  setZoom(1);
+                }}
+              >
+                {Object.entries(FORMAT_LABELS).map(([format, label]) => (
+                  <option key={format} value={format}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="history-controls">
+              <button
+                className="icon"
+                aria-label="Отменить"
+                title="Отменить · ⌘Z"
+                disabled={!state.past.length}
+                onClick={state.undo}
+              >
+                <Undo2 size={16} />
+              </button>
+              <button
+                className="icon"
+                aria-label="Повторить"
+                title="Повторить · ⇧⌘Z"
+                disabled={!state.future.length}
+                onClick={state.redo}
+              >
+                <Redo2 size={16} />
+              </button>
+            </div>
+          </div>
+          {error && (
+            <div role="alert" className="error-banner">
+              <span>{error}</span>
+              {conflict && (
+                <button onClick={() => void save(true)}>Сохранить копию</button>
               )}
-              {variantsOpen ? (
-                <ChevronDown size={18} />
-              ) : (
-                <ChevronUp size={18} />
+              <button
+                className="icon"
+                aria-label="Закрыть сообщение"
+                onClick={() => setError("")}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
+          <div className="stage-area">
+            <div
+              className={`artboard-space ${scene.transparent ? "checkerboard" : ""} ${busy ? "busy" : ""}`}
+            >
+              <Canvas
+                store={store}
+                assets={data.assets}
+                sources={sources}
+                zoom={zoom}
+                busy={busy}
+                locked={locked}
+                onSelectLight={() => {
+                  state.select(null);
+                  setRightOpen(true);
+                  setLeftOpen(false);
+                }}
+              />
+              {busy && (
+                <div className="composing-overlay">
+                  <Loader2 size={22} className="spin" />
+                  <span>Подбираем предметы и композицию</span>
+                </div>
               )}
-            </button>
-          </section>
-        )}
-        <input
-          ref={projectInput}
-          className="sr-only"
-          type="file"
-          accept=".json"
-          aria-label="Импорт проекта"
-          onChange={(e) => {
-            if (e.target.files?.[0]) void importProject(e.target.files[0]);
-            e.target.value = "";
+            </div>
+            <div className="stage-bottom">
+              <div className="zoom-controls">
+                <button
+                  className="icon"
+                  aria-label="Уменьшить масштаб просмотра"
+                  onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
+                >
+                  <ZoomOut size={15} />
+                </button>
+                <button
+                  className="zoom-reset"
+                  aria-label="Вписать в окно"
+                  title="Вписать в окно"
+                  onClick={() => setZoom(1)}
+                >
+                  {Math.round(zoom * 100)}%
+                </button>
+                <button
+                  className="icon"
+                  aria-label="Увеличить масштаб просмотра"
+                  onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
+                >
+                  <ZoomIn size={15} />
+                </button>
+                <button
+                  className="icon"
+                  aria-label={
+                    fullscreen ? "Выйти из полного экрана" : "Полный экран"
+                  }
+                  aria-pressed={fullscreen}
+                  onClick={() => void toggleFullscreen()}
+                >
+                  <Maximize size={13} />
+                </button>
+              </div>
+            </div>
+          </div>
+          {composition && (
+            <section
+              className={`composition-bottom ${variantsOpen ? "is-expanded" : "is-collapsed"}`}
+              aria-label="Варианты композиции"
+            >
+              <div
+                id="composition-variants"
+                className="variants"
+                hidden={!variantsOpen}
+              >
+                <div className="section-title">
+                  <h2>Можно и так</h2>
+                  <span className="variants-count">3 варианта</span>
+                </div>
+                <div className="variant-grid">
+                  {composition.scenes.map((variant, i) => (
+                    <button
+                      key={i}
+                      className="variant-card"
+                      aria-label={`Вариант композиции ${i + 1}`}
+                      onClick={() => {
+                        state.change({
+                          ...variant,
+                          palette: scene.palette,
+                          light: scene.light,
+                          detail: scene.detail,
+                          scale:
+                            variant.scale *
+                            (scene.detail !== variant.detail
+                              ? scene.detail === "S"
+                                ? 2
+                                : 0.5
+                              : 1),
+                        });
+                        setVariantsOpen(false);
+                      }}
+                    >
+                      <span className="variant-number">0{i + 1}</span>
+                      <svg
+                        className="variant-preview"
+                        viewBox={`0 0 ${FORMATS[variant.format].join(" ")}`}
+                        aria-hidden="true"
+                      >
+                        <Illustration
+                          scene={{ ...variant, light: scene.light }}
+                          assets={data.assets}
+                          sources={sources}
+                          prefix={`variant-${i}`}
+                        />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                className="variants-toggle"
+                aria-label={
+                  variantsOpen
+                    ? "Скрыть варианты композиции"
+                    : "Показать варианты композиции"
+                }
+                aria-expanded={variantsOpen}
+                aria-controls="composition-variants"
+                onClick={() => setVariantsOpen(!variantsOpen)}
+              >
+                {!variantsOpen && (
+                  <span>
+                    Можно и так <small>3 варианта</small>
+                  </span>
+                )}
+                {variantsOpen ? (
+                  <ChevronDown size={18} />
+                ) : (
+                  <ChevronUp size={18} />
+                )}
+              </button>
+            </section>
+          )}
+          <input
+            ref={projectInput}
+            className="sr-only"
+            type="file"
+            accept=".json"
+            aria-label="Импорт проекта"
+            onChange={(e) => {
+              if (e.target.files?.[0]) void importProject(e.target.files[0]);
+              e.target.value = "";
+            }}
+          />
+        </main>
+        <Inspector
+          store={store}
+          assets={data.assets}
+          palettes={palettes}
+          onImportPalette={() => setShowPalette(true)}
+          onClose={() => setRightOpen(false)}
+        />
+        <nav className="mobile-panels" aria-label="Панели редактора">
+          <button
+            onClick={showLibrary}
+            aria-expanded={leftOpen}
+            aria-controls="idea-panel"
+          >
+            <PanelLeft size={17} />
+            Идея и предметы
+          </button>
+          <button
+            onClick={() => {
+              setLeftOpen(false);
+              setRightOpen(!rightOpen);
+            }}
+            aria-expanded={rightOpen}
+            aria-controls="settings-panel"
+          >
+            <Settings2 size={17} />
+            Настройки
+          </button>
+        </nav>
+        <PaletteDialog
+          open={showPalette}
+          palette={scene.palette}
+          onClose={() => {
+            paletteRequest.current++;
+            setShowPalette(false);
+          }}
+          onApply={applyPalette}
+        />
+        <WelcomeDialog
+          open={showWelcome}
+          onClose={() => setShowWelcome(false)}
+        />
+        <ExperimentalDialog
+          open={showExperimentGuide}
+          onClose={() => setShowExperimentGuide(false)}
+          onShow={(step) => {
+            setShowExperimentGuide(false);
+            setRightOpen(true);
+            setLeftOpen(false);
+            const current = store.getState();
+            if (step === 3) {
+              if (current.scene.light?.enabled)
+                current.change({
+                  ...current.scene,
+                  light: { ...current.scene.light, enabled: false },
+                });
+              const target = current.scene.elements.find(
+                (e) => !e.hidden && !e.locked,
+              );
+              current.select(target?.id ?? null);
+            } else current.select(null);
+            requestAnimationFrame(() => {
+              const selector =
+                step === 3
+                  ? '[aria-label="Своя тень"]'
+                  : step === 1 && current.scene.light?.enabled
+                    ? "[data-light-marker]"
+                    : step === 2 && current.scene.light?.enabled
+                      ? '[aria-label="Высота источника"]'
+                      : '[aria-label="Общий источник света"]';
+              const target = document.querySelector<HTMLElement | SVGElement>(
+                selector,
+              );
+              target?.focus();
+              target?.scrollIntoView({ block: "nearest" });
+              target?.classList.add("experiment-guide-focus");
+              setTimeout(
+                () => target?.classList.remove("experiment-guide-focus"),
+                2200,
+              );
+            });
           }}
         />
-      </main>
-      <Inspector
-        store={store}
-        assets={data.assets}
-        palettes={palettes}
-        onImportPalette={() => setShowPalette(true)}
-        onClose={() => setRightOpen(false)}
-      />
-      <nav className="mobile-panels" aria-label="Панели редактора">
-        <button
-          onClick={showLibrary}
-          aria-expanded={leftOpen}
-          aria-controls="idea-panel"
+        <dialog
+          ref={helpDialog}
+          onClose={() => setShowHelp(false)}
+          className="help-dialog"
         >
-          <PanelLeft size={17} />
-          Идея и предметы
-        </button>
-        <button
-          onClick={() => {
-            setLeftOpen(false);
-            setRightOpen(!rightOpen);
-          }}
-          aria-expanded={rightOpen}
-          aria-controls="settings-panel"
-        >
-          <Settings2 size={17} />
-          Настройки
-        </button>
-      </nav>
-      <PaletteDialog
-        open={showPalette}
-        palette={scene.palette}
-        onClose={() => {
-          paletteRequest.current++;
-          setShowPalette(false);
-        }}
-        onApply={applyPalette}
-      />
-      <WelcomeDialog open={showWelcome} onClose={() => setShowWelcome(false)} />
-      <dialog
-        ref={helpDialog}
-        onClose={() => setShowHelp(false)}
-        className="help-dialog"
-      >
-        <div className="dialog-title">
-          <h2>
-            Маленькая мастерская,
-            <br />
-            большие возможности
-          </h2>
-          <button
-            className="icon"
-            aria-label="Закрыть помощь"
-            onClick={() => setShowHelp(false)}
-          >
-            <X size={19} />
-          </button>
-        </div>
-        <p>
-          Введите идею или назовите предметы. Композиция собирается только из
-          исходной SVG-библиотеки. OpenAI помогает выбрать смысл, а векторная
-          геометрия остаётся неизменной.
-        </p>
-        <div className="shortcut-list">
-          <span>
-            Передвинуть предмет<kbd>↑ ↓ ← →</kbd>
-          </span>
-          <span>
-            Шаг 10 пикселей<kbd>Shift + стрелки</kbd>
-          </span>
-          <span>
-            Отменить действие<kbd>⌘ / Ctrl + Z</kbd>
-          </span>
-          <span>
-            Дублировать<kbd>⌘ / Ctrl + D</kbd>
-          </span>
-          <span>
-            Копировать предмет<kbd>⌘ / Ctrl + C</kbd>
-          </span>
-          <span>
-            Вставить предмет<kbd>⌘ / Ctrl + V</kbd>
-          </span>
-          <span>
-            Повторить действие<kbd>Shift + ⌘ / Ctrl + Z</kbd>
-          </span>
-          <span>
-            Сохранить<kbd>⌘ / Ctrl + S</kbd>
-          </span>
-          <span>
-            Удалить<kbd>Delete</kbd>
-          </span>
-        </div>
-        <div className="help-gestures">
-          <h3>Мышь и холст</h3>
+          <div className="dialog-title">
+            <h2>
+              Маленькая мастерская,
+              <br />
+              большие возможности
+            </h2>
+            <button
+              className="icon"
+              aria-label="Закрыть помощь"
+              onClick={() => setShowHelp(false)}
+            >
+              <X size={19} />
+            </button>
+          </div>
           <p>
-            <strong>Размер:</strong> тяните за угол рамки, чтобы сохранить
-            пропорции. Боковые ручки растягивают по одной оси.
+            Введите идею или назовите предметы. Композиция собирается только из
+            исходной SVG-библиотеки. OpenAI помогает выбрать смысл, а векторная
+            геометрия остаётся неизменной.
           </p>
-          <p>
-            <strong>Поворот:</strong> тяните круглую ручку над рамкой; Shift
-            фиксирует шаг 15°. Стрелки у поля угла можно удерживать.
-          </p>
-          {customShadows && (
-            <>
-              <p>
-                <strong>Своя тень:</strong> настройте направление и длину
-                проекции. Опора предмета остаётся неподвижной.
-              </p>
-              <p>
-                <strong>Общий свет:</strong> включите источник в настройках
-                композиции и перемещайте метку на холсте. Он управляет тенями
-                всех предметов.
-              </p>
-            </>
-          )}
-          <p>
-            <strong>Масштаб:</strong> кнопки лупы увеличивают и уменьшают холст.
-            Колесо мыши и полосы прокрутки перемещают увеличенный холст; 100%
-            вписывает его в окно.
-          </p>
-          <p>
-            <strong>Панель над предметом:</strong> дублирование, порядок слоёв и
-            удаление. Скачать SVG, сохранить JSON или открыть JSON можно через
-            меню скачивания.
-          </p>
-        </div>
-      </dialog>
-    </div>
+          <div className="shortcut-list">
+            <span>
+              Передвинуть предмет<kbd>↑ ↓ ← →</kbd>
+            </span>
+            <span>
+              Шаг 10 пикселей<kbd>Shift + стрелки</kbd>
+            </span>
+            <span>
+              Отменить действие<kbd>⌘ / Ctrl + Z</kbd>
+            </span>
+            <span>
+              Дублировать<kbd>⌘ / Ctrl + D</kbd>
+            </span>
+            <span>
+              Копировать предмет<kbd>⌘ / Ctrl + C</kbd>
+            </span>
+            <span>
+              Вставить предмет<kbd>⌘ / Ctrl + V</kbd>
+            </span>
+            <span>
+              Повторить действие<kbd>Shift + ⌘ / Ctrl + Z</kbd>
+            </span>
+            <span>
+              Сохранить<kbd>⌘ / Ctrl + S</kbd>
+            </span>
+            <span>
+              Удалить<kbd>Delete</kbd>
+            </span>
+          </div>
+          <div className="help-gestures">
+            <h3>Мышь и холст</h3>
+            <p>
+              <strong>Размер:</strong> тяните за угол рамки, чтобы сохранить
+              пропорции. Боковые ручки растягивают по одной оси.
+            </p>
+            <p>
+              <strong>Поворот:</strong> тяните круглую ручку над рамкой; Shift
+              фиксирует шаг 15°. Стрелки у поля угла можно удерживать.
+            </p>
+            {customShadows && (
+              <>
+                <p>
+                  <strong>Своя тень:</strong> настройте направление и длину
+                  проекции. Опора предмета остаётся неподвижной.
+                </p>
+                <p>
+                  <strong>Общий свет:</strong> включите источник в настройках
+                  композиции и перемещайте метку на холсте. Он управляет тенями
+                  всех предметов.
+                </p>
+              </>
+            )}
+            <p>
+              <strong>Масштаб:</strong> кнопки лупы увеличивают и уменьшают
+              холст. Колесо мыши и полосы прокрутки перемещают увеличенный
+              холст; 100% вписывает его в окно.
+            </p>
+            <p>
+              <strong>Панель над предметом:</strong> дублирование, порядок слоёв
+              и удаление. Скачать SVG, сохранить JSON или открыть JSON можно
+              через меню скачивания.
+            </p>
+          </div>
+        </dialog>
+      </div>
+    </ShadowFeaturesProvider>
   );
 }
 

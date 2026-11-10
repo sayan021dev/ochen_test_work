@@ -86,13 +86,16 @@ export const api = {
       { scene, revision },
     ),
   validate: (scene: unknown) => request<Scene>("/validate", "POST", scene),
-  export: async (scene: Scene) => {
-    const response = await fetch("/api/export", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-      body: JSON.stringify(scene),
-    });
+  export: async (scene: Scene, experimental = false) => {
+    const response = await fetch(
+      `/api/export${experimental ? "?experimental=true" : ""}`,
+      {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+        body: JSON.stringify(scene),
+      },
+    );
     if (!response.ok) {
       if (response.status === 401)
         window.dispatchEvent(new Event("ochen:auth-required"));
