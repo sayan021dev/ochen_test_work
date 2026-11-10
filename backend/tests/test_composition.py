@@ -47,7 +47,7 @@ def test_layouts_are_repeatable_and_keep_shared_scale(detail, format):
     assert len({tuple((e.x, e.y) for e in s.elements) for s in first}) == 3
     for s in first:
         assert {e.family for e in s.elements} == {"book", "lamp", "coin"}
-        assert sum(e.role == "main" for e in s.elements) == 2
+        assert sum(e.role == "main" for e in s.elements) == 3
         assert all(0 <= e.x < s.size[0] and 0 <= e.y < s.size[1] for e in s.elements)
 
 

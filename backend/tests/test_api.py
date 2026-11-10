@@ -206,6 +206,7 @@ def test_real_ai_route_validates_response_caches_selection_and_limits_cost(
                                         "accepted": True,
                                         "families": ["lamp", "book"],
                                         "explanation": "Свет знаний",
+                                        "layout": {"relations": []},
                                     }
                                 ),
                             }
@@ -270,7 +271,7 @@ def test_overlapping_ai_requests_are_rejected_before_budget_and_active_slot_is_r
                 calls.append(prompt)
                 started.set()
                 await release.wait()
-                return ["book"], "Тестовый подбор"
+                return ["book"], "Тестовый подбор", None
 
         async with application.router.lifespan_context(application):
             application.state.ai = DelayedAI()

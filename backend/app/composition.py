@@ -3,6 +3,7 @@
 import re
 
 from app.catalog import CATALOG, FAMILIES, asset_for
+from app.layout import REL_RE, LayoutIntent, mentions, pack, resolve_intent
 from app.models import ComposeRequest, Element, Scene
 
 NOUNS = {
@@ -47,18 +48,19 @@ METAPHORS = [
 
 
 def select_components(prompt: str) -> tuple[list[str], list[str]]:
-    chunks = re.split(r"[,;\n]+|\s+(?:и|and)\s+", prompt.lower().replace("ё", "е"))
-    found, unknown = [], []
-    for chunk in chunks:
-        text = chunk.strip()
-        if not text:
-            continue
-        family = next((f for f, aliases in NOUNS.items() if text in aliases), None)
-        if family:
-            if family not in found:
-                found.append(family)
-        else:
-            unknown.append(text)
+    text = prompt.lower().replace("ё", "е")
+    found = list(dict.fromkeys(m.lastgroup for m in mentions(text)))
+    remainder = text
+    for match in reversed(mentions(text)):
+        remainder = remainder[: match.start()] + " " + remainder[match.end() :]
+    remainder = REL_RE.sub(" ", remainder)
+    remainder = re.sub(
+        r"\b(?:и|а|от|and|the|to|of|ними|них|ней|ним|него|нее|them|both|it|"
+        r"не|not|без|наложений|пересечений|друг|друга|всеми|всех)\b",
+        " ",
+        remainder,
+    )
+    unknown = [part.strip() for part in re.split(r"[,;\n]+", remainder) if part.strip()]
     return found, unknown
 
 
@@ -73,15 +75,19 @@ def select_offline_metaphor(prompt: str) -> tuple[list[str], str]:
     raise ValueError("Словарь пока не знает эту метафору. Включите AI или назовите предметы.")
 
 
-def compose_variants(families: list[str], request: ComposeRequest) -> list[Scene]:
+def compose_variants(
+    families: list[str], request: ComposeRequest, layout: LayoutIntent | None = None
+) -> list[Scene]:
     if not families or len(families) > 6 or any(f not in FAMILIES for f in families):
         raise ValueError("Выберите от одного до шести предметов библиотеки")
-    dimensions = [asset_for(f, request.detail, "main") for f in families]
-    layouts = [
-        [(0.47, 0.50), (0.75, 0.58), (0.22, 0.43), (0.72, 0.22), (0.27, 0.79), (0.85, 0.80)],
-        [(0.66, 0.55), (0.32, 0.57), (0.82, 0.24), (0.18, 0.28), (0.46, 0.82), (0.85, 0.85)],
-        [(0.30, 0.62), (0.65, 0.39), (0.80, 0.76), (0.22, 0.20), (0.53, 0.83), (0.85, 0.18)],
-    ]
+    families = list(dict.fromkeys(families))
+    named = {m.lastgroup for m in mentions(request.prompt)}
+    roles = {
+        f: "background" if request.backgrounds and i >= 2 and f not in named else "main"
+        for i, f in enumerate(families)
+    }
+    dimensions = [asset_for(f, request.detail, roles[f]) for f in families]
+    intent = resolve_intent(request.prompt, families, layout)
     scenes = []
     for variant in range(3):
         scene = Scene(
@@ -89,30 +95,35 @@ def compose_variants(families: list[str], request: ComposeRequest) -> list[Scene
             format=request.format,
             detail=request.detail,
             palette=request.palette,
-            scale=0.4,
         )
         width, height = scene.size
+        design = (variant + request.seed) % 3
+        boxes, order = pack(dimensions, families, intent, width / height, design)
+        left, top = min(b.x for b in boxes), min(b.y for b in boxes)
+        total_width = max(b.x + b.width for b in boxes) - left
+        total_height = max(b.y + b.height for b in boxes) - top
+        # Fit the complete scene once. Never clamp or resize individual instances.
+        margin = min(width, height) * (0.085 + design * 0.015)
         scene.scale = min(
             4 if request.detail == "L" else 8,
-            width / (max(a["width"] for a in dimensions) * 1.6),
-            height / (max(a["height"] for a in dimensions) * 1.4),
+            (width - 2 * margin) / total_width,
+            (height - 2 * margin) / total_height,
         )
-        foreground, background = [], []
-        for index, (family, asset) in enumerate(zip(families, dimensions, strict=True)):
-            cx, cy = layouts[(variant + request.seed) % 3][index]
-            object_width, object_height = (
-                asset["width"] * scene.scale,
-                asset["height"] * scene.scale,
-            )
-            element = Element(
+        origin_x = (width - total_width * scene.scale) / 2
+        origin_y = (height - total_height * scene.scale) / 2
+        by_family = {}
+        for index, (family, box) in enumerate(zip(families, boxes, strict=True)):
+            by_family[family] = Element(
                 id=f"item-{index + 1}",
                 family=family,
-                role="background" if request.backgrounds and index >= 2 else "main",
-                x=round(max(0, min(width - object_width, cx * width - object_width / 2)), 2),
-                y=round(max(0, min(height - object_height, cy * height - object_height / 2)), 2),
+                role=roles[family],
+                x=round(origin_x + (box.x - left) * scene.scale, 4),
+                y=round(origin_y + (box.y - top) * scene.scale, 4),
             )
-            (background if element.role == "background" else foreground).append(element)
-        scene.elements = background + foreground
+        # Backgrounds first unless an explicit front/back/on relation determines the order.
+        if not any(r.relation in {"on", "behind", "in_front_of"} for r in intent.relations):
+            order.sort(key=lambda f: roles[f] != "background")
+        scene.elements = [by_family[f] for f in order]
         scenes.append(scene)
     return scenes
 

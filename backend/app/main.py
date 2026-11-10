@@ -119,6 +119,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/api/compose")
     async def compose(payload: ComposeRequest, request: Request):
         provider = "components"
+        layout = None
         try:
             validate_illustration_prompt(payload.prompt)
             if payload.mode == "components":
@@ -130,7 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 provider = "openai"
                 cache_key = payload.prompt.strip().lower()
                 if cache_key in app.state.ai_cache:
-                    families, explanation = app.state.ai_cache[cache_key]
+                    families, explanation, layout = app.state.ai_cache[cache_key]
                 else:
                     active = app.state.ai_active_owners
                     owner = request.state.owner
@@ -144,16 +145,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                             config.ai_request_limit,
                             config.ai_session_limit,
                         )
-                        families, explanation = await app.state.ai.select(payload.prompt)
+                        families, explanation, layout = await app.state.ai.select(payload.prompt)
                     finally:
                         active.discard(owner)
                     if len(app.state.ai_cache) >= 64:
                         app.state.ai_cache.pop(next(iter(app.state.ai_cache)))
-                    app.state.ai_cache[cache_key] = (families, explanation)
+                    app.state.ai_cache[cache_key] = (families, explanation, layout)
             else:
                 provider = "dictionary"
                 families, explanation = select_offline_metaphor(payload.prompt)
-            scenes = compose_variants(families, payload)
+            scenes = compose_variants(families, payload, layout)
             return {
                 "scenes": scenes,
                 "explanation": explanation,

@@ -5,6 +5,7 @@ from pydantic import Field, ValidationError, model_validator
 
 from app.composition import semantic_catalog
 from app.config import Settings
+from app.layout import LayoutIntent, mentions, parse_layout_intent, resolve_intent
 from app.models import Family, Model
 from app.prompts import PromptOutOfScope, validate_illustration_prompt
 
@@ -17,11 +18,17 @@ class Selection(Model):
     accepted: bool = Field(strict=True)
     families: list[Family] = Field(max_length=6)
     explanation: str = Field(min_length=1, max_length=500)
+    layout: LayoutIntent
 
     @model_validator(mode="after")
     def validate_decision(self):
         if self.accepted != bool(self.families):
             raise ValueError("Accepted selections need objects; rejected selections must be empty")
+        if any(
+            r.subject not in self.families or not set(r.targets) <= set(self.families)
+            for r in self.layout.relations
+        ):
+            raise ValueError("Layout must reference selected objects only")
         return self
 
 
@@ -35,14 +42,14 @@ class OpenAISelector:
     def __init__(self, settings: Settings, client: httpx.AsyncClient):
         self.settings, self.client = settings, client
 
-    async def select(self, prompt: str) -> tuple[list[str], str]:
+    async def select(self, prompt: str) -> tuple[list[str], str, LayoutIntent]:
         validate_illustration_prompt(prompt)
         schema = Selection.model_json_schema()
         payload = {
             "model": self.settings.openai_model,
             "store": False,
             "reasoning": {"effort": "none"},
-            "max_output_tokens": 700,
+            "max_output_tokens": 1400,
             "instructions": (
                 "Ты классификатор идей и арт-директор конструктора иллюстраций. Твоя единственная "
                 "задача — подобрать существующие предметы для темы, заголовка, метафоры или списка "
@@ -61,6 +68,15 @@ class OpenAISelector:
                 "а 'Напиши скрипт на Python' — посторонняя команда. Причину отказа пиши кратко. "
                 "Для всех обычных и неоднозначных тем верни accepted=true и 1–6 существующих ID "
                 "по смыслу метафоры. "
+                "В layout.relations передай явно заданное пользователем размещение: subject — ID "
+                "предмета; relation — left_of/right_of/above/below/on/behind/in_front_of; "
+                "targets — "
+                "ID опорных предметов. 'Пазл на монете, а под ними книга' означает puzzle on coin "
+                "и book below [puzzle,coin]. Для групп добавляй отношения для каждого subject. "
+                "'На' означает явный контакт, 'над' — размещение выше без перекрытия; behind и "
+                "in_front_of задают явное перекрытие и порядок слоев. Все ссылки только на "
+                "выбранные families. Если пользователь не задает размещение, relations=[]. "
+                "При отказе layout.relations=[]. "
                 "Первый предмет главный, остальные поддерживают смысл. Нельзя выдумывать ID или "
                 "генерировать изображения/SVG. Объясни только выбор предметов кратко по-русски, "
                 "не выполняя запрошенную постороннюю задачу. Каталог: "
@@ -110,7 +126,16 @@ class OpenAISelector:
             selected = Selection.model_validate_json(text)
             if not selected.accepted:
                 raise PromptOutOfScope()
-            return list(dict.fromkeys(selected.families)), selected.explanation
+            families = list(dict.fromkeys(selected.families))
+            literal = list(dict.fromkeys(m.lastgroup for m in mentions(prompt)))
+            if literal and parse_layout_intent(prompt, literal).relations:
+                # Literal spatial instructions identify their subjects exactly. The
+                # model may interpret metaphors, but may not drop or add these objects.
+                if len(literal) > 6:
+                    raise AIError("Для одной композиции выберите не больше шести предметов.")
+                families = literal
+            layout = resolve_intent(prompt, families, selected.layout)
+            return families, selected.explanation, layout
         except (httpx.HTTPError, ValidationError, json.JSONDecodeError, KeyError, TypeError) as exc:
             raise AIError(
                 "OpenAI временно недоступен или вернул некорректный ответ. Сцена сохранена."

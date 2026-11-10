@@ -13,6 +13,15 @@ def settings(**kw):
 
 
 def response_payload(selection=None):
+    selection = dict(
+        selection
+        or {
+            "accepted": True,
+            "families": ["book", "lamp"],
+            "explanation": "Книга и свет помогают учиться.",
+        }
+    )
+    selection.setdefault("layout", {"relations": []})
     return {
         "status": "completed",
         "output": [
@@ -52,7 +61,7 @@ def test_model_receives_only_catalog_and_returns_validated_ids():
         async with httpx.AsyncClient(transport=httpx.MockTransport(serve)) as client:
             return await OpenAISelector(settings(), client).select("Свет знаний")
 
-    ids, explanation = asyncio.run(run())
+    ids, explanation, layout = asyncio.run(run())
     assert ids == ["book", "lamp"]
     assert "учиться" in explanation
 
@@ -162,3 +171,120 @@ def test_http_proxy_is_explicitly_used_for_https_openai(monkeypatch):
     build_client(configured)
     assert received["proxy"] == "http://proxy.invalid:8888"
     assert received["trust_env"] is False
+
+
+def test_ai_spatial_intent_survives_validated_selection():
+    selection = {
+        "accepted": True,
+        "families": ["book", "coin"],
+        "explanation": "Опора",
+        "layout": {"relations": [{"subject": "coin", "relation": "on", "targets": ["book"]}]},
+    }
+
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=response_payload(selection))
+            )
+        ) as client:
+            return await OpenAISelector(settings(), client).select("Монета на книге")
+
+    ids, explanation, layout = asyncio.run(run())
+    assert ids == ["coin", "book"]
+    assert layout.relations[0].subject == "coin"
+    assert layout.relations[0].relation == "on"
+
+
+@pytest.mark.parametrize(
+    "layout",
+    [
+        {"relations": [{"subject": "coin", "relation": "on", "targets": ["book"]}]},
+        {"relations": [{"subject": "book", "relation": "left_of", "targets": ["coin"]}]},
+        {"relations": [{"subject": "book", "relation": "above", "targets": ["book"]}]},
+        {"relations": [{"subject": "book", "relation": "around", "targets": ["lamp"]}]},
+        {"relations": [{"subject": "book", "relation": "left_of", "targets": []}]},
+    ],
+)
+def test_bad_layout_never_reaches_scene(layout):
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(
+                    200,
+                    json=response_payload(
+                        {
+                            "accepted": True,
+                            "families": ["book", "lamp"],
+                            "explanation": "Идея",
+                            "layout": layout,
+                        }
+                    ),
+                )
+            )
+        ) as client:
+            await OpenAISelector(settings(), client).select("Идея")
+
+    with pytest.raises(AIError):
+        asyncio.run(run())
+
+
+def test_missing_ai_layout_is_rejected():
+    payload = response_payload()
+    payload["output"][0]["content"][0]["text"] = json.dumps(
+        {"accepted": True, "families": ["book"], "explanation": "Идея"}
+    )
+
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload))
+        ) as client:
+            await OpenAISelector(settings(), client).select("Идея")
+
+    with pytest.raises(AIError):
+        asyncio.run(run())
+
+
+def test_explicit_spatial_subjects_are_not_dropped_or_invented_by_ai():
+    selection = {
+        "accepted": True,
+        "families": ["puzzle", "book", "phone"],
+        "explanation": "Идея",
+        "layout": {"relations": []},
+    }
+
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=response_payload(selection))
+            )
+        ) as client:
+            return await OpenAISelector(settings(), client).select(
+                "пазл на монете а под ними книга"
+            )
+
+    families, _, intent = asyncio.run(run())
+    assert families == ["puzzle", "coin", "book"]
+    assert {(r.subject, r.relation, tuple(r.targets)) for r in intent.relations} == {
+        ("puzzle", "on", ("coin",)),
+        ("book", "below", ("puzzle", "coin")),
+    }
+
+
+def test_colored_adjective_does_not_inject_an_unasked_flower():
+    selection = {
+        "accepted": True,
+        "families": ["book", "coin", "flowers"],
+        "explanation": "Идея",
+        "layout": {"relations": []},
+    }
+
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=response_payload(selection))
+            )
+        ) as client:
+            return await OpenAISelector(settings(), client).select("Цветная книга слева от монеты")
+
+    families, _, _ = asyncio.run(run())
+    assert families == ["book", "coin"]
