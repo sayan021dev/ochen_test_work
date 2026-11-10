@@ -6,5 +6,6 @@ import "@fontsource/tiktok-sans/400.css";
 import "@fontsource/tiktok-sans/500.css";
 import "./styles.css";
 import App from "./App";
+import "./ui-tokens.css";
 
 createRoot(document.getElementById("root")!).render(<App />);

@@ -93,24 +93,70 @@ it("optional shadow survives duplicate, role/detail changes and undo without mod
   const store = createEditorStore(defaultScene(palette));
   const element = store.getState().scene.elements[0];
   store.getState().select(element.id);
-  store
-    .getState()
-    .patchElement(element.id, {
-      shadow: { angle: 140, length: 1.5, opacity: 0.6 },
-    });
+  store.getState().patchElement(element.id, {
+    shadow: { angle: 140, length: 1.5, opacity: 0.6 },
+  });
   store.getState().duplicate();
   const copy = store.getState().scene.elements.at(-1)!;
   expect(copy.shadow).toEqual({ angle: 140, length: 1.5, opacity: 0.6 });
-  store
-    .getState()
-    .patchElement(copy.id, {
-      shadow: { ...copy.shadow!, angle: 20 },
-      role: "background",
-    });
+  store.getState().patchElement(copy.id, {
+    shadow: { ...copy.shadow!, angle: 20 },
+    role: "background",
+  });
   store.getState().setDetail("S");
   expect(store.getState().scene.elements[0].shadow?.angle).toBe(140);
   expect(store.getState().scene.elements.at(-1)?.shadow?.angle).toBe(20);
   store.getState().undo();
   store.getState().undo();
   expect(store.getState().scene.elements.at(-1)?.shadow?.angle).toBe(140);
+});
+
+it("copy/paste creates independent offset instances and one undo step", () => {
+  const store = createEditorStore(defaultScene(palette));
+  const first = store.getState().scene.elements[0];
+  store.getState().select(first.id);
+  store.getState().copySelection();
+  store.getState().pasteSelection();
+  const copy = store.getState().scene.elements.at(-1)!;
+  expect(copy.id).not.toBe(first.id);
+  expect(copy.family).toBe(first.family);
+  expect(copy.x).toBe(first.x + 24);
+  store.getState().undo();
+  expect(store.getState().scene.elements).toHaveLength(3);
+});
+it("deleting a selected shadow restores the original without deleting its parent", () => {
+  const store = createEditorStore(defaultScene(palette));
+  const original = store.getState().scene.elements[0];
+  store.getState().patchElement(original.id, {
+    shadow: { angle: 90, length: 1, opacity: 1 },
+  });
+  store.getState().selectShadow(original.id);
+  store.getState().remove();
+  expect(store.getState().scene.elements).toHaveLength(3);
+  expect(store.getState().scene.elements[0].shadow).toBeNull();
+  expect(store.getState().selectedPart).toBe("object");
+  store.getState().undo();
+  expect(store.getState().scene.elements[0].shadow?.angle).toBe(90);
+});
+it("switching detail at the format fitting limit keeps a valid server scale", () => {
+  const scene = defaultScene(palette);
+  scene.detail = "S";
+  scene.scale = 0.049;
+  const store = createEditorStore(scene);
+  store.getState().setDetail("L");
+  expect(store.getState().scene.scale).toBeGreaterThanOrEqual(0.03);
+});
+it("a replacement browser session detaches ownership while preserving scene and undo", () => {
+  const store = createEditorStore(defaultScene(palette));
+  store.getState().hydrate(store.getState().scene, "previous-owner-project", 4);
+  store.getState().change({ ...store.getState().scene, title: "Unsaved edit" });
+  const scene = store.getState().scene,
+    past = store.getState().past;
+  store.getState().detachProject();
+  expect(store.getState().scene).toBe(scene);
+  expect(store.getState().past).toBe(past);
+  expect(store.getState().projectId).toBeNull();
+  expect(store.getState().changeVersion).not.toBe(
+    store.getState().savedVersion,
+  );
 });

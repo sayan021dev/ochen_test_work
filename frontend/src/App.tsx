@@ -1,27 +1,21 @@
 import {
-  ArrowDownToLine,
   ArrowRight,
-  Check,
   CheckCircle2,
-  ChevronDown,
   CircleHelp,
-  Cloud,
-  Code2,
-  Download,
+  PencilLine,
   FolderOpen,
   Layers3,
   Loader2,
   Maximize,
-  Minus,
   PanelLeft,
   Plus,
   Redo2,
   Settings2,
   Sparkles,
   Undo2,
-  Upload,
   X,
   ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
@@ -29,9 +23,16 @@ import { api, ApiError, download } from "./api";
 import { Canvas, Illustration, type EditorStore } from "./Canvas";
 import { Inspector } from "./Inspector";
 import { Library } from "./Library";
+import { PasswordGate } from "./PasswordGate";
+import { PaletteDialog } from "./PaletteDialog";
+import { WelcomeDialog } from "./WelcomeDialog";
+import { ProjectGallery } from "./ProjectGallery";
+import { DownloadMenu } from "./DownloadMenu";
 import { createEditorStore, defaultScene } from "./state";
 import {
   FORMATS,
+  FORMAT_LABELS,
+  type Format,
   type Bootstrap,
   type Composition,
   type Palette,
@@ -70,9 +71,13 @@ export default function App() {
   const [data, setData] = useState<Bootstrap | null>(null),
     [sources, setSources] = useState<Record<string, string>>({}),
     [error, setError] = useState("");
+  const [locked, setLocked] = useState(false);
   const load = useCallback(async () => {
     setError("");
     try {
+      const access = await api.auth();
+      setLocked(access.required && !access.authenticated);
+      if (access.required && !access.authenticated) return;
       const bootstrap = await api.bootstrap();
       const files = await Promise.all(
         bootstrap.assets.map(async (a) => {
@@ -90,6 +95,19 @@ export default function App() {
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    const requireAuth = () => setLocked(true);
+    window.addEventListener("ochen:auth-required", requireAuth);
+    return () => window.removeEventListener("ochen:auth-required", requireAuth);
+  }, []);
+  const login = async (password: string) => {
+    const access = await api.login(password);
+    if (data && access.sessionChanged)
+      window.dispatchEvent(new Event("ochen:session-replaced"));
+    setLocked(false);
+    if (!data) await load();
+  };
+  if (!data && locked) return <PasswordGate onLogin={login} />;
   if (!data)
     return (
       <main className="loading-screen">
@@ -108,20 +126,32 @@ export default function App() {
           </>
         ) : (
           <p>
-            <Loader2 className="spin" size={16} /> Открываем векторную
-            мастерскую
+            <Loader2 className="spin" size={16} /> Открываем редактор
           </p>
         )}
       </main>
     );
-  return <Editor data={data} sources={sources} />;
+  return (
+    <>
+      <div inert={locked || undefined}>
+        <Editor data={data} sources={sources} locked={locked} />
+      </div>
+      {locked && (
+        <div className="auth-overlay">
+          <PasswordGate onLogin={login} />
+        </div>
+      )}
+    </>
+  );
 }
 
 function Editor({
   data,
   sources,
+  locked,
 }: {
   data: Bootstrap;
+  locked: boolean;
   sources: Record<string, string>;
 }) {
   const [store] = useState(() =>
@@ -146,8 +176,12 @@ function Editor({
   const [projects, setProjects] = useState<Project[]>([]),
     [showProjects, setShowProjects] = useState(false),
     [showHelp, setShowHelp] = useState(false);
-  const projectsDialog = useRef<HTMLDialogElement>(null),
-    helpDialog = useRef<HTMLDialogElement>(null),
+  const [showPalette, setShowPalette] = useState(false),
+    [showWelcome, setShowWelcome] = useState(false),
+    [loadingProjects, setLoadingProjects] = useState(false),
+    [fullscreen, setFullscreen] = useState(false);
+  const workspace = useRef<HTMLElement>(null);
+  const helpDialog = useRef<HTMLDialogElement>(null),
     projectInput = useRef<HTMLInputElement>(null);
   const savingRef = useRef(false),
     restored = useRef(false),
@@ -155,7 +189,21 @@ function Editor({
     paletteRequest = useRef(0),
     navigationRequest = useRef(0);
   const dirty = state.changeVersion !== state.savedVersion;
-  const [width, height] = FORMATS[scene.format];
+  const isSaved = !dirty && !!state.projectId && saveStatus === "Сохранено";
+  useEffect(() => {
+    const detach = () => {
+      store.getState().detachProject();
+      localStorage.removeItem("ochen:last-project");
+      history.replaceState({}, "", "/");
+      setConflict(false);
+      setSaveStatus("Не сохранено");
+      setError(
+        "Сессия браузера обновилась. Текущая работа сохранится как новый проект.",
+      );
+    };
+    window.addEventListener("ochen:session-replaced", detach);
+    return () => window.removeEventListener("ochen:session-replaced", detach);
+  }, [store]);
 
   const registerPalette = useCallback(
     (loaded: Scene) => {
@@ -251,11 +299,13 @@ function Editor({
   }, [store, registerPalette]);
 
   useEffect(() => {
-    if (!dirty || conflict || saving || busy || state.dragBaseline) return;
+    if (!dirty || conflict || saving || busy || state.dragBaseline || locked)
+      return;
     const timer = setTimeout(() => void save(), 1400);
     return () => clearTimeout(timer);
   }, [
     dirty,
+    locked,
     conflict,
     saving,
     busy,
@@ -282,7 +332,9 @@ function Editor({
         target.closest(
           'input,textarea,select,[contenteditable="true"],dialog',
         ) ||
-        busy
+        busy ||
+        showProjects ||
+        locked
       )
         return;
       const s = store.getState(),
@@ -294,6 +346,12 @@ function Editor({
       } else if (mod && event.key.toLowerCase() === "s") {
         event.preventDefault();
         void save();
+      } else if (mod && event.key.toLowerCase() === "c" && s.selected) {
+        event.preventDefault();
+        s.copySelection();
+      } else if (mod && event.key.toLowerCase() === "v" && s.clipboard) {
+        event.preventDefault();
+        s.pasteSelection();
       } else if (mod && event.key.toLowerCase() === "d") {
         event.preventDefault();
         s.duplicate();
@@ -306,6 +364,45 @@ function Editor({
         if (!selected || selected.locked) return;
         event.preventDefault();
         const delta = event.shiftKey ? 10 : 1;
+        if (s.selectedPart === "shadow" && selected.shadow) {
+          const dx =
+            event.key === "ArrowRight"
+              ? delta
+              : event.key === "ArrowLeft"
+                ? -delta
+                : 0;
+          const dy =
+            event.key === "ArrowDown"
+              ? delta
+              : event.key === "ArrowUp"
+                ? -delta
+                : 0;
+          const r = (-selected.angle * Math.PI) / 180;
+          s.patchElement(selected.id, {
+            shadow: {
+              ...selected.shadow,
+              x: Math.max(
+                -5000,
+                Math.min(
+                  5000,
+                  (selected.shadow.x ?? 0) +
+                    (dx * Math.cos(r) - dy * Math.sin(r)) /
+                      (s.scene.scale * (selected.scale_x ?? 1)),
+                ),
+              ),
+              y: Math.max(
+                -5000,
+                Math.min(
+                  5000,
+                  (selected.shadow.y ?? 0) +
+                    (dx * Math.sin(r) + dy * Math.cos(r)) /
+                      (s.scene.scale * (selected.scale_y ?? 1)),
+                ),
+              ),
+            },
+          });
+          return;
+        }
         const x = Math.max(
           -5000,
           Math.min(
@@ -335,15 +432,64 @@ function Editor({
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [store, save, busy]);
+  }, [store, save, busy, showProjects, locked]);
 
   useEffect(() => {
     if (selected) setRightOpen(true);
   }, [selected]);
   useEffect(() => {
-    if (showProjects) projectsDialog.current?.showModal();
-    else projectsDialog.current?.close();
-  }, [showProjects]);
+    if (locked) {
+      if (document.fullscreenElement)
+        void document.exitFullscreen().catch(() => {});
+      paletteRequest.current++;
+      setShowPalette(false);
+      setShowWelcome(false);
+      setShowHelp(false);
+    }
+  }, [locked]);
+  useEffect(() => {
+    if (
+      locked ||
+      showProjects ||
+      showHelp ||
+      showPalette ||
+      busy ||
+      state.dragBaseline ||
+      document.cookie
+        .split("; ")
+        .some((c) => c.startsWith("ochen_welcome_seen="))
+    )
+      return;
+    const timer = setTimeout(() => {
+      document.cookie = `ochen_welcome_seen=1; Max-Age=31536000; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+      setShowWelcome(true);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [
+    locked,
+    showProjects,
+    showHelp,
+    showPalette,
+    busy,
+    state.dragBaseline,
+    state.changeVersion,
+  ]);
+  useEffect(() => {
+    const update = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", update);
+    return () => document.removeEventListener("fullscreenchange", update);
+  }, []);
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await workspace.current?.requestFullscreen();
+      setZoom(1);
+    } catch {
+      setError(
+        "Браузер не разрешил полноэкранный режим. Попробуйте открыть сайт в отдельной вкладке.",
+      );
+    }
+  };
   useEffect(() => {
     if (showHelp) helpDialog.current?.showModal();
     else helpDialog.current?.close();
@@ -402,33 +548,21 @@ function Editor({
       }),
       "сложено-проект.json",
     );
-  const importPalette = async (file: File) => {
-    const requestId = ++paletteRequest.current;
-    const epoch = store.getState().documentEpoch;
-    try {
-      if (file.size > 20000)
-        throw new Error("Файл палитры слишком большой. Максимум 20 КБ.");
-      const candidate: unknown = JSON.parse(await file.text());
-      const validated = await api.validate({
-        ...store.getState().scene,
-        palette: candidate,
-      });
-      if (
-        requestId !== paletteRequest.current ||
-        epoch !== store.getState().documentEpoch
-      )
-        return;
-      const palette = registerPalette(validated).palette;
-      store.getState().change({ ...store.getState().scene, palette });
-      setError("");
-    } catch (e) {
-      if (
-        requestId !== paletteRequest.current ||
-        epoch !== store.getState().documentEpoch
-      )
-        return;
-      setError(errorMessage(e));
-    }
+  const applyPalette = async (candidate: Palette) => {
+    const requestId = ++paletteRequest.current,
+      epoch = store.getState().documentEpoch;
+    const validated = await api.validate({
+      ...store.getState().scene,
+      palette: candidate,
+    });
+    if (
+      requestId !== paletteRequest.current ||
+      epoch !== store.getState().documentEpoch
+    )
+      throw new Error("Документ изменился. Откройте палитру заново.");
+    const palette = registerPalette(validated).palette;
+    store.getState().change({ ...store.getState().scene, palette });
+    setError("");
   };
   const importProject = async (file: File) => {
     if (!canLeave()) return;
@@ -501,41 +635,77 @@ function Editor({
     localStorage.removeItem("ochen:last-project");
     history.replaceState({}, "", "/");
     setSaveStatus("Не сохранено");
+    setShowProjects(false);
     setComposition(null);
     setConflict(false);
   };
   const showLibrary = () => setLeftOpen(!leftOpen);
+  const openGallery = () => {
+    setShowProjects(true);
+    setShowWelcome(false);
+    setLoadingProjects(true);
+    void api
+      .projects()
+      .then(setProjects)
+      .catch((e) => setError(errorMessage(e)))
+      .finally(() => setLoadingProjects(false));
+  };
+  if (showProjects)
+    return (
+      <>
+        <ProjectGallery
+          projects={projects}
+          assets={data.assets}
+          sources={sources}
+          loading={loadingProjects}
+          onOpen={(id) => void openProject(id)}
+          onNew={newProject}
+          onBack={() => setShowProjects(false)}
+        />
+        {error && (
+          <div className="gallery-error" role="alert">
+            {error}
+            <button
+              onClick={() => {
+                setError("");
+                setShowProjects(false);
+              }}
+            >
+              В редактор
+            </button>
+          </div>
+        )}
+      </>
+    );
 
   return (
     <div
       className={`app-shell ${leftOpen ? "left-open" : ""} ${rightOpen ? "right-open" : ""}`}
     >
       <header className="app-header">
-        <a className="brand" href="/" aria-label="Сложено, главная">
-          <span className="brand-mark">
-            <i />
-            <i />
-            <i />
-          </span>
-          <h1>Сложено</h1>
-          <span className="brand-divider" />
-          <span className="brand-caption">Векторная мастерская</span>
-        </a>
-        <div className="header-center">
-          <span className="outline-pill">
-            <span className="status-dot" /> Из готовых объектов
-          </span>
+        <div className="header-project-actions">
+          <a className="brand" href="/" aria-label="Сложено, главная">
+            <span className="brand-mark">
+              <i />
+              <i />
+              <i />
+            </span>
+            <h1>Сложено</h1>
+          </a>
+          <button
+            className="text-button new-project-button"
+            onClick={newProject}
+            aria-label="Новый проект"
+          >
+            <Plus size={16} />
+            <span>Новый проект</span>
+          </button>
         </div>
         <div className="header-actions">
           <button
             className="text-button"
-            onClick={() => {
-              setShowProjects(true);
-              void api
-                .projects()
-                .then(setProjects)
-                .catch((e) => setError(errorMessage(e)));
-            }}
+            onClick={openGallery}
+            aria-label="Мои работы"
           >
             <FolderOpen size={16} />
             <span>Мои работы</span>
@@ -547,7 +717,6 @@ function Editor({
           >
             <CircleHelp size={18} />
           </button>
-          <span className="avatar">Р</span>
         </div>
       </header>
       <aside className="left-panel" aria-label="Идея и библиотека">
@@ -561,9 +730,6 @@ function Editor({
             >
               <X size={17} />
             </button>
-            <span className="ai-badge">
-              <Sparkles size={12} /> Подбор
-            </span>
           </div>
           <h2>Что соберём?</h2>
           <p className="intro-copy">Опишите смысл. Предметы найдутся.</p>
@@ -670,16 +836,15 @@ function Editor({
           }}
           disabled={busy || scene.elements.length >= 48}
         />
-        <div className="left-footer">
-          <span>Сделано для тестового задания</span>
-          <span>01 / V1</span>
-        </div>
       </aside>
-      <main className="workspace">
+      <main className="workspace" ref={workspace}>
         <div className="document-toolbar">
-          <div className="document-title">
+          <label
+            className="document-title"
+            title="Нажмите, чтобы переименовать проект"
+          >
             <span className="document-icon">
-              <Code2 size={16} />
+              <PencilLine size={16} />
             </span>
             <input
               aria-label="Название проекта"
@@ -690,69 +855,53 @@ function Editor({
                   state.change({ ...scene, title: e.target.value });
               }}
             />
-            <ChevronDown size={13} />
-          </div>
+          </label>
           <div className="document-actions">
-            <span role="status" className="save-status">
-              {saving ? (
-                <Loader2 size={12} className="spin" />
-              ) : dirty ? (
-                <Cloud size={13} />
-              ) : (
-                <Check size={13} />
-              )}
-              <span>{dirty && !saving ? "Есть изменения" : saveStatus}</span>
-            </span>
             <button
-              className="icon"
-              aria-label="Новый проект"
-              title="Новый проект"
-              onClick={newProject}
-            >
-              <Plus size={17} />
-            </button>
-            <button
-              className="icon"
               aria-label="Сохранить проект"
-              title="Сохранить проект"
               disabled={saving}
+              className={`save-status ${isSaved ? "is-saved" : "is-unsaved"}`}
+              title={
+                saving
+                  ? "Сохранение выполняется"
+                  : isSaved
+                    ? "Все изменения сохранены · Ctrl / ⌘ + S"
+                    : "Сохранить проект · Ctrl / ⌘ + S"
+              }
               onClick={() => void save()}
             >
-              <Cloud size={17} />
+              <CheckCircle2 size={16} />
+              <span role="status">
+                {isSaved ? "Сохранено" : "Не сохранено"}
+              </span>
             </button>
-            <button
-              className="export-button"
-              aria-label="Скачать SVG"
-              onClick={() => void exportSVG()}
-            >
-              <Download size={15} />
-              <span>Скачать SVG</span>
-            </button>
+            <DownloadMenu
+              onSVG={() => void exportSVG()}
+              onJSON={exportProject}
+              onImport={() => {
+                if (canLeave()) projectInput.current?.click();
+              }}
+            />
           </div>
         </div>
         <div className="canvas-toolbar">
-          <div className="format-control">
-            {(
-              [
-                ["square", "Пост 1:1"],
-                ["landscape", "Обложка 1.91:1"],
-                ["portrait", "Постер 2:3"],
-              ] as const
-            ).map(([format, label]) => (
-              <button
-                key={format}
-                aria-label={label}
-                aria-pressed={scene.format === format}
-                onClick={() => {
-                  state.change({ ...scene, format });
-                  setZoom(1);
-                }}
-              >
-                <span className={`format-shape ${format}`} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
+          <label className="canvas-preset">
+            <span>Холст</span>
+            <select
+              aria-label="Размер холста"
+              value={scene.format}
+              onChange={(event) => {
+                state.setFormat(event.target.value as Format, data.assets);
+                setZoom(1);
+              }}
+            >
+              {Object.entries(FORMAT_LABELS).map(([format, label]) => (
+                <option key={format} value={format}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="history-controls">
             <button
               className="icon"
@@ -790,14 +939,6 @@ function Editor({
           </div>
         )}
         <div className="stage-area">
-          <div className="stage-label">
-            <span>
-              КОМПОЗИЦИЯ <b>01</b>
-            </span>
-            <span>
-              {width} × {height} px <span className="small-dot" /> SVG
-            </span>
-          </div>
           <div
             className={`artboard-space ${scene.transparent ? "checkerboard" : ""} ${busy ? "busy" : ""}`}
           >
@@ -816,30 +957,36 @@ function Editor({
             )}
           </div>
           <div className="stage-bottom">
-            <span>
-              <span className="status-dot" /> {scene.elements.length} предмета ·{" "}
-              {scene.detail === "L" ? "Подробная" : "Компактная"} детализация
-            </span>
             <div className="zoom-controls">
               <button
                 className="icon"
                 aria-label="Уменьшить масштаб просмотра"
                 onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
               >
-                <Minus size={13} />
+                <ZoomOut size={15} />
               </button>
-              <span>{Math.round(zoom * 100)}%</span>
+              <button
+                className="zoom-reset"
+                aria-label="Вписать в окно"
+                title="Вписать в окно"
+                onClick={() => setZoom(1)}
+              >
+                {Math.round(zoom * 100)}%
+              </button>
               <button
                 className="icon"
                 aria-label="Увеличить масштаб просмотра"
                 onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
               >
-                <ZoomIn size={13} />
+                <ZoomIn size={15} />
               </button>
               <button
                 className="icon"
-                aria-label="Вписать в окно"
-                onClick={() => setZoom(1)}
+                aria-label={
+                  fullscreen ? "Выйти из полного экрана" : "Полный экран"
+                }
+                aria-pressed={fullscreen}
+                onClick={() => void toggleFullscreen()}
               >
                 <Maximize size={13} />
               </button>
@@ -847,31 +994,6 @@ function Editor({
           </div>
         </div>
         <div className="composition-bottom">
-          <div className="concept-card">
-            <span className="concept-icon">
-              <Sparkles size={16} />
-            </span>
-            <div>
-              <div className="concept-heading">
-                <h2>
-                  {composition
-                    ? "Почему эти предметы"
-                    : "У каждой идеи есть форма"}
-                </h2>
-                <span className="tiny-label">
-                  {composition?.provider === "openai"
-                    ? "OpenAI"
-                    : composition?.provider === "dictionary"
-                      ? "Словарный подбор"
-                      : "Готовая библиотека"}
-                </span>
-              </div>
-              <p>
-                {composition?.explanation ??
-                  "Начните с метафоры или добавьте предметы вручную. Мы сохраним исходный вектор, детали и характер иллюстраций."}
-              </p>
-            </div>
-          </div>
           {composition && (
             <section className="variants" aria-label="Варианты композиции">
               <div className="section-title">
@@ -919,41 +1041,23 @@ function Editor({
             </section>
           )}
         </div>
-        <footer className="workspace-footer">
-          <span>
-            <CheckCircle2 size={13} /> Исходные контуры сохранены
-          </span>
-          <div>
-            <button className="text-button" onClick={exportProject}>
-              <ArrowDownToLine size={13} />
-              JSON проекта
-            </button>
-            <button
-              className="text-button"
-              onClick={() => projectInput.current?.click()}
-            >
-              <Upload size={13} />
-              Открыть JSON
-            </button>
-          </div>
-          <input
-            ref={projectInput}
-            className="sr-only"
-            type="file"
-            accept=".json"
-            aria-label="Импорт проекта"
-            onChange={(e) => {
-              if (e.target.files?.[0]) void importProject(e.target.files[0]);
-              e.target.value = "";
-            }}
-          />
-        </footer>
+        <input
+          ref={projectInput}
+          className="sr-only"
+          type="file"
+          accept=".json"
+          aria-label="Импорт проекта"
+          onChange={(e) => {
+            if (e.target.files?.[0]) void importProject(e.target.files[0]);
+            e.target.value = "";
+          }}
+        />
       </main>
       <Inspector
         store={store}
         assets={data.assets}
         palettes={palettes}
-        onImportPalette={(file) => void importPalette(file)}
+        onImportPalette={() => setShowPalette(true)}
         onClose={() => setRightOpen(false)}
       />
       <nav className="mobile-panels" aria-label="Панели редактора">
@@ -966,43 +1070,16 @@ function Editor({
           Настройки
         </button>
       </nav>
-      <dialog
-        ref={projectsDialog}
-        onClose={() => setShowProjects(false)}
-        className="projects-dialog"
-      >
-        <div className="dialog-title">
-          <h2>Мои работы</h2>
-          <button
-            className="icon"
-            aria-label="Закрыть мои работы"
-            onClick={() => setShowProjects(false)}
-          >
-            <X size={19} />
-          </button>
-        </div>
-        {!projects.length ? (
-          <p className="muted">
-            Сохраните первую композицию, и она появится здесь.
-          </p>
-        ) : (
-          <div className="project-list">
-            {projects.map((p) => (
-              <button key={p.id} onClick={() => void openProject(p.id)}>
-                <FolderOpen size={20} />
-                <span>
-                  <strong>{p.scene.title}</strong>
-                  <small>
-                    {new Date(p.updated_at).toLocaleDateString("ru-RU")} ·{" "}
-                    {p.scene.elements.length} предмета
-                  </small>
-                </span>
-                <ArrowRight size={17} />
-              </button>
-            ))}
-          </div>
-        )}
-      </dialog>
+      <PaletteDialog
+        open={showPalette}
+        palette={scene.palette}
+        onClose={() => {
+          paletteRequest.current++;
+          setShowPalette(false);
+        }}
+        onApply={applyPalette}
+      />
+      <WelcomeDialog open={showWelcome} onClose={() => setShowWelcome(false)} />
       <dialog
         ref={helpDialog}
         onClose={() => setShowHelp(false)}
@@ -1041,16 +1118,46 @@ function Editor({
             Дублировать<kbd>⌘ / Ctrl + D</kbd>
           </span>
           <span>
+            Копировать предмет<kbd>⌘ / Ctrl + C</kbd>
+          </span>
+          <span>
+            Вставить предмет<kbd>⌘ / Ctrl + V</kbd>
+          </span>
+          <span>
+            Повторить действие<kbd>Shift + ⌘ / Ctrl + Z</kbd>
+          </span>
+          <span>
             Сохранить<kbd>⌘ / Ctrl + S</kbd>
           </span>
           <span>
             Удалить<kbd>Delete</kbd>
           </span>
         </div>
-        <p className="help-text">
-          Палитра JSON: поля id, name, background и object. В каждой группе
-          ровно 4 HEX-цвета. Файл-пример находится в репозитории.
-        </p>
+        <div className="help-gestures">
+          <h3>Мышь и холст</h3>
+          <p>
+            <strong>Размер:</strong> тяните за угол рамки, чтобы сохранить
+            пропорции. Боковые ручки растягивают по одной оси.
+          </p>
+          <p>
+            <strong>Поворот:</strong> тяните круглую ручку над рамкой; Shift
+            фиксирует шаг 15°. Стрелки у поля угла можно удерживать.
+          </p>
+          <p>
+            <strong>Своя тень:</strong> включите режим в настройках и нажмите на
+            тень, чтобы перемещать и менять её рамкой отдельно от предмета.
+          </p>
+          <p>
+            <strong>Масштаб:</strong> кнопки лупы увеличивают и уменьшают холст.
+            Колесо мыши и полосы прокрутки перемещают увеличенный холст; 100%
+            вписывает его в окно.
+          </p>
+          <p>
+            <strong>Панель над предметом:</strong> дублирование, порядок слоёв и
+            удаление. Скачать SVG, сохранить JSON или открыть JSON можно через
+            меню скачивания.
+          </p>
+        </div>
       </dialog>
     </div>
   );

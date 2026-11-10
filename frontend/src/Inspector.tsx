@@ -1,12 +1,10 @@
 import {
-  ArrowDown,
-  ArrowUp,
-  Copy,
+  ChevronDown,
+  ChevronUp,
   Eye,
   EyeOff,
   FolderInput,
   Lock,
-  Trash2,
   Unlock,
   X,
 } from "lucide-react";
@@ -14,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 import type { EditorStore } from "./Canvas";
 import type { Asset, Palette } from "./types";
+import { rotateElement } from "./geometry";
 
 function NumberField({
   label,
@@ -22,6 +21,9 @@ function NumberField({
   max,
   onCommit,
   disabled = false,
+  onStep,
+  onStepStart,
+  onStepEnd,
 }: {
   label: string;
   value: number;
@@ -29,11 +31,35 @@ function NumberField({
   max: number;
   onCommit: (value: number) => void;
   disabled?: boolean;
+  onStep?: (delta: number) => void;
+  onStepStart?: () => void;
+  onStepEnd?: () => void;
 }) {
   const [draft, setDraft] = useState(String(Math.round(value * 100) / 100));
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holding = useRef(false);
+  const callbacks = useRef({ onStep, onStepEnd });
+  useEffect(() => {
+    callbacks.current = { onStep, onStepEnd };
+  }, [onStep, onStepEnd]);
+  const stop = () => {
+    if (timer.current !== null) clearTimeout(timer.current);
+    timer.current = null;
+    if (holding.current) {
+      holding.current = false;
+      callbacks.current.onStepEnd?.();
+    }
+  };
+  useEffect(
+    () => () => {
+      if (timer.current !== null) clearTimeout(timer.current);
+      if (holding.current) callbacks.current.onStepEnd?.();
+    },
+    [],
+  );
   useEffect(() => setDraft(String(Math.round(value * 100) / 100)), [value]);
   return (
-    <label className="number-field">
+    <div className="number-field">
       <span>
         {label === "Положение X" ? "X" : label === "Положение Y" ? "Y" : "↻"}
       </span>
@@ -58,7 +84,49 @@ function NumberField({
         }}
       />
       {label === "Угол поворота" && <span>°</span>}
-    </label>
+      {onStep && (
+        <span className="angle-steppers">
+          {([1, -1] as const).map((delta) => (
+            <button
+              key={delta}
+              type="button"
+              disabled={disabled}
+              aria-label={`${delta === 1 ? "Увеличить" : "Уменьшить"} ${label === "Направление тени" ? "угол тени" : "угол поворота"}`}
+              onPointerDown={(event) => {
+                if (event.button !== 0) return;
+                event.preventDefault();
+                stop();
+                holding.current = true;
+                onStepStart?.();
+                onStep(delta);
+                const repeat = () => {
+                  callbacks.current.onStep?.(delta);
+                  timer.current = setTimeout(repeat, 60);
+                };
+                timer.current = setTimeout(repeat, 350);
+                event.currentTarget.setPointerCapture?.(event.pointerId);
+              }}
+              onPointerUp={stop}
+              onPointerCancel={stop}
+              onLostPointerCapture={stop}
+              onClick={(event) => {
+                if (event.detail === 0) {
+                  onStepStart?.();
+                  onStep(delta);
+                  onStepEnd?.();
+                }
+              }}
+            >
+              {delta === 1 ? (
+                <ChevronUp size={13} />
+              ) : (
+                <ChevronDown size={13} />
+              )}
+            </button>
+          ))}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -72,12 +140,11 @@ export function Inspector({
   store: EditorStore;
   assets: Asset[];
   palettes: Palette[];
-  onImportPalette: (file: File) => void;
+  onImportPalette: () => void;
   onClose: () => void;
 }) {
   const state = useStore(store),
-    { scene, selected } = state,
-    fileInput = useRef<HTMLInputElement>(null);
+    { scene, selected } = state;
   const element = scene.elements.find((e) => e.id === selected);
   const asset = element
     ? assets.find(
@@ -90,7 +157,13 @@ export function Inspector({
   return (
     <aside className="inspector" aria-label="Настройки композиции">
       <div className="panel-heading">
-        <h2>{element ? "Объект" : "Композиция"}</h2>
+        <h2>
+          {element
+            ? state.selectedPart === "shadow"
+              ? "Тень объекта"
+              : "Объект"
+            : "Композиция"}
+        </h2>
         <button
           className="icon mobile-only"
           aria-label="Закрыть настройки"
@@ -139,13 +212,14 @@ export function Inspector({
                 aria-label="Своя тень"
                 checked={!!element.shadow}
                 disabled={element.locked}
-                onChange={(event) =>
+                onChange={(event) => {
                   state.patchElement(element.id, {
                     shadow: event.target.checked
-                      ? { angle: 35, length: 1, opacity: 0.35 }
+                      ? { angle: 0, length: 1, opacity: 1 }
                       : null,
-                  })
-                }
+                  });
+                  if (!event.target.checked) state.select(element.id);
+                }}
               />
               <span>
                 <strong>Своя тень</strong>
@@ -156,13 +230,20 @@ export function Inspector({
             {element.shadow ? (
               <>
                 <p className="shadow-hint">
-                  Художественная проекция. Направление задаётся относительно
-                  предмета; длина — условный масштаб.
+                  Поворачивает исходную тень. Ноль градусов сохраняет её
+                  направление; 100% — исходная длина.
                 </p>
+                <button
+                  className="secondary shadow-select"
+                  disabled={element.locked}
+                  onClick={() => state.selectShadow(element.id)}
+                >
+                  Выделить тень на холсте
+                </button>
                 <div className="shadow-fields">
                   <div>
                     <span className="field-label">
-                      Направление от предмета, °
+                      Поворот исходной тени, °
                     </span>
                     <NumberField
                       label="Направление тени"
@@ -170,6 +251,20 @@ export function Inspector({
                       min={0}
                       max={360}
                       disabled={element.locked}
+                      onStepStart={state.beginDrag}
+                      onStepEnd={state.finishDrag}
+                      onStep={(delta) => {
+                        const current = store
+                          .getState()
+                          .scene.elements.find((e) => e.id === element.id);
+                        if (current?.shadow)
+                          store.getState().previewElement(element.id, {
+                            shadow: {
+                              ...current.shadow,
+                              angle: (current.shadow.angle + delta + 360) % 360,
+                            },
+                          });
+                      }}
                       onCommit={(angle) =>
                         !element.locked &&
                         state.patchElement(element.id, {
@@ -216,15 +311,15 @@ export function Inspector({
                 </div>
                 <div className="shadow-presets" aria-label="Направления тени">
                   {[
-                    [0, "Вправо"],
-                    [90, "Вниз"],
-                    [180, "Влево"],
-                    [270, "Вверх"],
+                    [0, "Исходное направление"],
+                    [90, "Поворот на 90°"],
+                    [180, "Поворот на 180°"],
+                    [270, "Поворот на 270°"],
                   ].map(([angle, name]) => (
                     <button
                       key={angle}
                       disabled={element.locked}
-                      aria-label={`Тень ${String(name).toLowerCase()}`}
+                      aria-label={`Тень: ${name}`}
                       title={String(name)}
                       onClick={() =>
                         state.patchElement(element.id, {
@@ -245,7 +340,7 @@ export function Inspector({
               </p>
             )}
           </div>
-          <span className="field-label">ПОЛОЖЕНИЕ И ПОВОРОТ</span>
+          <span className="field-label">ПОЛОЖЕНИЕ И ПОВОРОТ ПРЕДМЕТА</span>
           <div className="position-grid">
             <NumberField
               label="Положение X"
@@ -267,59 +362,45 @@ export function Inspector({
             />
             <NumberField
               label="Угол поворота"
+              disabled={element.locked}
               value={element.angle}
               min={-360}
               max={360}
+              onStepStart={state.beginDrag}
+              onStepEnd={state.finishDrag}
+              onStep={(delta) => {
+                const current = store
+                  .getState()
+                  .scene.elements.find((e) => e.id === element.id);
+                if (current)
+                  store
+                    .getState()
+                    .previewElement(
+                      element.id,
+                      rotateElement(
+                        current,
+                        store.getState().scene.scale,
+                        asset.width,
+                        asset.height,
+                        current.angle + delta,
+                      ),
+                    );
+              }}
               onCommit={(angle) =>
-                !element.locked && state.patchElement(element.id, { angle })
+                !element.locked &&
+                state.patchElement(
+                  element.id,
+                  rotateElement(
+                    element,
+                    scene.scale,
+                    asset.width,
+                    asset.height,
+                    angle,
+                  ),
+                )
               }
             />
           </div>
-          <div className="object-actions">
-            <button
-              className="icon"
-              title="Дублировать"
-              aria-label="Дублировать объект"
-              onClick={state.duplicate}
-            >
-              <Copy size={16} />
-            </button>
-            <button
-              className="icon"
-              title="На передний план"
-              aria-label="Переместить слой выше"
-              onClick={() => state.reorder(element.id, 1)}
-            >
-              <ArrowUp size={16} />
-            </button>
-            <button
-              className="icon"
-              aria-label="Переместить слой ниже"
-              title="На задний план"
-              onClick={() => state.reorder(element.id, -1)}
-            >
-              <ArrowDown size={16} />
-            </button>
-            <button
-              className="icon danger"
-              disabled={element.locked}
-              title="Удалить"
-              aria-label="Удалить объект"
-              onClick={state.remove}
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-          <details className="source-info">
-            <summary>Происхождение объекта</summary>
-            <p>
-              Исходная библиотека Figma
-              <br />
-              Узел {asset.source_node_id}
-              <br />
-              Геометрия сохранена
-            </p>
-          </details>
         </section>
       )}
       <section className="inspector-section">
@@ -367,23 +448,11 @@ export function Inspector({
         </div>
         <button
           className="text-button import-palette"
-          onClick={() => fileInput.current?.click()}
+          onClick={onImportPalette}
         >
           <FolderInput size={14} />
           Загрузить палитру
         </button>
-        <input
-          ref={fileInput}
-          className="sr-only"
-          type="file"
-          accept=".json,application/json"
-          aria-label="Импорт палитры"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onImportPalette(file);
-            e.target.value = "";
-          }}
-        />
         <label className="checkbox-row">
           <input
             type="checkbox"
@@ -451,9 +520,6 @@ export function Inspector({
           <p className="help-text">Добавьте предмет из библиотеки слева.</p>
         )}
       </section>
-      <div className="inspector-footer">
-        <span>SVG</span> Вектор остаётся вектором.
-      </div>
     </aside>
   );
 }

@@ -17,4 +17,5 @@ check: test
 	npm --prefix frontend run lint
 	npm --prefix frontend run build
 e2e: db
+	npm --prefix frontend run build
 	cd frontend && npx playwright test

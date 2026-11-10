@@ -33,5 +33,19 @@ export default defineConfig({
       url: "http://127.0.0.1:5178",
       reuseExistingServer: !process.env.CI,
     },
+    {
+      command:
+        "../.venv/bin/uvicorn app.main:app --app-dir ../backend --host 127.0.0.1 --port 8019",
+      url: "http://127.0.0.1:8019/api/ready",
+      reuseExistingServer: !process.env.CI,
+      env: {
+        SITE_PASSWORD: "test-access-only",
+        REQUIRE_SITE_PASSWORD: "true",
+        AUTH_SECRET: "test-signing-secret-for-browser-regressions-only",
+        OPENAI_API_KEY: "",
+        HTTP_PROXY: "",
+        ALLOWED_ORIGINS: '["http://127.0.0.1:8019"]',
+      },
+    },
   ],
 });

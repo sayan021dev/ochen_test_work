@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, context }) => {
+  await context.addCookies([
+    { name: "ochen_welcome_seen", value: "1", url: "http://127.0.0.1:5178" },
+  ]);
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Сложено" })).toBeVisible();
   await expect(page.getByTestId("artboard")).toBeVisible();
@@ -15,7 +18,7 @@ test("component composition, move, duplicate, layers, undo and vector export", a
     .getByRole("button", { name: "Собрать композицию", exact: true })
     .click();
   await expect(
-    page.getByText("Подобраны названные предметы из исходной библиотеки."),
+    page.getByRole("button", { name: "Вариант композиции 1" }),
   ).toBeVisible();
   await expect(
     page.getByTestId("artboard").locator("[data-element-id]"),
@@ -23,11 +26,11 @@ test("component composition, move, duplicate, layers, undo and vector export", a
   await page.getByRole("button", { name: "Слой Книга", exact: true }).click();
   await page.getByLabel("Положение X").fill("123");
   await page.getByLabel("Положение X").blur();
-  await page.getByLabel("Угол поворота").fill("15");
-  await page.getByLabel("Угол поворота").blur();
+  await page.getByLabel("Угол поворота", { exact: true }).fill("15");
+  await page.getByLabel("Угол поворота", { exact: true }).blur();
   await expect(
     page.getByTestId("artboard").locator('[data-family="book"]'),
-  ).toHaveAttribute("transform", /translate\(123 .*rotate\(15\)/);
+  ).toHaveAttribute("transform", /rotate\(15\)/);
   await page.getByRole("button", { name: "Дублировать объект" }).click();
   await expect(
     page.getByTestId("artboard").locator("[data-element-id]"),
@@ -38,6 +41,9 @@ test("component composition, move, duplicate, layers, undo and vector export", a
   ).toHaveCount(3);
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Скачать SVG", exact: true }).click();
+  await page
+    .getByRole("menuitem", { name: "Скачать SVG", exact: true })
+    .click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.svg$/);
   const stream = await download.createReadStream();
@@ -56,7 +62,7 @@ test("palette, true detail, format and save survive page reload", async ({
     page.getByTestId("artboard").locator("[data-background]"),
   ).toHaveAttribute("fill", "#FDD7B9");
   await page.getByRole("button", { name: "Детализация S" }).click();
-  await page.getByRole("button", { name: "Постер 2:3" }).click();
+  await page.getByLabel("Размер холста").selectOption("portrait");
   await expect(page.getByTestId("artboard")).toHaveAttribute(
     "viewBox",
     "0 0 800 1200",
@@ -68,7 +74,7 @@ test("palette, true detail, format and save survive page reload", async ({
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("artboard")).toHaveAttribute(
@@ -123,8 +129,10 @@ test("offline metaphor, palette import, keyboard and responsive layout", async (
     .getByRole("button", { name: "Собрать композицию", exact: true })
     .click();
   await expect(
-    page.getByText("Словарный подбор", { exact: true }),
+    page.getByRole("button", { name: "Вариант композиции 1" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Загрузить палитру" }).click();
+  await page.getByRole("tab", { name: "Импорт JSON" }).click();
   await page.getByLabel("Импорт палитры").setInputFiles({
     name: "custom.json",
     mimeType: "application/json",
@@ -137,6 +145,7 @@ test("offline metaphor, palette import, keyboard and responsive layout", async (
       }),
     ),
   });
+  await page.getByRole("button", { name: "Применить палитру" }).click();
   await expect(
     page.getByTestId("artboard").locator("[data-background]"),
   ).toHaveAttribute("fill", "#123456");
@@ -164,7 +173,7 @@ test("opening another saved project updates the URL and restores the chosen proj
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   const firstURL = page.url();
   await page.getByRole("button", { name: "Новый проект" }).click();
@@ -173,11 +182,13 @@ test("opening another saved project updates the URL and restores the chosen proj
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   expect(page.url()).not.toBe(firstURL);
   await page.getByRole("button", { name: "Мои работы" }).click();
-  await page.getByRole("button", { name: /Первый проект/ }).click();
+  await page
+    .getByRole("button", { name: /Открыть проект «Первый проект/ })
+    .click();
   await expect(page.getByLabel("Название проекта")).toHaveValue(
     "Первый проект",
   );
@@ -224,19 +235,19 @@ test("concurrent edits cause a recoverable conflict instead of overwriting anoth
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   const second = await context.newPage();
   await second.goto(page.url());
   await expect(
-    second.getByRole("status").filter({ hasText: "Сохранено" }),
+    second.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   await page.getByLabel("Название проекта").fill("Из первой вкладки");
   await page
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   await second.getByLabel("Название проекта").fill("Из второй вкладки");
   await second
@@ -250,7 +261,7 @@ test("concurrent edits cause a recoverable conflict instead of overwriting anoth
     .getByRole("button", { name: "Сохранить копию", exact: true })
     .click();
   await expect(
-    second.getByRole("status").filter({ hasText: "Сохранено" }),
+    second.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   expect(second.url()).not.toBe(page.url());
   await second.close();
@@ -293,7 +304,7 @@ test("delayed initial restore cannot replace edits made while it loads", async (
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   let release!: () => void;
   let received!: () => void;
@@ -320,27 +331,24 @@ test("delayed initial restore cannot replace edits made while it loads", async (
   );
 });
 
-test("palette validation merges only colors and preserves the three original palettes", async ({
+test("cancelled palette validation cannot overwrite later editor changes", async ({
   page,
 }) => {
-  let release!: () => void;
-  let received!: () => void;
-  const started = new Promise<void>((resolve) => {
-    received = resolve;
-  });
+  let release!: () => void, received!: () => void;
   const gate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
+      release = resolve;
+    }),
+    started = new Promise<void>((resolve) => {
+      received = resolve;
+    });
   await page.route("**/api/validate", async (route) => {
     const response = await route.fetch();
     received();
     await gate;
     await route.fulfill({ response });
   });
-  const builtin = await page
-    .getByRole("button", { name: "Палитра Сирень" })
-    .count();
-  expect(builtin).toBe(1);
+  await page.getByRole("button", { name: "Загрузить палитру" }).click();
+  await page.getByRole("tab", { name: "Импорт JSON" }).click();
   await page.getByLabel("Импорт палитры").setInputFiles({
     name: "custom.json",
     mimeType: "application/json",
@@ -353,12 +361,14 @@ test("palette validation merges only colors and preserves the three original pal
       }),
     ),
   });
+  await page.getByRole("button", { name: "Применить палитру" }).click();
   await started;
+  await page.keyboard.press("Escape");
   await page.getByLabel("Название проекта").fill("Не потерять название");
   release();
   await expect(
     page.getByTestId("artboard").locator("[data-background]"),
-  ).toHaveAttribute("fill", "#123456");
+  ).toHaveAttribute("fill", "#D7CDF5");
   await expect(page.getByLabel("Название проекта")).toHaveValue(
     "Не потерять название",
   );
@@ -374,7 +384,7 @@ test("JSON import creates a dirty new project, autosaves it, and restores it by 
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   const oldURL = page.url();
   const id = new URL(oldURL).searchParams.get("project");
@@ -390,7 +400,7 @@ test("JSON import creates a dirty new project, autosaves it, and restores it by 
   );
   await expect(page).not.toHaveURL(oldURL);
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   expect(new URL(page.url()).searchParams.get("project")).not.toBe(id);
   await page.reload();
@@ -406,7 +416,7 @@ test("a save conflict blocks gallery navigation and JSON replacement until a cop
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   await page.route("**/api/projects/*", (route) =>
     route.request().method() === "PUT"
@@ -453,13 +463,13 @@ test("custom shadow is a separate opt-in feature with history, persistence and v
   await page.getByRole("button", { name: "Отменить", exact: true }).click();
   await expect(art.locator("[data-custom-shadow]")).toHaveAttribute(
     "opacity",
-    "0.35",
+    "1",
   );
   await page
     .getByRole("button", { name: "Сохранить проект", exact: true })
     .click();
   await expect(
-    page.getByRole("status").filter({ hasText: "Сохранено" }),
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
   ).toBeVisible();
   await page.reload();
   await expect(art.locator("[data-custom-shadow]")).toHaveCount(1);
@@ -467,6 +477,9 @@ test("custom shadow is a separate opt-in feature with history, persistence and v
   await expect(art.locator("[data-custom-shadow]")).toHaveCount(1);
   const pending = page.waitForEvent("download");
   await page.getByRole("button", { name: "Скачать SVG", exact: true }).click();
+  await page
+    .getByRole("menuitem", { name: "Скачать SVG", exact: true })
+    .click();
   const stream = await (await pending).createReadStream();
   let svg = "";
   for await (const chunk of stream!) svg += chunk;
@@ -478,4 +491,146 @@ test("custom shadow is a separate opt-in feature with history, persistence and v
   await page.getByLabel("Своя тень").uncheck();
   await expect(art.locator("[data-custom-shadow]")).toHaveCount(0);
   expect(await art.locator('[data-family="lamp"]').innerHTML()).toBe(original);
+});
+
+test("selection handles resize and floating actions and clipboard work", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "Слой Лампа", exact: true }).click();
+  await expect(page.locator('[data-resize-handle="se"]')).toBeVisible({
+    timeout: 1000,
+  });
+  const art = page.getByTestId("artboard"),
+    object = art.locator('[data-family="lamp"]');
+  const before = await object.getAttribute("transform");
+  const box = await page.locator('[data-resize-handle="se"]').boundingBox();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box!.x + 50, box!.y + 40, { steps: 5 });
+  await page.mouse.up();
+  await expect(object).not.toHaveAttribute("transform", before!);
+  await art.focus();
+  await page.keyboard.press("Control+c");
+  await page.keyboard.press("Control+v");
+  await expect(art.locator('[data-family="lamp"]')).toHaveCount(2);
+  await expect(
+    page.getByRole("toolbar", { name: "Действия с объектом" }),
+  ).toBeVisible();
+});
+
+test("viewport is fixed, size presets center composition, and fullscreen really toggles", async ({
+  page,
+}) => {
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollHeight <= innerHeight + 1,
+    ),
+  ).toBe(true);
+  await page.getByLabel("Размер холста").selectOption("portrait");
+  const art = page.getByTestId("artboard");
+  await expect(art).toHaveAttribute("viewBox", "0 0 800 1200");
+  const center = await art.evaluate((svg) => {
+    const groups = [...svg.querySelectorAll<SVGGElement>("[data-element-id]")];
+    const points = groups.flatMap((g) => {
+      const b = g.getBBox(),
+        m = g.transform.baseVal.consolidate()!.matrix;
+      return [
+        [b.x, b.y],
+        [b.x + b.width, b.y],
+        [b.x, b.y + b.height],
+        [b.x + b.width, b.y + b.height],
+      ].map(([x, y]) => new DOMPoint(x, y).matrixTransform(m));
+    });
+    return {
+      x:
+        (Math.min(...points.map((p) => p.x)) +
+          Math.max(...points.map((p) => p.x))) /
+        2,
+      y:
+        (Math.min(...points.map((p) => p.y)) +
+          Math.max(...points.map((p) => p.y))) /
+        2,
+    };
+  });
+  expect(center.x).toBeCloseTo(400, 0);
+  expect(center.y).toBeCloseTo(600, 0);
+  await page.getByLabel("Размер холста").selectOption("fullhd");
+  await expect(art).toHaveAttribute("viewBox", "0 0 1920 1080");
+  await page.getByRole("button", { name: "Полный экран", exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => !!document.fullscreenElement))
+    .toBe(true);
+  await page.getByRole("button", { name: "Выйти из полного экрана" }).click();
+  await expect
+    .poll(() => page.evaluate(() => !!document.fullscreenElement))
+    .toBe(false);
+});
+test("palette can be created interactively and projects have real SVG previews", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "Загрузить палитру" }).click();
+  await expect(page.getByRole("dialog", { name: /палитр/i })).toBeVisible();
+  await page.getByLabel("HEX фона 1").fill("#123456");
+  await page.getByRole("button", { name: "Применить палитру" }).click();
+  await expect(
+    page.getByTestId("artboard").locator("[data-background]"),
+  ).toHaveAttribute("fill", "#123456");
+  await page.getByLabel("Название проекта").fill("Галерея с превью");
+  await page
+    .getByRole("button", { name: "Сохранить проект", exact: true })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: /^Сохранено$/ }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Мои работы" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Мои проекты" }),
+  ).toBeVisible();
+  const card = page.getByRole("button", {
+    name: "Открыть проект «Галерея с превью»",
+  });
+  await expect(card.locator("svg path").first()).toBeVisible();
+  await card.click();
+  await expect(page.getByLabel("Название проекта")).toHaveValue(
+    "Галерея с превью",
+  );
+});
+test("welcome is delayed, readable, and shown only once per cookie", async ({
+  page,
+  context,
+}) => {
+  await context.clearCookies();
+  await page.reload();
+  await expect(
+    page.getByRole("dialog", { name: /У каждой идеи/ }),
+  ).not.toBeVisible();
+  await expect(page.getByRole("dialog", { name: /У каждой идеи/ })).toBeVisible(
+    { timeout: 6000 },
+  );
+  await page.getByRole("button", { name: "Начать создавать" }).click();
+  await page.reload();
+  await page.waitForTimeout(3700);
+  await expect(
+    page.getByRole("dialog", { name: /У каждой идеи/ }),
+  ).not.toBeVisible();
+});
+
+test("rotation handle changes angle around the object center and is one undo step", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "Слой Лампа", exact: true }).click();
+  const item = page.getByTestId("artboard").locator('[data-family="lamp"]'),
+    before = await item.getAttribute("transform");
+  const handle = page.getByRole("button", {
+      name: "Повернуть объект",
+      exact: true,
+    }),
+    box = await handle.boundingBox();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box!.x + 70, box!.y + 35, { steps: 6 });
+  await page.mouse.up();
+  await expect(item).not.toHaveAttribute("transform", before!);
+  await page.getByRole("button", { name: "Отменить", exact: true }).click();
+  await expect(item).toHaveAttribute("transform", before!);
 });

@@ -29,6 +29,8 @@ async function request<T>(
     );
   }
   if (!response.ok) {
+    if (response.status === 401 && !path.startsWith("/auth"))
+      window.dispatchEvent(new Event("ochen:auth-required"));
     const result = await response
       .json()
       .catch(() => ({ detail: "Сервис временно недоступен" }));
@@ -42,6 +44,22 @@ async function request<T>(
   return response.json();
 }
 export const api = {
+  auth: async () => {
+    const result = await request<{
+      required: boolean;
+      authenticated: boolean;
+      csrf_token: string;
+    }>("/auth");
+    csrf = result.csrf_token;
+    return result;
+  },
+  login: async (password: string) => {
+    const previous = csrf;
+    await api.auth();
+    await request("/auth/login", "POST", { password });
+    return { sessionChanged: !!previous && previous !== csrf };
+  },
+  logout: () => request("/auth/logout", "POST", {}),
   bootstrap: async () => {
     const result = await request<Bootstrap>("/bootstrap");
     csrf = result.csrf_token;
@@ -74,8 +92,11 @@ export const api = {
       headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
       body: JSON.stringify(scene),
     });
-    if (!response.ok)
+    if (!response.ok) {
+      if (response.status === 401)
+        window.dispatchEvent(new Event("ochen:auth-required"));
       throw new ApiError("Не удалось экспортировать SVG", response.status);
+    }
     return response.blob();
   },
 };

@@ -10,12 +10,13 @@ const NS = "http://www.w3.org/2000/svg";
 export function shadowMatrix(meta: ShadowMetadata, shadow: Shadow): string {
   const angle = (shadow.angle * Math.PI) / 180,
     [x, y] = meta.anchor;
-  const length = Math.max(meta.width, meta.height) * 0.65 * shadow.length;
-  const a = -Math.sin(angle) * 0.45,
-    b = Math.cos(angle) * 0.45,
-    c = (-Math.cos(angle) * length) / meta.height,
-    d = (-Math.sin(angle) * length) / meta.height;
-  return `matrix(${[a, b, c, d, x - a * x - c * y, y - b * x - d * y].map((n) => n.toFixed(6)).join(" ")})`;
+  const scaleX = shadow.length * (shadow.scale_x ?? 1),
+    scaleY = shadow.length * (shadow.scale_y ?? 1),
+    a = Math.cos(angle) * scaleX,
+    b = Math.sin(angle) * scaleX,
+    c = -Math.sin(angle) * scaleY,
+    d = Math.cos(angle) * scaleY;
+  return `matrix(${[a, b, c, d, x + (shadow.x ?? 0) - a * x - c * y, y + (shadow.y ?? 0) - b * x - d * y].map((n) => n.toFixed(6)).join(" ")})`;
 }
 export function applyCustomShadow(
   document: Document,
@@ -37,12 +38,14 @@ export function applyCustomShadow(
     mask = create("mask", {
       id: "custom-body-mask",
       maskUnits: "userSpaceOnUse",
+      "mask-type": "luminance",
       x: String(-width * 3),
       y: String(-height * 3),
       width: String(width * 7),
       height: String(height * 7),
     });
   const matte = create("g", {
+    "data-mask-part": "body",
     fill: "white",
     stroke: "white",
     "stroke-width": String(meta.outline),
@@ -70,6 +73,10 @@ export function applyCustomShadow(
     }
     matte.append(sourceMatte);
   }
+  for (const polygon of meta.keep_polygons ?? [])
+    matte.append(
+      create("polygon", { points: polygon.map((p) => p.join(",")).join(" ") }),
+    );
   if (meta.preserve_above !== undefined)
     matte.append(
       create("rect", {
@@ -95,6 +102,48 @@ export function applyCustomShadow(
     }
     mask.append(erase);
   }
+  const inverse = mask.cloneNode(true) as SVGElement;
+  inverse.setAttribute("id", "custom-cast-mask");
+  for (const node of [...inverse.querySelectorAll("*")]) {
+    for (const key of ["fill", "stroke"]) {
+      const color = node.getAttribute(key);
+      if (color === "white" || color === "black")
+        node.setAttribute(key, color === "white" ? "black" : "white");
+    }
+  }
+  inverse.prepend(
+    create("rect", {
+      x: mask.getAttribute("x")!,
+      y: mask.getAttribute("y")!,
+      width: mask.getAttribute("width")!,
+      height: mask.getAttribute("height")!,
+      fill: "white",
+    }),
+  );
+  defs.append(inverse);
+  const cast = create("g", { mask: "url(#custom-cast-mask)" });
+  const castSource = create("g", { "data-shadow-subject": "true" });
+  for (const child of children) castSource.append(child.cloneNode(true));
+  const castIds = new Set(meta.cast_path_ids);
+  for (const node of [...castSource.querySelectorAll("path")])
+    if (!castIds.has(node.id)) node.remove();
+  if (meta.cast_regions) {
+    const regions = create("clipPath", {
+      id: "custom-cast-region",
+      clipPathUnits: "userSpaceOnUse",
+    });
+    for (const polygon of meta.cast_regions)
+      regions.append(
+        create("polygon", {
+          points: polygon.map((p) => p.join(",")).join(" "),
+        }),
+      );
+    defs.append(regions);
+    cast.setAttribute("clip-path", "url(#custom-cast-region)");
+  }
+  for (const node of [...castSource.querySelectorAll("[id]")])
+    node.removeAttribute("id");
+  cast.append(castSource);
   const body = create("g", {
     mask: "url(#custom-body-mask)",
   });
@@ -116,21 +165,29 @@ export function applyCustomShadow(
     );
     body.append(repair);
   }
-  const cast = body.cloneNode(true) as SVGElement;
-  for (const node of [cast, ...cast.querySelectorAll("*")]) {
-    node.removeAttribute("id");
-    if (node.localName === "path") {
-      node.setAttribute("fill", role === "main" ? "#181817" : "#7864D7");
-      if (node.hasAttribute("stroke"))
-        node.setAttribute("stroke", role === "main" ? "#181817" : "#7864D7");
-    }
-  }
   const layer = create("g", {
     "data-custom-shadow": "true",
+    "data-shadow-source": "original-footprint",
     "pointer-events": "none",
     opacity: String(settings.opacity),
     transform: shadowMatrix(meta, settings),
   });
   layer.append(cast);
+  if (
+    settings.angle % 360 === 0 &&
+    settings.length === 1 &&
+    settings.opacity === 1 &&
+    (settings.x ?? 0) === 0 &&
+    (settings.y ?? 0) === 0 &&
+    (settings.scale_x ?? 1) === 1 &&
+    (settings.scale_y ?? 1) === 1
+  ) {
+    layer.setAttribute("display", "none");
+    body.setAttribute("mask", "none");
+    for (const repair of [
+      ...body.querySelectorAll("[data-shadow-body-repair]"),
+    ])
+      repair.setAttribute("display", "none");
+  }
   root.append(defs, layer, body);
 }

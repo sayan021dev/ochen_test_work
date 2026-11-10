@@ -1,5 +1,6 @@
 import { createStore } from "zustand/vanilla";
-import type { Detail, Element, Palette, Scene } from "./types";
+import type { Asset, Detail, Element, Format, Palette, Scene } from "./types";
+import { centerForFormat } from "./geometry";
 
 export function defaultScene(palette: Palette): Scene {
   return {
@@ -48,6 +49,7 @@ export function defaultScene(palette: Palette): Scene {
 type EditorState = {
   scene: Scene;
   selected: string | null;
+  selectedPart: "object" | "shadow";
   past: Scene[];
   future: Scene[];
   dragBaseline: Scene | null;
@@ -56,8 +58,15 @@ type EditorState = {
   changeVersion: number;
   savedVersion: number;
   documentEpoch: number;
+  clipboard: Element | null;
+  copySelection: () => void;
+  pasteSelection: () => void;
+  setFormat: (format: Format, assets: Asset[]) => void;
+  previewElement: (id: string, patch: Partial<Element>) => void;
   change: (scene: Scene) => void;
   select: (id: string | null) => void;
+  selectShadow: (id: string) => void;
+  detachProject: () => void;
   patchElement: (id: string, patch: Partial<Element>) => void;
   add: (family: Element["family"]) => void;
   duplicate: () => void;
@@ -82,6 +91,7 @@ export function createEditorStore(initial: Scene) {
   return createStore<EditorState>((set, get) => ({
     scene: initial,
     selected: null,
+    selectedPart: "object",
     past: [],
     future: [],
     dragBaseline: null,
@@ -90,6 +100,47 @@ export function createEditorStore(initial: Scene) {
     changeVersion: 0,
     savedVersion: 0,
     documentEpoch: 0,
+    clipboard: null,
+    detachProject: () =>
+      set((s) => ({
+        projectId: null,
+        serverRevision: 0,
+        savedVersion: -1,
+        documentEpoch: s.documentEpoch + 1,
+      })),
+    copySelection: () => {
+      const e = get().scene.elements.find((e) => e.id === get().selected);
+      if (e) set({ clipboard: structuredClone(e) });
+    },
+    pasteSelection: () => {
+      const s = get();
+      if (!s.clipboard || s.scene.elements.length >= 48) return;
+      const element = {
+        ...structuredClone(s.clipboard),
+        id: crypto.randomUUID(),
+        x: bounded(s.clipboard.x + 24),
+        y: bounded(s.clipboard.y + 24),
+        hidden: false,
+        locked: false,
+      };
+      s.change({ ...s.scene, elements: [...s.scene.elements, element] });
+      set({
+        selected: element.id,
+        selectedPart: "object",
+        clipboard: structuredClone(element),
+      });
+    },
+    setFormat: (format, assets) =>
+      get().change(centerForFormat(get().scene, format, assets)),
+    previewElement: (id, patch) =>
+      set((s) => ({
+        scene: {
+          ...s.scene,
+          elements: s.scene.elements.map((e) =>
+            e.id === id && !e.locked ? { ...e, ...patch } : e,
+          ),
+        },
+      })),
     change: (scene) =>
       set((s) =>
         same(scene, s.scene)
@@ -101,7 +152,11 @@ export function createEditorStore(initial: Scene) {
               changeVersion: s.changeVersion + 1,
             },
       ),
-    select: (selected) => set({ selected }),
+    select: (selected) => set({ selected, selectedPart: "object" }),
+    selectShadow: (selected) => {
+      const e = get().scene.elements.find((e) => e.id === selected);
+      if (e?.shadow && !e.hidden) set({ selected, selectedPart: "shadow" });
+    },
     patchElement: (id, patch) =>
       get().change({
         ...get().scene,
@@ -129,7 +184,7 @@ export function createEditorStore(initial: Scene) {
           },
         ],
       });
-      set({ selected: id });
+      set({ selected: id, selectedPart: "object" });
     },
     duplicate: () => {
       const s = get(),
@@ -149,17 +204,22 @@ export function createEditorStore(initial: Scene) {
           },
         ],
       });
-      set({ selected: id });
+      set({ selected: id, selectedPart: "object" });
     },
     remove: () => {
       const s = get(),
         selected = s.scene.elements.find((e) => e.id === s.selected);
       if (!selected || selected.locked) return;
+      if (s.selectedPart === "shadow" && selected.shadow) {
+        s.patchElement(selected.id, { shadow: null });
+        set({ selectedPart: "object" });
+        return;
+      }
       s.change({
         ...s.scene,
         elements: s.scene.elements.filter((e) => e.id !== s.selected),
       });
-      set({ selected: null });
+      set({ selected: null, selectedPart: "object" });
     },
     reorder: (id, delta) => {
       const s = get(),
@@ -178,6 +238,7 @@ export function createEditorStore(initial: Scene) {
               past: s.past.slice(0, -1),
               future: [s.scene, ...s.future],
               selected: null,
+              selectedPart: "object",
               changeVersion: s.changeVersion + 1,
             }
           : {},
@@ -190,6 +251,7 @@ export function createEditorStore(initial: Scene) {
               future: s.future.slice(1),
               past: [...s.past, s.scene],
               selected: null,
+              selectedPart: "object",
               changeVersion: s.changeVersion + 1,
             }
           : {},
@@ -200,7 +262,10 @@ export function createEditorStore(initial: Scene) {
         s.change({
           ...s.scene,
           detail,
-          scale: s.scene.scale * (detail === "S" ? 2 : 0.5),
+          scale: Math.max(
+            0.03,
+            Math.min(8, s.scene.scale * (detail === "S" ? 2 : 0.5)),
+          ),
         });
     },
     beginDrag: () => set({ dragBaseline: get().scene }),
@@ -232,6 +297,7 @@ export function createEditorStore(initial: Scene) {
       set((s) => ({
         scene,
         selected: null,
+        selectedPart: "object",
         past: [],
         future: [],
         dragBaseline: null,

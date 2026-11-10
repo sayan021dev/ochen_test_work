@@ -1,7 +1,9 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { act } from "react";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { Illustration } from "./Canvas";
+import { elementCorners } from "./geometry";
 import { Inspector } from "./Inspector";
 import { createEditorStore, defaultScene } from "./state";
 import * as svg from "./svg";
@@ -77,4 +79,50 @@ it("clamped shadow input displays the actual stored percentage even when already
     store.getState().scene.elements.find((e) => e.id === lamp.id)?.shadow
       ?.length,
   ).toBe(2);
+});
+it("holding the angle stepper repeats and records one undo action", () => {
+  vi.useFakeTimers();
+  const scene = defaultScene(palette);
+  scene.elements = scene.elements.filter((e) => e.family === "lamp");
+  const store = createEditorStore(scene);
+  const lamp = scene.elements.find((e) => e.family === "lamp")!;
+  store.getState().select(lamp.id);
+  const view = render(
+    <Inspector
+      store={store}
+      assets={[asset]}
+      palettes={[palette]}
+      onImportPalette={() => {}}
+      onClose={() => {}}
+    />,
+  );
+  const up = view.getByRole("button", { name: "Увеличить угол поворота" });
+  fireEvent.pointerDown(up, { button: 0, pointerId: 1 });
+  act(() => vi.advanceTimersByTime(600));
+  fireEvent.pointerUp(up, { pointerId: 1 });
+  expect(
+    store.getState().scene.elements.find((e) => e.id === lamp.id)!.angle,
+  ).toBeGreaterThan(2);
+  expect(store.getState().past).toHaveLength(1);
+  const after = store.getState().scene.elements.find((e) => e.id === lamp.id)!;
+  const beforeCorners = elementCorners(
+    lamp,
+    scene.scale,
+    asset.width,
+    asset.height,
+  );
+  const afterCorners = elementCorners(
+    after,
+    scene.scale,
+    asset.width,
+    asset.height,
+  );
+  for (const axis of ["x", "y"] as const)
+    expect((afterCorners[0][axis] + afterCorners[2][axis]) / 2).toBeCloseTo(
+      (beforeCorners[0][axis] + beforeCorners[2][axis]) / 2,
+      3,
+    );
+  store.getState().undo();
+  expect(store.getState().scene).toEqual(scene);
+  vi.useRealTimers();
 });
