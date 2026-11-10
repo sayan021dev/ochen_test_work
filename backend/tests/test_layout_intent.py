@@ -363,3 +363,21 @@ def test_one_subject_stays_centered_on_its_support():
     for scene in compose_variants(["puzzle", "coin"], request):
         b = boxes(scene)
         assert abs(b["puzzle"][0] + b["puzzle"][2] / 2 - b["coin"][0] - b["coin"][2] / 2) < 0.001
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "лампа стоит на телефоне и на лампе лежит ручка",
+        "лампа стоит на телефоне, а на лампе лежит ручка",
+        "lamp stands on phone and on lamp lies pen",
+    ],
+)
+def test_receiver_chain_with_inverted_verb_clause_is_exact(prompt):
+    from app.layout import parse_layout_intent
+
+    intent = parse_layout_intent(prompt, ["lamp", "phone", "pen"])
+    assert {(r.subject, r.relation, tuple(r.targets)) for r in intent.relations} == {
+        ("lamp", "on", ("phone",)),
+        ("pen", "on", ("lamp",)),
+    }

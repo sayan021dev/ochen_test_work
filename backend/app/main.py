@@ -107,6 +107,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         return {
             "csrf_token": csrf_token(session),
+            "features": {"custom_shadows": config.custom_shadows_enabled},
             "assets": public_catalog(),
             "palettes": PALETTES,
             "formats": FORMATS,
@@ -171,7 +172,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.post("/api/export")
     def export(scene: Scene):
         return Response(
-            render_scene(scene),
+            render_scene(scene, custom_shadows_enabled=config.custom_shadows_enabled),
             media_type="image/svg+xml",
             headers={"Content-Disposition": 'attachment; filename="composition.svg"'},
         )

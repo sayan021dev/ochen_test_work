@@ -59,6 +59,13 @@ export type Palette = {
   background: string[];
   object: string[];
 };
+export type SceneLight = {
+  enabled: boolean;
+  x: number;
+  y: number;
+  height: number;
+  opacity: number;
+};
 export type Element = {
   id: string;
   family: Family;
@@ -71,6 +78,7 @@ export type Element = {
   hidden: boolean;
   locked: boolean;
   shadow?: Shadow | null;
+  support_ids?: string[];
 };
 export type Scene = {
   version: 1;
@@ -80,6 +88,7 @@ export type Scene = {
   scale: number;
   palette: Palette;
   transparent: boolean;
+  light?: SceneLight | null;
   elements: Element[];
 };
 export type Asset = {
@@ -97,6 +106,7 @@ export type Asset = {
 };
 export type Bootstrap = {
   csrf_token: string;
+  features?: { custom_shadows: boolean };
   assets: Asset[];
   palettes: Palette[];
   formats: Record<Format, [number, number]>;

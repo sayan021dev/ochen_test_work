@@ -74,6 +74,7 @@ export const api = {
     seed: number;
     backgrounds: boolean;
     use_ai: boolean;
+    light?: Scene["light"];
   }) => request<Composition>("/compose", "POST", data),
   projects: () => request<Project[]>("/projects"),
   project: (id: string) =>

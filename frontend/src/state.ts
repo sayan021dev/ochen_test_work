@@ -1,6 +1,15 @@
 import { createStore } from "zustand/vanilla";
-import type { Asset, Detail, Element, Format, Palette, Scene } from "./types";
+import type {
+  Asset,
+  Detail,
+  Element,
+  Format,
+  Palette,
+  Scene,
+  SceneLight,
+} from "./types";
 import { centerForFormat } from "./geometry";
+import { cleanSupports, supportOrder } from "./support";
 
 export function defaultScene(palette: Palette): Scene {
   return {
@@ -61,7 +70,12 @@ type EditorState = {
   clipboard: Element | null;
   copySelection: () => void;
   pasteSelection: () => void;
-  setFormat: (format: Format, assets: Asset[]) => void;
+  setFormat: (
+    format: Format,
+    assets: Asset[],
+    customShadowsEnabled?: boolean,
+  ) => void;
+  previewLight: (light: SceneLight) => void;
   previewElement: (id: string, patch: Partial<Element>) => void;
   change: (scene: Scene) => void;
   select: (id: string | null) => void;
@@ -89,7 +103,10 @@ const bounded = (value: number) =>
 
 export function createEditorStore(initial: Scene) {
   return createStore<EditorState>((set, get) => ({
-    scene: initial,
+    scene: {
+      ...initial,
+      elements: supportOrder(cleanSupports(initial.elements)),
+    },
     selected: null,
     selectedPart: "object",
     past: [],
@@ -130,8 +147,11 @@ export function createEditorStore(initial: Scene) {
         clipboard: structuredClone(element),
       });
     },
-    setFormat: (format, assets) =>
-      get().change(centerForFormat(get().scene, format, assets)),
+    setFormat: (format, assets, customShadowsEnabled = true) =>
+      get().change(
+        centerForFormat(get().scene, format, assets, customShadowsEnabled),
+      ),
+    previewLight: (light) => set((s) => ({ scene: { ...s.scene, light } })),
     previewElement: (id, patch) =>
       set((s) => ({
         scene: {
@@ -141,17 +161,22 @@ export function createEditorStore(initial: Scene) {
           ),
         },
       })),
-    change: (scene) =>
+    change: (scene) => {
+      const normalized = {
+        ...scene,
+        elements: supportOrder(cleanSupports(scene.elements)),
+      };
       set((s) =>
-        same(scene, s.scene)
+        same(normalized, s.scene)
           ? {}
           : {
-              scene,
+              scene: normalized,
               past: [...s.past, s.scene].slice(-50),
               future: [],
               changeVersion: s.changeVersion + 1,
             },
-      ),
+      );
+    },
     select: (selected) => set({ selected, selectedPart: "object" }),
     selectShadow: (selected) => {
       const e = get().scene.elements.find((e) => e.id === selected);
@@ -228,7 +253,20 @@ export function createEditorStore(initial: Scene) {
       if (index < 0 || next < 0 || next >= s.scene.elements.length) return;
       const elements = [...s.scene.elements];
       [elements[index], elements[next]] = [elements[next], elements[index]];
-      s.change({ ...s.scene, elements });
+      const positions = new Map(elements.map((e, i) => [e.id, i]));
+      s.change({
+        ...s.scene,
+        elements: elements.map((e) =>
+          e.support_ids
+            ? {
+                ...e,
+                support_ids: e.support_ids.filter(
+                  (id) => positions.get(id)! < positions.get(e.id)!,
+                ),
+              }
+            : e,
+        ),
+      });
     },
     undo: () =>
       set((s) =>
@@ -307,7 +345,10 @@ export function createEditorStore(initial: Scene) {
       set((s) => ({ scene: s.dragBaseline ?? s.scene, dragBaseline: null })),
     hydrate: (scene, id, revision) =>
       set((s) => ({
-        scene,
+        scene: {
+          ...scene,
+          elements: supportOrder(cleanSupports(scene.elements)),
+        },
         selected: null,
         selectedPart: "object",
         past: [],

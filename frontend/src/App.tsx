@@ -24,6 +24,7 @@ import { useStore } from "zustand";
 import { api, ApiError, download } from "./api";
 import { Canvas, Illustration, type EditorStore } from "./Canvas";
 import { Inspector } from "./Inspector";
+import { ShadowFeaturesProvider, useShadowFeatures } from "./features";
 import { Library } from "./Library";
 import { PasswordGate } from "./PasswordGate";
 import { PaletteDialog } from "./PaletteDialog";
@@ -135,7 +136,7 @@ export default function App() {
       </main>
     );
   return (
-    <>
+    <ShadowFeaturesProvider enabled={data.features?.custom_shadows ?? true}>
       <div inert={locked || undefined}>
         <Editor data={data} sources={sources} locked={locked} />
       </div>
@@ -144,7 +145,7 @@ export default function App() {
           <PasswordGate onLogin={login} />
         </div>
       )}
-    </>
+    </ShadowFeaturesProvider>
   );
 }
 
@@ -157,6 +158,7 @@ function Editor({
   locked: boolean;
   sources: Record<string, string>;
 }) {
+  const { customShadows } = useShadowFeatures();
   const [store] = useState(() =>
     createEditorStore(defaultScene(data.palettes[0])),
   );
@@ -368,7 +370,12 @@ function Editor({
         if (!selected || selected.locked) return;
         event.preventDefault();
         const delta = event.shiftKey ? 10 : 1;
-        if (s.selectedPart === "shadow" && selected.shadow) {
+        if (
+          customShadows &&
+          !s.scene.light?.enabled &&
+          s.selectedPart === "shadow" &&
+          selected.shadow
+        ) {
           const dx =
             event.key === "ArrowRight"
               ? delta
@@ -440,8 +447,16 @@ function Editor({
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [store, save, busy, showProjects, locked, data.assets]);
+  }, [store, save, busy, showProjects, locked, data.assets, customShadows]);
 
+  useEffect(() => {
+    const current = store.getState();
+    if (
+      (!customShadows || scene.light?.enabled) &&
+      current.selectedPart === "shadow"
+    )
+      current.select(current.selected);
+  }, [customShadows, scene.light?.enabled, state.selectedPart, store]);
   useEffect(() => {
     if (selected) setRightOpen(true);
   }, [selected]);
@@ -522,6 +537,7 @@ function Editor({
         palette: scene.palette,
         seed: 0,
         backgrounds,
+        light: scene.light ?? null,
         use_ai: mode === "metaphor" && data.ai.configured,
       });
       if (!unchanged(store, snapshot)) {
@@ -901,7 +917,11 @@ function Editor({
               aria-label="Размер холста"
               value={scene.format}
               onChange={(event) => {
-                state.setFormat(event.target.value as Format, data.assets);
+                state.setFormat(
+                  event.target.value as Format,
+                  data.assets,
+                  customShadows,
+                );
                 setZoom(1);
               }}
             >
@@ -958,6 +978,12 @@ function Editor({
               sources={sources}
               zoom={zoom}
               busy={busy}
+              locked={locked}
+              onSelectLight={() => {
+                state.select(null);
+                setRightOpen(true);
+                setLeftOpen(false);
+              }}
             />
             {busy && (
               <div className="composing-overlay">
@@ -1027,6 +1053,7 @@ function Editor({
                       state.change({
                         ...variant,
                         palette: scene.palette,
+                        light: scene.light,
                         detail: scene.detail,
                         scale:
                           variant.scale *
@@ -1046,7 +1073,7 @@ function Editor({
                       aria-hidden="true"
                     >
                       <Illustration
-                        scene={variant}
+                        scene={{ ...variant, light: scene.light }}
                         assets={data.assets}
                         sources={sources}
                         prefix={`variant-${i}`}
@@ -1193,10 +1220,19 @@ function Editor({
             <strong>Поворот:</strong> тяните круглую ручку над рамкой; Shift
             фиксирует шаг 15°. Стрелки у поля угла можно удерживать.
           </p>
-          <p>
-            <strong>Своя тень:</strong> включите режим в настройках и нажмите на
-            тень, чтобы перемещать и менять её рамкой отдельно от предмета.
-          </p>
+          {customShadows && (
+            <>
+              <p>
+                <strong>Своя тень:</strong> настройте направление и длину
+                проекции. Опора предмета остаётся неподвижной.
+              </p>
+              <p>
+                <strong>Общий свет:</strong> включите источник в настройках
+                композиции и перемещайте метку на холсте. Он управляет тенями
+                всех предметов.
+              </p>
+            </>
+          )}
           <p>
             <strong>Масштаб:</strong> кнопки лупы увеличивают и уменьшают холст.
             Колесо мыши и полосы прокрутки перемещают увеличенный холст; 100%

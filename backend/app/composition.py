@@ -4,7 +4,7 @@ import re
 
 from app.catalog import CATALOG, FAMILIES, asset_for
 from app.layout import REL_RE, LayoutIntent, mentions, pack, resolve_intent
-from app.models import ComposeRequest, Element, Scene
+from app.models import ComposeRequest, Element, Scene, SceneLight
 
 NOUNS = {
     "book": ("книга", "книги", "книгу", "book", "books"),
@@ -56,7 +56,8 @@ def select_components(prompt: str) -> tuple[list[str], list[str]]:
     remainder = REL_RE.sub(" ", remainder)
     remainder = re.sub(
         r"\b(?:и|а|от|and|the|to|of|ними|них|ней|ним|него|нее|them|both|it|"
-        r"не|not|без|наложений|пересечений|друг|друга|всеми|всех)\b",
+        r"не|not|без|наложений|пересечений|друг|друга|всеми|всех|"
+        r"стоит|стоят|лежит|лежат|sits?|stands?|lies?|rests?)\b",
         " ",
         remainder,
     )
@@ -76,7 +77,10 @@ def select_offline_metaphor(prompt: str) -> tuple[list[str], str]:
 
 
 def compose_variants(
-    families: list[str], request: ComposeRequest, layout: LayoutIntent | None = None
+    families: list[str],
+    request: ComposeRequest,
+    layout: LayoutIntent | None = None,
+    light: SceneLight | None = None,
 ) -> list[Scene]:
     if not families or len(families) > 6 or any(f not in FAMILIES for f in families):
         raise ValueError("Выберите от одного до шести предметов библиотеки")
@@ -89,12 +93,14 @@ def compose_variants(
     dimensions = [asset_for(f, request.detail, roles[f]) for f in families]
     intent = resolve_intent(request.prompt, families, layout)
     scenes = []
+    effective_light = light if light is not None else request.light
     for variant in range(3):
         scene = Scene(
             title=request.prompt[:120],
             format=request.format,
             detail=request.detail,
             palette=request.palette,
+            light=effective_light.model_copy(deep=True) if effective_light else None,
         )
         width, height = scene.size
         design = (variant + request.seed) % 3
@@ -120,6 +126,16 @@ def compose_variants(
                 x=round(origin_x + (box.x - left) * scene.scale, 4),
                 y=round(origin_y + (box.y - top) * scene.scale, 4),
             )
+        # Keep instance receiver references in the saved scene, not only transient
+        # semantic IDs. Every explicit on target is retained, including chains.
+        for relation in intent.relations:
+            if relation.relation == "on":
+                owner = by_family[relation.subject]
+                owner.support_ids = list(
+                    dict.fromkeys(
+                        owner.support_ids + [by_family[target].id for target in relation.targets]
+                    )
+                )
         # Backgrounds first unless an explicit front/back/on relation determines the order.
         if not any(r.relation in {"on", "behind", "in_front_of"} for r in intent.relations):
             order.sort(key=lambda f: roles[f] != "background")

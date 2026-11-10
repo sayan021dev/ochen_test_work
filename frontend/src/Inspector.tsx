@@ -5,13 +5,16 @@ import {
   EyeOff,
   FolderInput,
   Lock,
+  Sun,
   Unlock,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
-import type { EditorStore } from "./Canvas";
-import type { Asset, Palette } from "./types";
+import { clampLightToCanvas, type EditorStore } from "./Canvas";
+import { FORMATS, type Asset, type Palette } from "./types";
+import { useShadowFeatures } from "./features";
+import { canSupport } from "./support";
 import { rotateElement } from "./geometry";
 
 function NumberField({
@@ -145,6 +148,16 @@ export function Inspector({
 }) {
   const state = useStore(store),
     { scene, selected } = state;
+  const { customShadows } = useShadowFeatures();
+  const globalLight = customShadows && !!scene.light?.enabled;
+  const [canvasWidth, canvasHeight] = FORMATS[scene.format];
+  const lightOutside =
+    !!scene.light &&
+    (scene.light.x < 0 ||
+      scene.light.x > canvasWidth ||
+      scene.light.y < 0 ||
+      scene.light.y > canvasHeight);
+
   const element = scene.elements.find((e) => e.id === selected);
   const asset = element
     ? assets.find(
@@ -163,7 +176,7 @@ export function Inspector({
       <div className="panel-heading">
         <h2>
           {element
-            ? state.selectedPart === "shadow"
+            ? state.selectedPart === "shadow" && customShadows && !globalLight
               ? "Тень объекта"
               : "Объект"
             : "Композиция"}
@@ -176,6 +189,113 @@ export function Inspector({
           <X size={18} />
         </button>
       </div>
+      {!element && customShadows && (
+        <section
+          className="inspector-section scene-light-settings"
+          aria-label="Источник света композиции"
+        >
+          <label className="shadow-toggle">
+            <input
+              type="checkbox"
+              aria-label="Общий источник света"
+              checked={!!scene.light?.enabled}
+              onChange={(event) => {
+                const [width, height] = FORMATS[scene.format];
+                state.change({
+                  ...scene,
+                  light: {
+                    x: width * 0.2,
+                    y: height * 0.15,
+                    height: Math.min(
+                      5000,
+                      Math.max(1000, Math.max(width, height) * 1.5),
+                    ),
+                    opacity: 0.35,
+                    ...scene.light,
+                    enabled: event.target.checked,
+                  },
+                });
+              }}
+            />
+            <span>
+              <strong>Общий источник света</strong>
+              <small>Экспериментальный режим</small>
+            </span>
+            <Sun size={18} />
+          </label>
+          <p className="help-text">
+            Перемещайте источник на холсте. Он управляет тенями всех предметов;
+            исходные блики сохраняются.
+          </p>
+          {scene.light?.enabled && (
+            <div className="shadow-fields">
+              <label>
+                <span className="field-label">Высота источника</span>
+                <NumberField
+                  label="Высота источника"
+                  value={scene.light.height}
+                  min={50}
+                  max={5000}
+                  onCommit={(height) =>
+                    state.change({
+                      ...scene,
+                      light: { ...scene.light!, height },
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span className="field-label">Плотность теней, %</span>
+                <NumberField
+                  label="Плотность теней"
+                  value={scene.light.opacity * 100}
+                  min={0}
+                  max={100}
+                  onCommit={(opacity) =>
+                    state.change({
+                      ...scene,
+                      light: { ...scene.light!, opacity: opacity / 100 },
+                    })
+                  }
+                />
+              </label>
+              <button
+                className="secondary light-focus"
+                onClick={() => {
+                  const marker = document.querySelector<SVGElement>(
+                    "[data-light-marker]",
+                  );
+                  if (lightOutside && scene.light) {
+                    const matrix = marker?.ownerSVGElement?.getScreenCTM();
+                    const camera = matrix ? Math.hypot(matrix.a, matrix.b) : 1;
+                    state.change({
+                      ...scene,
+                      light: {
+                        ...scene.light,
+                        ...clampLightToCanvas(
+                          scene.light,
+                          canvasWidth,
+                          canvasHeight,
+                          camera,
+                        ),
+                      },
+                    });
+                    requestAnimationFrame(() =>
+                      document
+                        .querySelector<SVGElement>("[data-light-marker]")
+                        ?.focus(),
+                    );
+                  } else marker?.focus();
+                }}
+              >
+                {lightOutside
+                  ? "Вернуть источник на холст"
+                  : "Выбрать источник на холсте"}
+              </button>
+            </div>
+          )}
+        </section>
+      )}
       {element && asset && (
         <section className="inspector-section object-settings">
           <div className="selected-object">
@@ -209,166 +329,230 @@ export function Inspector({
               Фоновый
             </button>
           </div>
-          <div className="shadow-settings">
-            <label className="shadow-toggle">
-              <input
-                type="checkbox"
-                aria-label="Своя тень"
-                checked={!!element.shadow}
-                disabled={element.locked}
-                onChange={(event) => {
-                  state.patchElement(element.id, {
-                    shadow: event.target.checked
-                      ? { angle: 90, length: 1, opacity: 1 }
-                      : null,
-                  });
-                  if (!event.target.checked) state.select(element.id);
-                }}
-              />
-              <span>
-                <strong>Своя тень</strong>
-                <small>Дополнительный режим</small>
-              </span>
-              <span className="outline-pill">β</span>
-            </label>
-            {element.shadow ? (
-              <>
-                <p className="shadow-hint">
-                  <span>
-                    Силуэт предмета проецируется от неподвижной опоры.
-                  </span>
-                  <span>100% — стандартная длина проекции.</span>
-                </p>
-                <button
-                  className="secondary shadow-select"
+          <label className="receiver-field">
+            <span className="field-label">Опора</span>
+            <select
+              aria-label="Опора"
+              disabled={element.locked}
+              value={
+                (element.support_ids?.length ?? 0) > 1
+                  ? ":multiple"
+                  : (element.support_ids?.[0] ?? "")
+              }
+              onChange={(event) =>
+                state.patchElement(element.id, {
+                  support_ids: event.target.value ? [event.target.value] : [],
+                })
+              }
+            >
+              <option value="">Без опоры</option>
+              {(element.support_ids?.length ?? 0) > 1 && (
+                <option value=":multiple" disabled>
+                  Несколько опор
+                </option>
+              )}
+              {scene.elements
+                .filter((candidate) =>
+                  canSupport(scene.elements, element.id, candidate.id),
+                )
+                .map((candidate) => {
+                  const item = assets.find(
+                    (a) =>
+                      a.family === candidate.family &&
+                      a.detail === scene.detail &&
+                      a.role === candidate.role,
+                  );
+                  const duplicate =
+                    scene.elements.filter((e) => e.family === candidate.family)
+                      .length > 1;
+                  return (
+                    <option key={candidate.id} value={candidate.id}>
+                      {item?.name ?? candidate.family}
+                      {duplicate
+                        ? ` · ${scene.elements.indexOf(candidate) + 1}`
+                        : ""}
+                    </option>
+                  );
+                })}
+            </select>
+          </label>
+          {globalLight && (
+            <div className="active-light-note">
+              <Sun size={16} />
+              <span>Тенями управляет общий свет.</span>
+              <button
+                className="text-button"
+                onClick={() => state.select(null)}
+              >
+                Настроить свет
+              </button>
+            </div>
+          )}
+          {customShadows && !globalLight && (
+            <div className="shadow-settings">
+              <label className="shadow-toggle">
+                <input
+                  type="checkbox"
+                  aria-label="Своя тень"
+                  checked={!!element.shadow}
                   disabled={element.locked}
-                  onClick={() => state.selectShadow(element.id)}
-                >
-                  Выделить тень на холсте
-                </button>
-                <div className="shadow-fields">
-                  <div>
-                    <span className="field-label">Направление проекции, °</span>
-                    <NumberField
-                      label="Направление тени"
-                      value={element.shadow.angle}
-                      min={0}
-                      max={360}
-                      disabled={element.locked}
-                      onStepStart={state.beginDrag}
-                      onStepEnd={state.finishDrag}
-                      onStep={(delta) => {
-                        const current = store
-                          .getState()
-                          .scene.elements.find((e) => e.id === element.id);
-                        if (current?.shadow)
-                          store.getState().previewElement(element.id, {
+                  onChange={(event) => {
+                    state.patchElement(element.id, {
+                      shadow: event.target.checked
+                        ? { angle: 90, length: 1, opacity: 1 }
+                        : null,
+                    });
+                    if (!event.target.checked) state.select(element.id);
+                  }}
+                />
+                <span>
+                  <strong>Своя тень</strong>
+                  <small>Дополнительный режим</small>
+                </span>
+                <span className="outline-pill">β</span>
+              </label>
+              {element.shadow ? (
+                <>
+                  <p className="shadow-hint">
+                    <span>
+                      Силуэт предмета проецируется от неподвижной опоры.
+                    </span>
+                    <span>100% — стандартная длина проекции.</span>
+                  </p>
+                  <button
+                    className="secondary shadow-select"
+                    disabled={element.locked}
+                    onClick={() => state.selectShadow(element.id)}
+                  >
+                    Выделить тень на холсте
+                  </button>
+                  <div className="shadow-fields">
+                    <div>
+                      <span className="field-label">
+                        Направление проекции, °
+                      </span>
+                      <NumberField
+                        label="Направление тени"
+                        value={element.shadow.angle}
+                        min={0}
+                        max={360}
+                        disabled={element.locked}
+                        onStepStart={state.beginDrag}
+                        onStepEnd={state.finishDrag}
+                        onStep={(delta) => {
+                          const current = store
+                            .getState()
+                            .scene.elements.find((e) => e.id === element.id);
+                          if (current?.shadow)
+                            store.getState().previewElement(element.id, {
+                              shadow: {
+                                ...current.shadow,
+                                angle:
+                                  (current.shadow.angle + delta + 360) % 360,
+                                x: 0,
+                                y: 0,
+                                scale_x: 1,
+                                scale_y: 1,
+                              },
+                            });
+                        }}
+                        onCommit={(angle) =>
+                          !element.locked &&
+                          state.patchElement(element.id, {
                             shadow: {
-                              ...current.shadow,
-                              angle: (current.shadow.angle + delta + 360) % 360,
+                              ...element.shadow!,
+                              angle,
                               x: 0,
                               y: 0,
                               scale_x: 1,
                               scale_y: 1,
                             },
-                          });
-                      }}
-                      onCommit={(angle) =>
-                        !element.locked &&
-                        state.patchElement(element.id, {
-                          shadow: {
-                            ...element.shadow!,
-                            angle,
-                            x: 0,
-                            y: 0,
-                            scale_x: 1,
-                            scale_y: 1,
-                          },
-                        })
-                      }
-                    />
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <span className="field-label">Длина, %</span>
+                      <NumberField
+                        label="Длина тени"
+                        value={element.shadow.length * 100}
+                        min={0}
+                        max={200}
+                        disabled={element.locked}
+                        onCommit={(length) =>
+                          !element.locked &&
+                          state.patchElement(element.id, {
+                            shadow: {
+                              ...element.shadow!,
+                              length: length / 100,
+                              x: 0,
+                              y: 0,
+                              scale_x: 1,
+                              scale_y: 1,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <span className="field-label">Непрозрачность, %</span>
+                      <NumberField
+                        label="Непрозрачность тени"
+                        value={element.shadow.opacity * 100}
+                        min={0}
+                        max={100}
+                        disabled={element.locked}
+                        onCommit={(opacity) =>
+                          !element.locked &&
+                          state.patchElement(element.id, {
+                            shadow: {
+                              ...element.shadow!,
+                              opacity: opacity / 100,
+                            },
+                          })
+                        }
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <span className="field-label">Длина, %</span>
-                    <NumberField
-                      label="Длина тени"
-                      value={element.shadow.length * 100}
-                      min={0}
-                      max={200}
-                      disabled={element.locked}
-                      onCommit={(length) =>
-                        !element.locked &&
-                        state.patchElement(element.id, {
-                          shadow: {
-                            ...element.shadow!,
-                            length: length / 100,
-                            x: 0,
-                            y: 0,
-                            scale_x: 1,
-                            scale_y: 1,
-                          },
-                        })
-                      }
-                    />
+                  <div className="shadow-presets" aria-label="Направления тени">
+                    {[
+                      [45, "Вправо вниз"],
+                      [135, "Влево вниз"],
+                      [225, "Влево вверх"],
+                      [315, "Вправо вверх"],
+                    ].map(([angle, name]) => (
+                      <button
+                        key={angle}
+                        disabled={element.locked}
+                        aria-label={`Тень: ${name}`}
+                        title={String(name)}
+                        onClick={() =>
+                          state.patchElement(element.id, {
+                            shadow: {
+                              ...element.shadow!,
+                              angle: Number(angle),
+                              x: 0,
+                              y: 0,
+                              scale_x: 1,
+                              scale_y: 1,
+                            },
+                          })
+                        }
+                      >
+                        <span style={{ transform: `rotate(${angle}deg)` }}>
+                          →
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <span className="field-label">Непрозрачность, %</span>
-                    <NumberField
-                      label="Непрозрачность тени"
-                      value={element.shadow.opacity * 100}
-                      min={0}
-                      max={100}
-                      disabled={element.locked}
-                      onCommit={(opacity) =>
-                        !element.locked &&
-                        state.patchElement(element.id, {
-                          shadow: {
-                            ...element.shadow!,
-                            opacity: opacity / 100,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="shadow-presets" aria-label="Направления тени">
-                  {[
-                    [45, "Вправо вниз"],
-                    [135, "Влево вниз"],
-                    [225, "Влево вверх"],
-                    [315, "Вправо вверх"],
-                  ].map(([angle, name]) => (
-                    <button
-                      key={angle}
-                      disabled={element.locked}
-                      aria-label={`Тень: ${name}`}
-                      title={String(name)}
-                      onClick={() =>
-                        state.patchElement(element.id, {
-                          shadow: {
-                            ...element.shadow!,
-                            angle: Number(angle),
-                            x: 0,
-                            y: 0,
-                            scale_x: 1,
-                            scale_y: 1,
-                          },
-                        })
-                      }
-                    >
-                      <span style={{ transform: `rotate(${angle}deg)` }}>
-                        →
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className="shadow-hint">
-                Сейчас используется исходная тень из библиотеки.
-              </p>
-            )}
-          </div>
+                </>
+              ) : (
+                <p className="shadow-hint">
+                  Сейчас используется исходная тень из библиотеки.
+                </p>
+              )}
+            </div>
+          )}
           <span className="field-label">ПОЛОЖЕНИЕ И ПОВОРОТ ПРЕДМЕТА</span>
           <div className="position-grid">
             <NumberField

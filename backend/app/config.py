@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     ]
     ai_request_limit: int = Field(default=100, ge=1, le=10000)
     ai_session_limit: int = Field(default=20, ge=1, le=1000)
+    custom_shadows_enabled: bool = True
     cookie_secure: bool = False
     site_password: SecretStr = SecretStr("")
     require_site_password: bool = False

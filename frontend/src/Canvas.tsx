@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useLayoutEffect, useState } from "react";
+import { useMemo, useRef, useLayoutEffect, useState, useEffect } from "react";
 import {
   Copy,
   BringToFront,
@@ -6,6 +6,7 @@ import {
   Trash2,
   MousePointer2,
   RotateCcw,
+  Sun,
 } from "lucide-react";
 import {
   elementCorners,
@@ -15,9 +16,7 @@ import {
   framePoint,
   selectionFrame,
   inverseElementPoint,
-  needsShadowPass,
   type SelectionFrame,
-  elementTransform,
   resizeElement,
   rotateElement,
   type Point,
@@ -26,158 +25,26 @@ import {
 import type { Element } from "./types";
 import { useStore } from "zustand";
 import type { createEditorStore } from "./state";
-import { prepareAsset, prepareAssetLayer } from "./svg";
-import {
-  FORMATS,
-  type Asset,
-  type Palette,
-  type Scene,
-  type Shadow,
-} from "./types";
+import { Illustration, type AssetSources as Assets } from "./Illustration";
+export { Illustration } from "./Illustration";
+import { FORMATS, type Asset, type Scene, type SceneLight } from "./types";
+import { useShadowFeatures } from "./features";
+import { effectiveShadow } from "./lighting";
 
 export type EditorStore = ReturnType<typeof createEditorStore>;
-type Assets = { assets: Asset[]; sources: Record<string, string> };
 
-const Artwork = memo(function Artwork({
-  source,
-  palette,
-  id,
-  shadow,
-  asset,
-  pass = "all",
-}: {
-  source: string;
-  palette: Palette;
-  id: string;
-  shadow?: Shadow | null;
-  asset: Asset;
-  pass?: "all" | "body" | "shadow";
-}) {
-  const markup = useMemo(
-    () =>
-      pass !== "all"
-        ? prepareAssetLayer(
-            source,
-            palette,
-            id,
-            {
-              settings: shadow ?? { angle: 0, length: 1, opacity: 1 },
-              metadata: asset.shadow,
-              role: asset.role,
-              width: asset.width,
-              height: asset.height,
-            },
-            pass,
-            !!shadow,
-          )
-        : prepareAsset(
-            source,
-            palette,
-            id,
-            shadow
-              ? {
-                  settings: shadow,
-                  metadata: asset.shadow,
-                  role: asset.role,
-                  width: asset.width,
-                  height: asset.height,
-                }
-              : undefined,
-          ),
-    [source, palette, id, shadow, asset, pass],
-  );
-  return <g fill="none" dangerouslySetInnerHTML={{ __html: markup }} />;
-});
-
-export function Illustration({
-  scene,
-  assets,
-  sources,
-  prefix = "preview",
-}: Assets & { scene: Scene; prefix?: string }) {
-  const split = needsShadowPass(scene, assets);
-  return (
-    <>
-      {!scene.transparent && (
-        <rect
-          data-background="true"
-          width={FORMATS[scene.format][0]}
-          height={FORMATS[scene.format][1]}
-          fill={scene.palette.background[0]}
-        />
-      )}
-      <defs>
-        <clipPath id={`${prefix}-clip`}>
-          <rect
-            width={FORMATS[scene.format][0]}
-            height={FORMATS[scene.format][1]}
-          />
-        </clipPath>
-      </defs>
-      <g clipPath={`url(#${prefix}-clip)`}>
-        {split && (
-          <g data-scene-shadows="true">
-            {scene.elements
-              .filter((e) => !e.hidden)
-              .map((e) => {
-                const asset = assets.find(
-                  (a) =>
-                    a.family === e.family &&
-                    a.detail === scene.detail &&
-                    a.role === e.role,
-                );
-                if (!asset || !sources[asset.id]) return null;
-                return (
-                  <g
-                    key={e.id}
-                    data-shadow-owner-id={e.id}
-                    transform={elementTransform(scene, e)}
-                  >
-                    <Artwork
-                      source={sources[asset.id]}
-                      palette={scene.palette}
-                      id={`${prefix}-${e.id}-cast`}
-                      shadow={e.shadow}
-                      asset={asset}
-                      pass="shadow"
-                    />
-                  </g>
-                );
-              })}
-          </g>
-        )}
-        {scene.elements
-          .filter((e) => !e.hidden)
-          .map((e) => {
-            const asset = assets.find(
-              (a) =>
-                a.family === e.family &&
-                a.detail === scene.detail &&
-                a.role === e.role,
-            );
-            if (!asset || !sources[asset.id]) return null;
-            return (
-              <g
-                key={e.id}
-                data-element-id={e.id}
-                data-family={e.family}
-                data-source-node={asset.source_node_id}
-                transform={elementTransform(scene, e)}
-              >
-                <Artwork
-                  source={sources[asset.id]}
-                  palette={scene.palette}
-                  id={`${prefix}-${e.id}`}
-                  shadow={e.shadow}
-                  asset={asset}
-                  pass={split ? "body" : "all"}
-                />
-              </g>
-            );
-          })}
-      </g>
-    </>
-  );
+export function clampLightToCanvas(
+  p: Point,
+  width: number,
+  height: number,
+  camera: number,
+): Point {
+  const marginX = Math.min(width / 2, 20 / Math.max(camera, 1e-9));
+  const marginY = Math.min(height / 2, 36 / Math.max(camera, 1e-9));
+  return {
+    x: Math.max(marginX, Math.min(width - marginX, p.x)),
+    y: Math.max(marginY, Math.min(height - marginY, p.y)),
+  };
 }
 
 // SVG masks affect painting, but the browser still dispatches pointer events to
@@ -212,6 +79,7 @@ function pickPart(
   event: React.PointerEvent<SVGSVGElement>,
   scene: Scene,
   assets: Asset[],
+  customShadowsEnabled: boolean,
 ) {
   const nativeHits = new Set(
     document
@@ -227,6 +95,13 @@ function pickPart(
       const e = scene.elements.find(
         (item) => item.id === group.dataset.elementId,
       )!;
+      const asset = assets.find(
+        (a) =>
+          a.family === e.family &&
+          a.detail === scene.detail &&
+          a.role === e.role,
+      )!;
+      const shadow = effectiveShadow(scene, e, asset, customShadowsEnabled);
       const local = inverseElementPoint(e, scene.scale, location),
         p = new DOMPoint(local.x, local.y);
       const reviewed =
@@ -299,6 +174,7 @@ function pickPart(
       return {
         group,
         e,
+        shadow,
         p,
         reviewed,
         reviewedBody,
@@ -315,8 +191,7 @@ function pickPart(
       c.projected
         ? c.bodyInk(c.p)
         : nativeHits.has(c.group) &&
-          (!c.reviewed ||
-            (!c.e.shadow ? !c.sourceInk(c.p) : c.reviewedBody(c.p)))
+          (!c.reviewed || (!c.shadow ? !c.sourceInk(c.p) : c.reviewedBody(c.p)))
     )
       return { e: c.e, part: "object" as const };
   }
@@ -326,7 +201,7 @@ function pickPart(
       if (nativeHits.has(c.group)) return { e, part: "object" as const };
       continue;
     }
-    const settings = e.shadow ?? { angle: 0, length: 1, opacity: 1 };
+    const settings = c.shadow ?? { angle: 0, length: 1, opacity: 1 };
     if (settings.opacity <= 0 || !layer.transform.baseVal.numberOfItems)
       continue;
     const matrix = layer.transform.baseVal.getItem(0).matrix;
@@ -334,7 +209,13 @@ function pickPart(
     const p = c.p.matrixTransform(matrix.inverse());
     if (c.projected) {
       if (!c.bodyInk(c.p) && c.bodyInk(p, c.subject ?? null))
-        return { e, part: "shadow" as const };
+        return {
+          e,
+          part:
+            customShadowsEnabled && !scene.light?.enabled && e.shadow
+              ? ("shadow" as const)
+              : ("object" as const),
+        };
       continue;
     }
     const a = assets.find(
@@ -350,7 +231,13 @@ function pickPart(
       p.y <= box[1] + box[3] &&
       c.sourceInk(p)
     )
-      return { e, part: e.shadow ? ("shadow" as const) : ("object" as const) };
+      return {
+        e,
+        part:
+          customShadowsEnabled && !scene.light?.enabled && e.shadow
+            ? ("shadow" as const)
+            : ("object" as const),
+      };
   }
 }
 
@@ -360,11 +247,28 @@ export function Canvas({
   sources,
   zoom,
   busy,
-}: Assets & { store: EditorStore; zoom: number; busy: boolean }) {
+  locked = false,
+  onSelectLight,
+}: Assets & {
+  store: EditorStore;
+  zoom: number;
+  busy: boolean;
+  locked?: boolean;
+  onSelectLight?: () => void;
+}) {
+  const { customShadows } = useShadowFeatures();
   const { scene, selected, selectedPart } = useStore(store),
     svg = useRef<SVGSVGElement>(null),
     host = useRef<HTMLDivElement>(null),
     scroll = useRef<HTMLDivElement>(null);
+  const globalLight = customShadows && !!scene.light?.enabled;
+  const canEditShadows = customShadows && !globalLight;
+  const lightDrag = useRef<{
+    start: Point;
+    light: SceneLight;
+    epoch: number;
+    pointerId: number;
+  } | null>(null);
   const viewCenter = useRef<{ format: Scene["format"]; point: Point } | null>(
     null,
   );
@@ -412,12 +316,45 @@ export function Canvas({
   const frame = useMemo(
     () =>
       element && asset
-        ? selectionFrame(element, asset, scene.scale, selectedPart)
+        ? selectionFrame(
+            canEditShadows && selectedPart === "shadow"
+              ? {
+                  ...element,
+                  shadow: effectiveShadow(scene, element, asset, customShadows),
+                }
+              : element,
+            asset,
+            scene.scale,
+            canEditShadows ? selectedPart : "object",
+          )
         : null,
-    [element, asset, scene.scale, selectedPart],
+    [element, asset, scene, selectedPart, customShadows, canEditShadows],
   );
   const corners = useMemo(() => (frame ? frameCorners(frame) : []), [frame]);
   const editingShadow = !!frame?.owner;
+  useEffect(() => {
+    if (!canEditShadows && selectedPart === "shadow")
+      store.getState().select(selected);
+  }, [canEditShadows, selectedPart, selected, store]);
+  useEffect(() => {
+    if (!busy && !locked) return;
+    const active = lightDrag.current ?? drag.current;
+    if (active?.epoch === store.getState().documentEpoch)
+      store.getState().cancelDrag();
+    lightDrag.current = null;
+    drag.current = null;
+  }, [busy, locked, store]);
+
+  useEffect(
+    () => () => {
+      const active = lightDrag.current ?? drag.current;
+      if (active?.epoch === store.getState().documentEpoch)
+        store.getState().cancelDrag();
+      lightDrag.current = null;
+      drag.current = null;
+    },
+    [store],
+  );
 
   // Preserve the point under the viewport center through zoom and window resizing.
   useLayoutEffect(() => {
@@ -496,7 +433,33 @@ export function Canvas({
       svg.current!.getScreenCTM()!.inverse(),
     );
   const startGesture = (event: React.PointerEvent<SVGSVGElement>) => {
-    if (busy || drag.current || event.button !== 0) return;
+    if (
+      busy ||
+      locked ||
+      drag.current ||
+      lightDrag.current ||
+      event.button !== 0
+    )
+      return;
+    if (
+      (event.target as SVGElement).closest("[data-light-marker]") &&
+      globalLight &&
+      scene.light
+    ) {
+      event.preventDefault();
+      const current = store.getState();
+      current.select(null);
+      onSelectLight?.();
+      current.beginDrag();
+      lightDrag.current = {
+        start: point(event),
+        light: scene.light,
+        epoch: current.documentEpoch,
+        pointerId: event.pointerId,
+      };
+      svg.current?.setPointerCapture(event.pointerId);
+      return;
+    }
     const handle = (event.target as SVGElement).closest<SVGElement>(
       "[data-resize-handle],[data-rotate-handle],[data-shadow-frame-move]",
     );
@@ -504,8 +467,18 @@ export function Canvas({
       scenePoint = point(event);
     const hit =
       handle && element
-        ? { e: element, part: selectedPart }
-        : pickPart(svg.current!, scenePoint, event, current.scene, assets);
+        ? {
+            e: element,
+            part: canEditShadows ? selectedPart : ("object" as const),
+          }
+        : pickPart(
+            svg.current!,
+            scenePoint,
+            event,
+            current.scene,
+            assets,
+            customShadows,
+          );
     svg.current?.focus({ preventScroll: true });
     if (!hit) {
       current.select(null);
@@ -522,7 +495,17 @@ export function Canvas({
     else current.select(e.id);
     event.preventDefault();
     if (e.locked) return;
-    const f = selectionFrame(e, a, current.scene.scale, part),
+    const f = selectionFrame(
+        part === "shadow"
+          ? {
+              ...e,
+              shadow: effectiveShadow(current.scene, e, a, customShadows),
+            }
+          : e,
+        a,
+        current.scene.scale,
+        part,
+      ),
       p = framePoint(f, scenePoint);
     const localCorners = elementCorners(f.element, f.scale, f.width, f.height);
     const center = f.projection?.anchor ?? {
@@ -548,6 +531,12 @@ export function Canvas({
     svg.current?.setPointerCapture(event.pointerId);
   };
   const finish = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (lightDrag.current?.pointerId === event.pointerId) {
+      if (lightDrag.current.epoch === store.getState().documentEpoch)
+        store.getState().finishDrag();
+      lightDrag.current = null;
+      return;
+    }
     if (drag.current?.pointerId !== event.pointerId) return;
     if (drag.current.epoch === store.getState().documentEpoch)
       store.getState().finishDrag();
@@ -636,6 +625,30 @@ export function Canvas({
             aria-label="Холст композиции"
             onPointerDown={startGesture}
             onPointerMove={(event) => {
+              const light = lightDrag.current;
+              if (
+                light &&
+                light.pointerId === event.pointerId &&
+                light.epoch === store.getState().documentEpoch &&
+                !busy &&
+                !locked &&
+                globalLight
+              ) {
+                const p = point(event);
+                store.getState().previewLight({
+                  ...light.light,
+                  ...clampLightToCanvas(
+                    {
+                      x: light.light.x + p.x - light.start.x,
+                      y: light.light.y + p.y - light.start.y,
+                    },
+                    width,
+                    height,
+                    camera,
+                  ),
+                });
+                return;
+              }
               const d = drag.current;
               if (
                 !d ||
@@ -643,8 +656,9 @@ export function Canvas({
                 d.epoch !== store.getState().documentEpoch
               )
                 return;
-              const f = d.frame,
-                p = framePoint(f, point(event)),
+              const f = d.frame;
+              if (f.owner && !canEditShadows) return;
+              const p = framePoint(f, point(event)),
                 current = store.getState();
               if (d.kind === "move" && !f.owner) {
                 current.previewMove(
@@ -711,6 +725,12 @@ export function Canvas({
             }}
             onPointerUp={finish}
             onPointerCancel={(event) => {
+              if (lightDrag.current?.pointerId === event.pointerId) {
+                if (lightDrag.current.epoch === store.getState().documentEpoch)
+                  store.getState().cancelDrag();
+                lightDrag.current = null;
+                return;
+              }
               if (drag.current?.pointerId !== event.pointerId) return;
               if (drag.current.epoch === store.getState().documentEpoch)
                 store.getState().cancelDrag();
@@ -724,6 +744,95 @@ export function Canvas({
               sources={sources}
               prefix="stage"
             />
+            {globalLight && scene.light && (
+              <g
+                data-light-marker="true"
+                transform={`translate(${scene.light.x} ${scene.light.y})`}
+                role="button"
+                tabIndex={0}
+                aria-label="Источник света"
+                className="scene-light-marker"
+                style={{ cursor: busy || locked ? "default" : "grab" }}
+                onFocus={() => {
+                  store.getState().select(null);
+                  onSelectLight?.();
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    ![
+                      "ArrowLeft",
+                      "ArrowRight",
+                      "ArrowUp",
+                      "ArrowDown",
+                    ].includes(event.key) ||
+                    busy ||
+                    locked
+                  )
+                    return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const current = store.getState(),
+                    light = current.scene.light;
+                  if (!light?.enabled) return;
+                  const delta = event.shiftKey ? 10 : 1;
+                  current.change({
+                    ...current.scene,
+                    light: {
+                      ...light,
+                      ...clampLightToCanvas(
+                        {
+                          x:
+                            light.x +
+                            (event.key === "ArrowRight"
+                              ? delta
+                              : event.key === "ArrowLeft"
+                                ? -delta
+                                : 0),
+                          y:
+                            light.y +
+                            (event.key === "ArrowDown"
+                              ? delta
+                              : event.key === "ArrowUp"
+                                ? -delta
+                                : 0),
+                        },
+                        width,
+                        height,
+                        camera,
+                      ),
+                    },
+                  });
+                }}
+              >
+                <circle
+                  r={15 / camera}
+                  fill="#3d303b"
+                  stroke="#ff8bb9"
+                  strokeWidth={1.5 / camera}
+                />
+                <g transform={`scale(${1 / camera})`} pointerEvents="none">
+                  <Sun x={-9} y={-9} size={18} color="#ffd4a2" />
+                </g>
+                <rect
+                  x={-20 / camera}
+                  y={18 / camera}
+                  width={40 / camera}
+                  height={17 / camera}
+                  rx={4 / camera}
+                  fill="#242427"
+                  pointerEvents="none"
+                />
+                <text
+                  y={30 / camera}
+                  textAnchor="middle"
+                  fontSize={11 / camera}
+                  fill="#f3d4df"
+                  pointerEvents="none"
+                >
+                  Свет
+                </text>
+              </g>
+            )}
             {element && frame && (
               <g
                 className="selection-controls"

@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+ElementId = Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
 Color = Annotated[str, Field(pattern=r"^#[0-9A-Fa-f]{6}$")]
 Finite = Annotated[float, Field(allow_inf_nan=False)]
 Family = Literal[
@@ -45,7 +46,7 @@ class Shadow(Model):
 
 
 class Element(Model):
-    id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")
+    id: ElementId
     family: Family
     role: Literal["main", "background"] = "main"
     x: Finite = Field(ge=-5000, le=5000)
@@ -56,6 +57,46 @@ class Element(Model):
     hidden: bool = False
     locked: bool = False
     shadow: Shadow | None = None
+    support_ids: list[ElementId] = Field(default_factory=list, max_length=6)
+
+
+def support_order(elements: list[Element]) -> list[Element]:
+    """Validate the instance graph and return its stable support-before-caster order.
+
+    The first ready element in the original array wins. Input lists and instances
+    remain untouched; hidden supports participate in validation and ordering too.
+    """
+    identifiers = {element.id for element in elements}
+    if len(identifiers) != len(elements):
+        raise ValueError("ID экземпляров должны быть уникальными")
+    for element in elements:
+        if len(element.support_ids) != len(set(element.support_ids)):
+            raise ValueError("Опоры предмета должны быть уникальными")
+        if element.id in element.support_ids:
+            raise ValueError("Предмет не может быть собственной опорой")
+        if not set(element.support_ids) <= identifiers:
+            raise ValueError("Опора должна ссылаться на существующий предмет сцены")
+    pending = list(elements)
+    emitted = set()
+    ordered = []
+    while pending:
+        ready = next(
+            (i for i, element in enumerate(pending) if set(element.support_ids) <= emitted), None
+        )
+        if ready is None:
+            raise ValueError("Связи опор не должны образовывать цикл")
+        element = pending.pop(ready)
+        ordered.append(element)
+        emitted.add(element.id)
+    return ordered
+
+
+class SceneLight(Model):
+    enabled: bool = False
+    x: Finite = Field(ge=-5000, le=5000)
+    y: Finite = Field(ge=-5000, le=5000)
+    height: Finite = Field(default=1000, ge=50, le=5000)
+    opacity: Finite = Field(default=0.35, ge=0, le=1)
 
 
 class Scene(Model):
@@ -66,14 +107,17 @@ class Scene(Model):
     scale: Finite = Field(default=0.4, ge=0.03, le=8)
     palette: Palette
     transparent: bool = False
+    light: SceneLight | None = None
     elements: list[Element] = Field(default_factory=list, max_length=48)
 
     @model_validator(mode="after")
     def unique_ids(self):
         if self.detail == "L" and self.scale > 4:
             raise ValueError("Для детализации L максимальный общий масштаб равен 4")
-        if len({e.id for e in self.elements}) != len(self.elements):
-            raise ValueError("ID экземпляров должны быть уникальными")
+        ordered = support_order(self.elements)
+        # Pydantic validates assignment; assigning here would recurse into this
+        # same after-validator. Every member was already validated by the field.
+        object.__setattr__(self, "elements", ordered)
         return self
 
     @property
@@ -90,6 +134,7 @@ class ComposeRequest(Model):
     seed: int = Field(default=0, ge=0, le=1000000)
     backgrounds: bool = True
     use_ai: bool = True
+    light: SceneLight | None = None
 
     @model_validator(mode="after")
     def nonempty_prompt(self):

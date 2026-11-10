@@ -82,7 +82,12 @@ def parse_layout_intent(prompt: str, families: list[str]) -> LayoutIntent:
             # Inverted clause: 'над книгой монета' / 'слева от монеты книга'.
             prefix = text[: before.start()] if index == 0 else ""
             prefix_matches = list(REL_RE.finditer(prefix))
-            if prefix_matches and not gap.strip():
+            if prefix_matches and (
+                not gap.strip()
+                or re.fullmatch(
+                    r"\s*(?:стоит|стоят|лежит|лежат|sits?|stands?|lies?|rests?)\s*", gap
+                )
+            ):
                 relation = prefix_matches[-1]
                 relations.append(
                     LayoutRelation(
@@ -99,9 +104,19 @@ def parse_layout_intent(prompt: str, families: list[str]) -> LayoutIntent:
         # A new inverted clause must not borrow its subject from the previous clause:
         # 'над книгой монета, справа от книги телефон'. Here the second 'книга'
         # is the reference and the next adjacent noun is the new subject.
-        clause_boundary = re.search(r"[,;]\s*(?:а\s+|and\s+)?$", gap[: match.start()])
-        next_is_subject = (
-            index + 2 < len(nouns) and not text[after.end() : nouns[index + 2].start()].strip()
+        clause_boundary = re.search(
+            r"(?:[,;]\s*(?:а\s+|and\s+)?|(?:и|and)\s+)$", gap[: match.start()]
+        )
+        predicate = (
+            text[after.end() : nouns[index + 2].start()].strip() if index + 2 < len(nouns) else None
+        )
+        next_is_subject = predicate is not None and (
+            not predicate
+            or re.fullmatch(
+                r"(?:стоит|стоят|лежит|лежат|расположен[а-я]*|находится|находятся|"
+                r"sits?|stands?|lies?|rests?|is\s+lying)",
+                predicate,
+            )
         )
         if clause_boundary and next_is_subject:
             subject, targets = [nouns[index + 2].lastgroup], [after.lastgroup]
@@ -280,6 +295,20 @@ def pack(
         for subject in subjects:
             contact_offsets[(subject, support)] = start
             start += widths[subject] + gap
+    # A bridge can rest on several separate supports. Distribute those supports
+    # under its footprint instead of forcing their centers to coincide.
+    for relation in contact:
+        if relation.relation != "on" or len(relation.targets) < 2:
+            continue
+        owner = lookup[relation.subject]
+        receivers = [lookup[target] for target in dict.fromkeys(relation.targets)]
+        row_width = sum(widths[i] for i in receivers) + gap * (len(receivers) - 1)
+        start = (widths[owner] - row_width) / 2
+        if len(receivers) == 2 and row_width > widths[owner]:
+            start = widths[owner] / 2 - gap / 2 - widths[receivers[0]]
+        for receiver in receivers:
+            contact_offsets[(owner, receiver)] = -start
+            start += widths[receiver] + gap
     for r in contact:
         i = lookup[r.subject]
         for target in r.targets:

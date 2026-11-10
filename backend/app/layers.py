@@ -3,29 +3,32 @@
 import math
 
 from app.catalog import asset_for
+from app.lighting import effective_shadow
 from app.models import Scene
 from app.shadow import shadow_matrix
 
 
-def needs_shadow_pass(scene: Scene) -> bool:
+def needs_shadow_pass(scene: Scene, custom_shadows_enabled: bool = True) -> bool:
+    visible_ids = {element.id for element in scene.elements if not element.hidden}
+    if any(
+        not element.hidden and set(element.support_ids) & visible_ids for element in scene.elements
+    ):
+        return True
     boxes = []
     for element in scene.elements:
         if element.hidden:
             continue
         asset = asset_for(element.family, scene.detail, element.role)
+        shadow = effective_shadow(scene, element, asset, custom_shadows_enabled)
         points = [
             (0, 0),
             (asset["width"], 0),
             (asset["width"], asset["height"]),
             (0, asset["height"]),
         ]
-        if (
-            element.shadow
-            and (element.shadow.length > 0 or element.shadow.x or element.shadow.y)
-            and element.shadow.opacity > 0
-        ):
+        if shadow and (shadow.length > 0 or shadow.x or shadow.y) and shadow.opacity > 0:
             x, y, w, h = asset["shadow"]["projection"]["body_bbox"]
-            matrix = shadow_matrix(asset["shadow"], element.shadow)
+            matrix = shadow_matrix(asset["shadow"], shadow)
             a, b, c, d, tx, ty = map(float, matrix[7:-1].split())
             points += [
                 (a * px + c * py + tx, b * px + d * py + ty)

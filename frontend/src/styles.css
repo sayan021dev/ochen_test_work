@@ -1985,3 +1985,56 @@ body,
     font-size: 15px;
   }
 }
+
+.receiver-field {
+  display: block;
+}
+.receiver-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #45454e;
+  border-radius: 7px;
+  background: #2c2c31;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.scene-light-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.scene-light-settings .help-text,
+.scene-light-settings .shadow-fields {
+  margin: 0;
+}
+.scene-light-settings .shadow-toggle > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: #ffd4a2;
+}
+.light-focus {
+  min-height: 36px;
+  width: 100%;
+  font-size: 12px;
+}
+.active-light-note {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.active-light-note > svg {
+  color: #ffd4a2;
+}
+.active-light-note button {
+  grid-column: 2;
+  color: var(--pink);
+  padding: 0;
+}
+.scene-light-marker:focus-visible > circle {
+  stroke: white;
+}

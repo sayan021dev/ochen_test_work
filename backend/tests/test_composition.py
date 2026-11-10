@@ -83,3 +83,83 @@ def test_every_size_preset_supports_small_coin_in_both_detail_sets():
                 scene.format == format and scene.scale <= (4 if detail == "L" else 8)
                 for scene in result
             )
+
+
+@pytest.mark.parametrize("detail", ["S", "L"])
+@pytest.mark.parametrize(
+    "format",
+    ["square", "landscape", "portrait", "standard", "hd", "fullhd", "post", "story", "wide"],
+)
+def test_composed_receiver_chain_persists_instance_ids_in_all_variants(detail, format):
+    prompt = "лампа стоит на телефоне и на лампе лежит ручка"
+    found, unknown = select_components(prompt)
+    assert found == ["lamp", "phone", "pen"]
+    assert not unknown
+    request = ComposeRequest(
+        prompt=prompt, mode="components", palette=PALETTES[0], detail=detail, format=format
+    )
+    for scene in compose_variants(found, request):
+        by_family = {e.family: e for e in scene.elements}
+        assert by_family["lamp"].support_ids == [by_family["phone"].id]
+        assert by_family["pen"].support_ids == [by_family["lamp"].id]
+        assert by_family["phone"].support_ids == []
+        assert [e.family for e in scene.elements] == ["phone", "lamp", "pen"]
+
+
+@pytest.mark.parametrize("detail", ["S", "L"])
+@pytest.mark.parametrize(
+    "format",
+    ["square", "landscape", "portrait", "standard", "hd", "fullhd", "post", "story", "wide"],
+)
+def test_all_on_targets_are_persisted_without_turning_behind_into_a_support(detail, format):
+    request = ComposeRequest(
+        prompt="монета на книге и папке",
+        mode="components",
+        palette=PALETTES[0],
+        detail=detail,
+        format=format,
+    )
+    for scene in compose_variants(["coin", "book", "folder"], request):
+        by_family = {e.family: e for e in scene.elements}
+        assert by_family["coin"].support_ids == [by_family["book"].id, by_family["folder"].id]
+        from app.catalog import asset_for
+
+        bounds = {}
+        for family, item in by_family.items():
+            asset = asset_for(family, detail, item.role)
+            bounds[family] = (
+                item.x,
+                item.y,
+                asset["width"] * scene.scale,
+                asset["height"] * scene.scale,
+            )
+        for x, y, w, h in bounds.values():
+            assert 0 <= x < x + w <= scene.size[0] + 0.001
+            assert 0 <= y < y + h <= scene.size[1] + 0.001
+        cx, cy, cw, ch = bounds["coin"]
+        for support in ("book", "folder"):
+            x, y, w, h = bounds[support]
+            assert min(cx + cw, x + w) > max(cx, x)
+            assert min(cy + ch, y + h) > max(cy, y)
+        bx, by, bw, bh = bounds["book"]
+        fx, fy, fw, fh = bounds["folder"]
+        assert bx + bw <= fx or fx + fw <= bx or by + bh <= fy or fy + fh <= by
+    request = ComposeRequest(prompt="телефон позади книги", mode="components", palette=PALETTES[0])
+    assert all(
+        not e.support_ids
+        for scene in compose_variants(["phone", "book"], request)
+        for e in scene.elements
+    )
+
+
+@pytest.mark.parametrize("explicit_light", [True, False])
+def test_scene_light_is_preserved_in_three_fresh_variants(explicit_light):
+    from app.models import SceneLight
+
+    light = SceneLight(enabled=True, x=200, y=350, height=1200, opacity=0.4)
+    request = ComposeRequest(prompt="монета", palette=PALETTES[0], light=light)
+    scenes = compose_variants(["coin"], request, **({"light": light} if explicit_light else {}))
+    assert len(scenes) == 3
+    assert all(s.light.model_dump() == light.model_dump() for s in scenes)
+    scenes[0].light.x = 999
+    assert scenes[1].light.x == light.x == 200

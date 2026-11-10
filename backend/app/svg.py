@@ -9,6 +9,7 @@ from defusedxml.common import DefusedXmlException
 
 from app.catalog import PALETTES, asset_for
 from app.layers import needs_shadow_pass
+from app.lighting import effective_shadow
 from app.models import Scene, Shadow
 from app.shadow import with_custom_shadow
 
@@ -108,7 +109,7 @@ def recolor_and_namespace(root: ET.Element, palette: dict, prefix: str) -> ET.El
     return result
 
 
-def render_scene(scene: Scene) -> str:
+def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
     width, height = scene.size
     root = ET.Element(
         f"{{{NS}}}svg",
@@ -136,7 +137,90 @@ def render_scene(scene: Scene) -> str:
     clip = ET.SubElement(definitions, f"{{{NS}}}clipPath", {"id": "scene-clip"})
     ET.SubElement(clip, f"{{{NS}}}rect", {"width": str(width), "height": str(height)})
     artwork = ET.SubElement(root, f"{{{NS}}}g", {"clip-path": "url(#scene-clip)"})
-    split = needs_shadow_pass(scene)
+    split = needs_shadow_pass(scene, custom_shadows_enabled)
+    visible = [element for element in scene.elements if not element.hidden]
+    visible_ids = {element.id for element in visible}
+    receivers = {
+        element.id: [identifier for identifier in element.support_ids if identifier in visible_ids]
+        for element in visible
+    }
+    contacts = any(receivers.values())
+    assets = {
+        element.id: asset_for(element.family, scene.detail, element.role) for element in visible
+    }
+
+    def transform(element):
+        sx, sy = scene.scale * element.scale_x, scene.scale * element.scale_y
+        scale = str(sx) if sx == sy else f"{sx} {sy}"
+        return f"translate({element.x} {element.y}) rotate({element.angle}) scale({scale})"
+
+    def bounds(asset):
+        return {
+            "x": str(-asset["width"] * 3),
+            "y": str(-asset["height"] * 3),
+            "width": str(asset["width"] * 7),
+            "height": str(asset["height"] * 7),
+        }
+
+    if contacts:
+        for element in visible:
+            alpha = ET.SubElement(
+                definitions,
+                f"{{{NS}}}mask",
+                {
+                    **bounds(assets[element.id]),
+                    "id": f"scene-body-alpha-{element.id}",
+                    "maskUnits": "userSpaceOnUse",
+                    "mask-type": "alpha",
+                    "data-body-alpha": element.id,
+                },
+            )
+            ET.SubElement(alpha, f"{{{NS}}}use", {"href": f"#scene-body-{element.id}"})
+        for index, caster in enumerate(visible):
+            supports = set(receivers[caster.id])
+            if not supports:
+                continue
+            for inverse in (False, True):
+                identifier = f"scene-{'ground-cut' if inverse else 'receivers'}-{caster.id}"
+                mask = ET.SubElement(
+                    definitions,
+                    f"{{{NS}}}mask",
+                    {
+                        "id": identifier,
+                        "maskUnits": "userSpaceOnUse",
+                        "mask-type": "luminance",
+                        "x": "0",
+                        "y": "0",
+                        "width": str(width),
+                        "height": str(height),
+                    },
+                )
+                if inverse:
+                    ET.SubElement(
+                        mask,
+                        f"{{{NS}}}rect",
+                        {"width": str(width), "height": str(height), "fill": "white"},
+                    )
+                for receiver in visible[:index]:
+                    allowed = receiver.id in supports
+                    part = ET.SubElement(
+                        mask,
+                        f"{{{NS}}}g",
+                        {
+                            "transform": transform(receiver),
+                            "data-receiver-body": receiver.id,
+                            "data-receiver-fill": "allow" if allowed else "cut",
+                        },
+                    )
+                    ET.SubElement(
+                        part,
+                        f"{{{NS}}}rect",
+                        {
+                            **bounds(assets[receiver.id]),
+                            "fill": "white" if allowed != inverse else "black",
+                            "mask": f"url(#scene-body-alpha-{receiver.id})",
+                        },
+                    )
     passes = ["shadow", "body"] if split else ["all"]
     shadow_pass = (
         ET.SubElement(artwork, f"{{{NS}}}g", {"data-scene-shadows": "true"}) if split else None
@@ -145,30 +229,68 @@ def render_scene(scene: Scene) -> str:
         for element in scene.elements:
             if element.hidden:
                 continue
-            asset = asset_for(element.family, scene.detail, element.role)
+            asset = assets[element.id]
+            shadow = effective_shadow(scene, element, asset, custom_shadows_enabled)
             original = parse_safe_svg(asset["svg"])
-            if split or element.shadow is not None:
+            if split or shadow is not None:
                 original = with_custom_shadow(
                     original,
                     asset,
-                    element.shadow or Shadow(),
+                    shadow or Shadow(),
                     separate_layers=split,
-                    preserve_source=element.shadow is None,
+                    preserve_source=shadow is None,
                 )
             source = recolor_and_namespace(
                 original,
                 scene.palette.model_dump(),
                 "i_" + element.id + ("_cast" if paint_pass == "shadow" else ""),
             )
-            if split and element.shadow is None:
+            if split and shadow is None:
                 for node in source:
                     if node.get("data-custom-shadow") is not None:
                         del node.attrib["data-custom-shadow"]
                         node.set("data-source-shadow", "true")
             sx, sy = scene.scale * element.scale_x, scene.scale * element.scale_y
             scale = str(sx) if sx == sy else f"{sx} {sy}"
+            parent = shadow_pass if paint_pass == "shadow" else artwork
+            if contacts:
+                for node in source:
+                    if (
+                        node.get("data-custom-shadow") is not None
+                        or node.get("data-source-shadow") is not None
+                    ):
+                        node.set("id", f"scene-cast-{element.id}")
+                    if node.get("data-shadow-body") is not None:
+                        node.set("id", f"scene-body-{element.id}")
+                if receivers[element.id]:
+                    if paint_pass == "shadow":
+                        parent = ET.SubElement(
+                            parent,
+                            f"{{{NS}}}g",
+                            {
+                                "data-ground-shadow-cut": element.id,
+                                "mask": f"url(#scene-ground-cut-{element.id})",
+                            },
+                        )
+                    else:
+                        overlay = ET.SubElement(
+                            artwork,
+                            f"{{{NS}}}g",
+                            {
+                                "data-contact-shadow-owner": element.id,
+                                "data-contact-shadow-receivers": " ".join(receivers[element.id]),
+                                "pointer-events": "none",
+                                "mask": f"url(#scene-receivers-{element.id})",
+                            },
+                        )
+                        located = ET.SubElement(
+                            overlay, f"{{{NS}}}g", {"transform": transform(element)}
+                        )
+                        ET.SubElement(
+                            located, f"{{{NS}}}use", {"href": f"#scene-cast-{element.id}"}
+                        )
             group = ET.SubElement(
-                shadow_pass if paint_pass == "shadow" else artwork,
+                parent,
                 f"{{{NS}}}g",
                 {
                     **(

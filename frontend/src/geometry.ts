@@ -1,3 +1,4 @@
+import { effectiveShadow } from "./lighting";
 import { shadowMatrix } from "./shadow";
 import {
   FORMATS,
@@ -44,7 +45,11 @@ export function elementCorners(
     return { x: e.x + p.x, y: e.y + p.y };
   });
 }
-export function sceneBounds(scene: Scene, assets: Asset[]) {
+export function sceneBounds(
+  scene: Scene,
+  assets: Asset[],
+  customShadowsEnabled = true,
+) {
   const pts = scene.elements
     .filter((e) => !e.hidden)
     .flatMap((e) => {
@@ -55,7 +60,8 @@ export function sceneBounds(scene: Scene, assets: Asset[]) {
           a.role === e.role,
       );
       if (!a) return [];
-      const body = e.shadow && a.shadow?.projection?.body_bbox;
+      const shadow = effectiveShadow(scene, e, a, customShadowsEnabled);
+      const body = shadow && a.shadow?.projection?.body_bbox;
       const corners = body
         ? [
             [body[0], body[1]],
@@ -65,14 +71,16 @@ export function sceneBounds(scene: Scene, assets: Asset[]) {
           ].map(([x, y]) => elementPoint(e, scene.scale, { x, y }))
         : elementCorners(e, scene.scale, a.width, a.height);
       if (
-        e.shadow &&
-        e.shadow.opacity > 0 &&
-        (e.shadow.length > 0 ||
-          Math.abs(e.shadow.x ?? 0) + Math.abs(e.shadow.y ?? 0) > 1e-9) &&
+        shadow &&
+        shadow.opacity > 0 &&
+        (shadow.length > 0 ||
+          Math.abs(shadow.x ?? 0) + Math.abs(shadow.y ?? 0) > 1e-9) &&
         a.shadow?.projection
       )
         corners.push(
-          ...frameCorners(selectionFrame(e, a, scene.scale, "shadow")),
+          ...frameCorners(
+            selectionFrame({ ...e, shadow }, a, scene.scale, "shadow"),
+          ),
         );
       return corners;
     });
@@ -85,11 +93,29 @@ export function sceneBounds(scene: Scene, assets: Asset[]) {
   };
 }
 
-export function needsShadowPass(scene: Scene, assets: Asset[]): boolean {
+export function needsShadowPass(
+  scene: Scene,
+  assets: Asset[],
+  customShadowsEnabled = true,
+): boolean {
+  const visibleIds = new Set(
+    scene.elements.filter((e) => !e.hidden).map((e) => e.id),
+  );
+  if (
+    scene.elements.some(
+      (e) =>
+        !e.hidden && (e.support_ids ?? []).some((id) => visibleIds.has(id)),
+    )
+  )
+    return true;
   const boxes = scene.elements
     .filter((e) => !e.hidden)
     .flatMap((e) => {
-      const bounds = sceneBounds({ ...scene, elements: [e] }, assets);
+      const bounds = sceneBounds(
+        { ...scene, elements: [e] },
+        assets,
+        customShadowsEnabled,
+      );
       return bounds ? [bounds] : [];
     });
   return boxes.some((a, i) =>
@@ -108,8 +134,9 @@ export function centerForFormat(
   scene: Scene,
   format: Format,
   assets: Asset[],
+  customShadowsEnabled = true,
 ): Scene {
-  const b = sceneBounds(scene, assets);
+  const b = sceneBounds(scene, assets, customShadowsEnabled);
   if (!b) return { ...scene, format };
   const [w, h] = FORMATS[format],
     cx = (b.left + b.right) / 2,
@@ -125,6 +152,16 @@ export function centerForFormat(
     ...scene,
     format,
     scale,
+    ...(scene.light
+      ? {
+          light: {
+            ...scene.light,
+            x: boundedPosition(w / 2 + (scene.light.x - cx) * actual, true),
+            y: boundedPosition(h / 2 + (scene.light.y - cy) * actual, true),
+            height: clamp(scene.light.height * actual, 50, 5000),
+          },
+        }
+      : {}),
     elements: scene.elements.map((e) =>
       e.hidden
         ? e

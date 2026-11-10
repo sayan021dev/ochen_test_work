@@ -40,4 +40,6 @@ Files: frontend/src/geometry.ts, Canvas.tsx, Inspector.tsx, state and UI tests.
 
 - [x] Run focused checks during iteration; frozen full pytest/Vitest/Playwright once, inspect visual sheet.
 - [x] Record old mesh AA failure accurately; update docs/AGENTS for user override.
-- [ ] Commit/push main, rebuild local8018, observe Linux CI and report exact results.
+- [x] Commit/push main, rebuild local8018, observe Linux CI and report exact results.
+
+Commit 48d22fb; Linux CI run42884224016 passed, local1292pytest/123Vitest/38Playwright.
