@@ -1,0 +1,42 @@
+{
+  "name": "ochen-illustrations-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5178 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src --max-warnings=0"
+  },
+  "dependencies": {
+    "@fontsource/inter": "5.3.0",
+    "@fontsource/tiktok-sans": "5.3.0",
+    "lucide-react": "1.71.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zustand": "5.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.0",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "jsdom": "29.1.1",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vite": "8.3.7",
+    "vitest": "5.1.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
+  }
+}

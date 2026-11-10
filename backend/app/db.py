@@ -36,6 +36,10 @@ def make_engine(url: str):
     )
 
 
+class BudgetExceeded(ValueError):
+    pass
+
+
 def reserve_ai_request(engine, owner: str, global_limit: int, session_limit: int):
     """Atomic persisted daily caps, including requests that fail upstream."""
     day = datetime.now(UTC).date().isoformat()
@@ -55,4 +59,6 @@ def reserve_ai_request(engine, owner: str, global_limit: int, session_limit: int
                 .returning(Budget.count)
             ).scalar_one_or_none()
             if result is None:
-                raise ValueError("Дневной лимит AI-подбора исчерпан. Редактор и поиск доступны.")
+                raise BudgetExceeded(
+                    "Дневной лимит AI-подбора исчерпан. Редактор и поиск доступны."
+                )

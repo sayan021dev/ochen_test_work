@@ -124,6 +124,10 @@ def render_scene(scene: Scene) -> str:
                 "data-background": "true",
             },
         )
+    definitions = ET.SubElement(root, f"{{{NS}}}defs")
+    clip = ET.SubElement(definitions, f"{{{NS}}}clipPath", {"id": "scene-clip"})
+    ET.SubElement(clip, f"{{{NS}}}rect", {"width": str(width), "height": str(height)})
+    artwork = ET.SubElement(root, f"{{{NS}}}g", {"clip-path": "url(#scene-clip)"})
     for element in scene.elements:
         if element.hidden:
             continue
@@ -132,7 +136,7 @@ def render_scene(scene: Scene) -> str:
             parse_safe_svg(asset["svg"]), scene.palette.model_dump(), "i_" + element.id
         )
         group = ET.SubElement(
-            root,
+            artwork,
             f"{{{NS}}}g",
             {
                 "data-element-id": element.id,

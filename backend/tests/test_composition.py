@@ -49,3 +49,15 @@ def test_layouts_are_repeatable_and_keep_shared_scale(detail, format):
         assert {e.family for e in s.elements} == {"book", "lamp", "coin"}
         assert sum(e.role == "main" for e in s.elements) == 2
         assert all(0 <= e.x < s.size[0] and 0 <= e.y < s.size[1] for e in s.elements)
+
+
+@pytest.mark.parametrize(
+    "family",
+    ["book", "phone", "puzzle", "coin", "headphones", "lamp", "flowers", "wallet", "folder", "pen"],
+)
+@pytest.mark.parametrize("detail", ["L", "S"])
+def test_single_subject_layout_works_for_every_original_size(family, detail):
+    request = ComposeRequest(prompt=family, mode="components", palette=PALETTES[0], detail=detail)
+    scenes = compose_variants([family], request)
+    assert len(scenes) == 3
+    assert scenes[0].elements[0].family == family

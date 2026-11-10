@@ -30,7 +30,7 @@ def test_export_preserves_paths_and_namespaces_every_instance():
     original = parse_safe_svg(asset_for("lamp", "L", "main")["svg"])
     result = ET.fromstring(render_scene(scene()))
     assert result.get("viewBox") == "0 0 1200 630"
-    groups = result.findall("s:g", NS)
+    groups = result.findall(".//s:g[@data-element-id]", NS)
     assert len(groups) == 2
     assert [p.get("d") for p in groups[0].findall(".//s:path", NS)] == [
         p.get("d") for p in original.findall(".//s:path", NS)
@@ -41,6 +41,18 @@ def test_export_preserves_paths_and_namespaces_every_instance():
     assert groups[0].get("transform") == "translate(50.0 60.0) rotate(0.0) scale(0.4)"
     assert not result.findall(".//s:image", NS)
     assert not result.findall(".//s:foreignObject", NS)
+
+
+def test_artwork_is_clipped_to_canvas_while_remaining_editable():
+    result = ET.fromstring(render_scene(scene()))
+    clip = result.find(".//s:clipPath", NS)
+    assert clip is not None, "Objects outside canvas need the same clipping in preview and export"
+    rectangle = clip.find("s:rect", NS)
+    assert rectangle.get("width") == "1200"
+    assert rectangle.get("height") == "630"
+    wrapper = result.find("s:g[@clip-path]", NS)
+    assert wrapper.get("clip-path") == f"url(#{clip.get('id')})"
+    assert len(wrapper.findall("s:g[@data-element-id]", NS)) == 2
 
 
 @pytest.mark.parametrize("detail", ["S", "L"])

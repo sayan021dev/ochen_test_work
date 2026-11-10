@@ -14,10 +14,10 @@ from sqlalchemy import select, text, update
 from sqlalchemy.orm import Session
 
 from app.ai import AIError, OpenAISelector, build_client
-from app.catalog import ASSET_ROOT, PALETTES, public_catalog
+from app.catalog import ASSET_ROOT, PALETTES, ROOT, public_catalog
 from app.composition import compose_variants, select_components, select_offline_metaphor
 from app.config import Settings
-from app.db import Project, make_engine, reserve_ai_request
+from app.db import BudgetExceeded, Project, make_engine, reserve_ai_request
 from app.models import FORMATS, ComposeRequest, ProjectWrite, Scene
 from app.svg import render_scene
 
@@ -143,6 +143,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             }
         except AIError as exc:
             raise HTTPException(502, str(exc)) from None
+        except BudgetExceeded as exc:
+            raise HTTPException(429, str(exc)) from None
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from None
 
@@ -241,6 +243,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             db.commit()
             return representation(db.get(Project, project_id))
 
+    frontend = ROOT / "frontend" / "dist"
+    if frontend.is_dir():
+        app.mount("/", StaticFiles(directory=frontend, html=True), name="frontend")
     return app
 
 

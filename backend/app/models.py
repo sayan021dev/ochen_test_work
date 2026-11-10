@@ -37,13 +37,15 @@ class Scene(Model):
     title: str = Field(default="Новая композиция", min_length=1, max_length=120)
     format: Literal["square", "landscape", "portrait"] = "landscape"
     detail: Literal["L", "S"] = "L"
-    scale: Finite = Field(default=0.4, ge=0.03, le=3)
+    scale: Finite = Field(default=0.4, ge=0.03, le=8)
     palette: Palette
     transparent: bool = False
     elements: list[Element] = Field(default_factory=list, max_length=48)
 
     @model_validator(mode="after")
     def unique_ids(self):
+        if self.detail == "L" and self.scale > 4:
+            raise ValueError("Для детализации L максимальный общий масштаб равен 4")
         if len({e.id for e in self.elements}) != len(self.elements):
             raise ValueError("ID экземпляров должны быть уникальными")
         return self

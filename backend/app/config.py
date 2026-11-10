@@ -15,10 +15,10 @@ class Settings(BaseSettings):
         "postgresql+psycopg://illustrations:illustrations_local@127.0.0.1:54329/illustrations"
     )
     allowed_origins: list[str] = [
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-        "http://127.0.0.1:8000",
-        "http://localhost:8000",
+        "http://127.0.0.1:5178",
+        "http://localhost:5178",
+        "http://127.0.0.1:8017",
+        "http://localhost:8017",
     ]
     ai_request_limit: int = Field(default=100, ge=1, le=10000)
     ai_session_limit: int = Field(default=20, ge=1, le=1000)

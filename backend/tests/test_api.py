@@ -121,3 +121,86 @@ def test_atomic_ai_budget_survives_new_connection(client, app):
     reserve_ai_request(app.state.engine, "other", global_limit=3, session_limit=2)
     with pytest.raises(ValueError):
         reserve_ai_request(app.state.engine, "third", global_limit=3, session_limit=2)
+
+
+def test_built_frontend_can_be_served_on_api_origin(tmp_path, monkeypatch):
+    import importlib
+
+    main = importlib.import_module("app.main")
+    site = tmp_path / "frontend" / "dist"
+    site.mkdir(parents=True)
+    (site / "index.html").write_text("<html lang='ru'>Local editor</html>")
+    monkeypatch.setattr(main, "ROOT", tmp_path, raising=False)
+    application = create_app(
+        Settings(
+            _env_file=None,
+            database_url=f"sqlite:///{tmp_path}/web.db",
+            openai_api_key="",
+            http_proxy="",
+        )
+    )
+    with TestClient(application) as client:
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "Local editor" in response.text
+        assert client.get("/api/health").json() == {"status": "ok"}
+
+
+def test_real_ai_route_validates_response_caches_selection_and_limits_cost(
+    app, tmp_path, monkeypatch
+):
+    import importlib
+    import json
+
+    import httpx
+
+    main = importlib.import_module("app.main")
+
+    def serve(_):
+        return httpx.Response(
+            200,
+            json={
+                "status": "completed",
+                "output": [
+                    {
+                        "type": "message",
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": json.dumps(
+                                    {"families": ["lamp", "book"], "explanation": "Свет знаний"}
+                                ),
+                            }
+                        ],
+                    }
+                ],
+            },
+        )
+
+    monkeypatch.setattr(
+        main, "build_client", lambda _: httpx.AsyncClient(transport=httpx.MockTransport(serve))
+    )
+    application = create_app(
+        Settings(
+            _env_file=None,
+            database_url=f"sqlite:///{tmp_path}/ai.db",
+            openai_api_key="fake",
+            http_proxy="",
+            ai_request_limit=1,
+            ai_session_limit=1,
+        )
+    )
+    Base.metadata.create_all(application.state.engine)
+    with TestClient(application) as client:
+        csrf = client.get("/api/bootstrap").json()["csrf_token"]
+        client.headers["X-CSRF-Token"] = csrf
+        payload = {"prompt": "Свет знаний", "palette": PALETTES[0]}
+        result = client.post("/api/compose", json=payload)
+        assert result.status_code == 200
+        assert result.json()["provider"] == "openai"
+        assert {e["family"] for e in result.json()["scenes"][0]["elements"]} == {"lamp", "book"}
+        assert client.post("/api/compose", json=payload).status_code == 200
+        assert (
+            client.post("/api/compose", json={**payload, "prompt": "Другая идея"}).status_code
+            == 429
+        )
