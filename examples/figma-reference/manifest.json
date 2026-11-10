@@ -10,18 +10,18 @@
       "prompt": "телефон, пазлы",
       "format": "square",
       "size": [
-        1000.0,
-        1000.0
+        1000,
+        1000
       ],
       "families": [
         "phone",
         "puzzle"
       ],
       "source_bounds": [
-        3462.0,
-        663.0,
-        1000.0,
-        1000.0
+        3462,
+        663,
+        1000,
+        1000
       ],
       "reference": "square-phone-puzzle-reference.svg",
       "replay": "square-phone-puzzle-replay.svg",
@@ -62,6 +62,102 @@
           "square-phone-puzzle-S-2.svg",
           "square-phone-puzzle-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "пазлы над телефоном",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "targets": [
+              "phone"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "targets": [
+              "phone"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "target": "phone",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "phone": "main",
+          "puzzle": "main"
+        },
+        "reference_cropped_families": [],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": true
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": true
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": true
+          }
+        ],
+        "best": "square-phone-puzzle-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -69,18 +165,18 @@
       "prompt": "книга, телефон",
       "format": "square",
       "size": [
-        1000.0,
-        1000.0
+        1000,
+        1000
       ],
       "families": [
         "book",
         "phone"
       ],
       "source_bounds": [
-        4550.0,
-        663.0,
-        1000.0,
-        1000.0
+        4550,
+        663,
+        1000,
+        1000
       ],
       "reference": "square-book-phone-reference.svg",
       "replay": "square-book-phone-replay.svg",
@@ -121,6 +217,104 @@
           "square-book-phone-S-2.svg",
           "square-book-phone-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "телефон на книге",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "target": "book",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "book": "main",
+          "phone": "main"
+        },
+        "reference_cropped_families": [
+          "book"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "square-book-phone-spatial-best.svg",
+        "best_variant": 2,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -128,8 +322,8 @@
       "prompt": "папка, кошелек, монета",
       "format": "square",
       "size": [
-        1000.0,
-        1000.0
+        1000,
+        1000
       ],
       "families": [
         "folder",
@@ -137,10 +331,10 @@
         "coin"
       ],
       "source_bounds": [
-        5638.0,
-        663.0,
-        1000.0,
-        1000.0
+        5638,
+        663,
+        1000,
+        1000
       ],
       "reference": "square-folder-wallet-coin-reference.svg",
       "replay": "square-folder-wallet-coin-replay.svg",
@@ -193,6 +387,179 @@
           "square-folder-wallet-coin-S-2.svg",
           "square-folder-wallet-coin-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "папка выше кошелька и монеты, кошелек слева от монеты",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "wallet"
+            ]
+          },
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "wallet",
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "target": "coin",
+            "satisfied": true
+          },
+          {
+            "subject": "folder",
+            "relation": "above",
+            "target": "wallet",
+            "satisfied": true
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "target": "coin",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "folder": "main",
+          "wallet": "main",
+          "coin": "main"
+        },
+        "reference_cropped_families": [
+          "folder",
+          "wallet"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "square-folder-wallet-coin-spatial-best.svg",
+        "best_variant": 1,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -200,18 +567,18 @@
       "prompt": "цветы, наушники",
       "format": "square",
       "size": [
-        1000.0,
-        1000.0
+        1000,
+        1000
       ],
       "families": [
         "flowers",
         "headphones"
       ],
       "source_bounds": [
-        3462.0,
-        1776.0,
-        1000.0,
-        1000.0
+        3462,
+        1776,
+        1000,
+        1000
       ],
       "reference": "square-flowers-headphones-reference.svg",
       "replay": "square-flowers-headphones-replay.svg",
@@ -252,6 +619,105 @@
           "square-flowers-headphones-S-2.svg",
           "square-flowers-headphones-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "цветы позади наушников",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "targets": [
+              "headphones"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "targets": [
+              "headphones"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "target": "headphones",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "flowers": "background",
+          "headphones": "main"
+        },
+        "reference_cropped_families": [
+          "flowers",
+          "headphones"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "square-flowers-headphones-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -259,8 +725,8 @@
       "prompt": "лампа, кошелек, монета",
       "format": "square",
       "size": [
-        1000.0,
-        1000.0
+        1000,
+        1000
       ],
       "families": [
         "lamp",
@@ -268,10 +734,10 @@
         "coin"
       ],
       "source_bounds": [
-        4550.0,
-        1776.0,
-        1000.0,
-        1000.0
+        4550,
+        1776,
+        1000,
+        1000
       ],
       "reference": "square-lamp-wallet-coin-reference.svg",
       "replay": "square-lamp-wallet-coin-replay.svg",
@@ -324,6 +790,178 @@
           "square-lamp-wallet-coin-S-2.svg",
           "square-lamp-wallet-coin-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "лампа выше кошелька и монеты, кошелек ниже монеты",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "wallet"
+            ]
+          },
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "wallet",
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "target": "coin",
+            "satisfied": true
+          },
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "target": "wallet",
+            "satisfied": true
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "target": "coin",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "lamp": "background",
+          "wallet": "main",
+          "coin": "main"
+        },
+        "reference_cropped_families": [
+          "lamp"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "square-lamp-wallet-coin-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -331,8 +969,8 @@
       "prompt": "книга, пазлы, ручка",
       "format": "square",
       "size": [
-        1000.0,
-        1000.0
+        1000,
+        1000
       ],
       "families": [
         "book",
@@ -340,10 +978,10 @@
         "pen"
       ],
       "source_bounds": [
-        5638.0,
-        1776.0,
-        1000.0,
-        1000.0
+        5638,
+        1776,
+        1000,
+        1000
       ],
       "reference": "square-book-puzzle-pen-reference.svg",
       "replay": "square-book-puzzle-pen-replay.svg",
@@ -396,6 +1034,146 @@
           "square-book-puzzle-pen-S-2.svg",
           "square-book-puzzle-pen-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "пазлы на книге, ручка под книгой",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          },
+          {
+            "subject": "pen",
+            "relation": "below",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          },
+          {
+            "subject": "pen",
+            "relation": "below",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "pen",
+            "relation": "below",
+            "target": "book",
+            "satisfied": true
+          },
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "target": "book",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "pen": "main",
+          "book": "background",
+          "puzzle": "main"
+        },
+        "reference_cropped_families": [
+          "book"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "square-book-puzzle-pen-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -403,18 +1181,18 @@
       "prompt": "телефон, пазлы",
       "format": "landscape",
       "size": [
-        1200.0,
-        630.0
+        1200,
+        630
       ],
       "families": [
         "phone",
         "puzzle"
       ],
       "source_bounds": [
-        3462.0,
-        3377.0,
-        1200.0,
-        630.0
+        3462,
+        3377,
+        1200,
+        630
       ],
       "reference": "landscape-phone-puzzle-reference.svg",
       "replay": "landscape-phone-puzzle-replay.svg",
@@ -455,6 +1233,102 @@
           "landscape-phone-puzzle-S-2.svg",
           "landscape-phone-puzzle-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "пазлы над телефоном",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "targets": [
+              "phone"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "targets": [
+              "phone"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "target": "phone",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "phone": "main",
+          "puzzle": "main"
+        },
+        "reference_cropped_families": [],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": true
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": true
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": true
+          }
+        ],
+        "best": "landscape-phone-puzzle-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -462,18 +1336,18 @@
       "prompt": "книга, телефон",
       "format": "landscape",
       "size": [
-        1200.0,
-        630.0
+        1200,
+        630
       ],
       "families": [
         "book",
         "phone"
       ],
       "source_bounds": [
-        4762.0,
-        3377.0,
-        1200.0,
-        630.0
+        4762,
+        3377,
+        1200,
+        630
       ],
       "reference": "landscape-book-phone-reference.svg",
       "replay": "landscape-book-phone-replay.svg",
@@ -514,6 +1388,105 @@
           "landscape-book-phone-S-2.svg",
           "landscape-book-phone-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "телефон на книге",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "target": "book",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "book": "main",
+          "phone": "main"
+        },
+        "reference_cropped_families": [
+          "book",
+          "phone"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "landscape-book-phone-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -521,8 +1494,8 @@
       "prompt": "папка, кошелек, монета",
       "format": "landscape",
       "size": [
-        1200.0,
-        630.0
+        1200,
+        630
       ],
       "families": [
         "folder",
@@ -530,10 +1503,10 @@
         "coin"
       ],
       "source_bounds": [
-        6062.0,
-        3377.0,
-        1200.0,
-        630.0
+        6062,
+        3377,
+        1200,
+        630
       ],
       "reference": "landscape-folder-wallet-coin-reference.svg",
       "replay": "landscape-folder-wallet-coin-replay.svg",
@@ -586,6 +1559,179 @@
           "landscape-folder-wallet-coin-S-2.svg",
           "landscape-folder-wallet-coin-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "папка выше кошелька и монеты, кошелек слева от монеты",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "wallet"
+            ]
+          },
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "wallet",
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "target": "coin",
+            "satisfied": true
+          },
+          {
+            "subject": "folder",
+            "relation": "above",
+            "target": "wallet",
+            "satisfied": true
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "target": "coin",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "folder": "main",
+          "coin": "main",
+          "wallet": "main"
+        },
+        "reference_cropped_families": [
+          "folder",
+          "wallet"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "landscape-folder-wallet-coin-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -593,18 +1739,18 @@
       "prompt": "цветы, наушники",
       "format": "landscape",
       "size": [
-        1200.0,
-        630.0
+        1200,
+        630
       ],
       "families": [
         "flowers",
         "headphones"
       ],
       "source_bounds": [
-        3462.0,
-        4161.0,
-        1200.0,
-        630.0
+        3462,
+        4161,
+        1200,
+        630
       ],
       "reference": "landscape-flowers-headphones-reference.svg",
       "replay": "landscape-flowers-headphones-replay.svg",
@@ -645,6 +1791,105 @@
           "landscape-flowers-headphones-S-2.svg",
           "landscape-flowers-headphones-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "цветы позади наушников",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "targets": [
+              "headphones"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "targets": [
+              "headphones"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "target": "headphones",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "flowers": "background",
+          "headphones": "main"
+        },
+        "reference_cropped_families": [
+          "flowers",
+          "headphones"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "landscape-flowers-headphones-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -652,8 +1897,8 @@
       "prompt": "лампа, кошелек, монета",
       "format": "landscape",
       "size": [
-        1200.0,
-        630.0
+        1200,
+        630
       ],
       "families": [
         "lamp",
@@ -661,10 +1906,10 @@
         "coin"
       ],
       "source_bounds": [
-        4762.0,
-        4161.0,
-        1200.0,
-        630.0
+        4762,
+        4161,
+        1200,
+        630
       ],
       "reference": "landscape-lamp-wallet-coin-reference.svg",
       "replay": "landscape-lamp-wallet-coin-replay.svg",
@@ -717,6 +1962,179 @@
           "landscape-lamp-wallet-coin-S-2.svg",
           "landscape-lamp-wallet-coin-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "лампа выше кошелька и монеты, кошелек ниже монеты",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "wallet"
+            ]
+          },
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "wallet",
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "target": "coin",
+            "satisfied": true
+          },
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "target": "wallet",
+            "satisfied": true
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "target": "coin",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "lamp": "background",
+          "coin": "main",
+          "wallet": "main"
+        },
+        "reference_cropped_families": [
+          "lamp",
+          "wallet"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "landscape-lamp-wallet-coin-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -724,8 +2142,8 @@
       "prompt": "книга, пазлы, ручка",
       "format": "landscape",
       "size": [
-        1200.0,
-        630.0
+        1200,
+        630
       ],
       "families": [
         "book",
@@ -733,10 +2151,10 @@
         "pen"
       ],
       "source_bounds": [
-        6062.0,
-        4161.0,
-        1200.0,
-        630.0
+        6062,
+        4161,
+        1200,
+        630
       ],
       "reference": "landscape-book-puzzle-pen-reference.svg",
       "replay": "landscape-book-puzzle-pen-replay.svg",
@@ -789,6 +2207,147 @@
           "landscape-book-puzzle-pen-S-2.svg",
           "landscape-book-puzzle-pen-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "пазлы на книге, ручка под книгой",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          },
+          {
+            "subject": "pen",
+            "relation": "below",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          },
+          {
+            "subject": "pen",
+            "relation": "below",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "pen",
+            "relation": "below",
+            "target": "book",
+            "satisfied": true
+          },
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "target": "book",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "pen": "main",
+          "book": "background",
+          "puzzle": "main"
+        },
+        "reference_cropped_families": [
+          "book",
+          "puzzle"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "landscape-book-puzzle-pen-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -796,18 +2355,18 @@
       "prompt": "телефон, пазлы",
       "format": "portrait",
       "size": [
-        800.0,
-        1200.0
+        800,
+        1200
       ],
       "families": [
         "phone",
         "puzzle"
       ],
       "source_bounds": [
-        3467.0,
-        5454.0,
-        800.0,
-        1200.0
+        3467,
+        5454,
+        800,
+        1200
       ],
       "reference": "portrait-phone-puzzle-reference.svg",
       "replay": "portrait-phone-puzzle-replay.svg",
@@ -848,6 +2407,104 @@
           "portrait-phone-puzzle-S-2.svg",
           "portrait-phone-puzzle-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "пазлы над телефоном",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "targets": [
+              "phone"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "targets": [
+              "phone"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "puzzle",
+            "relation": "above",
+            "target": "phone",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "phone": "main",
+          "puzzle": "main"
+        },
+        "reference_cropped_families": [
+          "phone"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "puzzle",
+                "relation": "above",
+                "target": "phone",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "puzzle": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "portrait-phone-puzzle-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -855,8 +2512,8 @@
       "prompt": "книга, телефон",
       "format": "portrait",
       "size": [
-        800.0,
-        1200.0
+        800,
+        1200
       ],
       "families": [
         "book",
@@ -864,9 +2521,9 @@
       ],
       "source_bounds": [
         4464.5,
-        5454.0,
-        800.0,
-        1200.0
+        5454,
+        800,
+        1200
       ],
       "reference": "portrait-book-phone-reference.svg",
       "replay": "portrait-book-phone-replay.svg",
@@ -907,6 +2564,105 @@
           "portrait-book-phone-S-2.svg",
           "portrait-book-phone-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "телефон на книге",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "phone",
+            "relation": "on",
+            "target": "book",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "book": "main",
+          "phone": "main"
+        },
+        "reference_cropped_families": [
+          "book",
+          "phone"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "phone",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "phone": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "portrait-book-phone-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -914,8 +2670,8 @@
       "prompt": "папка, кошелек, монета",
       "format": "portrait",
       "size": [
-        800.0,
-        1200.0
+        800,
+        1200
       ],
       "families": [
         "folder",
@@ -923,10 +2679,10 @@
         "coin"
       ],
       "source_bounds": [
-        5462.0,
-        5454.0,
-        800.0,
-        1200.0
+        5462,
+        5454,
+        800,
+        1200
       ],
       "reference": "portrait-folder-wallet-coin-reference.svg",
       "replay": "portrait-folder-wallet-coin-replay.svg",
@@ -979,6 +2735,179 @@
           "portrait-folder-wallet-coin-S-2.svg",
           "portrait-folder-wallet-coin-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "папка выше кошелька и монеты, кошелек слева от монеты",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "wallet"
+            ]
+          },
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "targets": [
+              "wallet",
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "folder",
+            "relation": "above",
+            "target": "coin",
+            "satisfied": true
+          },
+          {
+            "subject": "folder",
+            "relation": "above",
+            "target": "wallet",
+            "satisfied": true
+          },
+          {
+            "subject": "wallet",
+            "relation": "left_of",
+            "target": "coin",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "folder": "main",
+          "coin": "main",
+          "wallet": "main"
+        },
+        "reference_cropped_families": [
+          "folder",
+          "wallet"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "folder",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "left_of",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "folder": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": true,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "portrait-folder-wallet-coin-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -986,18 +2915,18 @@
       "prompt": "цветы, наушники",
       "format": "portrait",
       "size": [
-        800.0,
-        1200.0
+        800,
+        1200
       ],
       "families": [
         "flowers",
         "headphones"
       ],
       "source_bounds": [
-        3467.0,
-        6946.0,
-        800.0,
-        1200.0
+        3467,
+        6946,
+        800,
+        1200
       ],
       "reference": "portrait-flowers-headphones-reference.svg",
       "replay": "portrait-flowers-headphones-replay.svg",
@@ -1038,6 +2967,105 @@
           "portrait-flowers-headphones-S-2.svg",
           "portrait-flowers-headphones-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "цветы позади наушников",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "targets": [
+              "headphones"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "targets": [
+              "headphones"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "flowers",
+            "relation": "behind",
+            "target": "headphones",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "flowers": "background",
+          "headphones": "main"
+        },
+        "reference_cropped_families": [
+          "flowers",
+          "headphones"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "flowers",
+                "relation": "behind",
+                "target": "headphones",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "flowers": "main",
+              "headphones": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "portrait-flowers-headphones-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -1045,8 +3073,8 @@
       "prompt": "лампа, кошелек, монета",
       "format": "portrait",
       "size": [
-        800.0,
-        1200.0
+        800,
+        1200
       ],
       "families": [
         "lamp",
@@ -1055,9 +3083,9 @@
       ],
       "source_bounds": [
         4464.5,
-        6946.0,
-        800.0,
-        1200.0
+        6946,
+        800,
+        1200
       ],
       "reference": "portrait-lamp-wallet-coin-reference.svg",
       "replay": "portrait-lamp-wallet-coin-replay.svg",
@@ -1110,6 +3138,178 @@
           "portrait-lamp-wallet-coin-S-2.svg",
           "portrait-lamp-wallet-coin-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "лампа выше кошелька и монеты, кошелек ниже монеты",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "wallet"
+            ]
+          },
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "targets": [
+              "wallet",
+              "coin"
+            ]
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "targets": [
+              "coin"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "target": "coin",
+            "satisfied": true
+          },
+          {
+            "subject": "lamp",
+            "relation": "above",
+            "target": "wallet",
+            "satisfied": true
+          },
+          {
+            "subject": "wallet",
+            "relation": "below",
+            "target": "coin",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "lamp": "background",
+          "coin": "main",
+          "wallet": "main"
+        },
+        "reference_cropped_families": [
+          "lamp"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "coin",
+                "satisfied": true
+              },
+              {
+                "subject": "lamp",
+                "relation": "above",
+                "target": "wallet",
+                "satisfied": true
+              },
+              {
+                "subject": "wallet",
+                "relation": "below",
+                "target": "coin",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "lamp": "main",
+              "wallet": "main",
+              "coin": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "portrait-lamp-wallet-coin-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     },
     {
@@ -1117,8 +3317,8 @@
       "prompt": "книга, пазлы, ручка",
       "format": "portrait",
       "size": [
-        800.0,
-        1200.0
+        800,
+        1200
       ],
       "families": [
         "book",
@@ -1126,10 +3326,10 @@
         "pen"
       ],
       "source_bounds": [
-        5462.0,
-        6946.0,
-        800.0,
-        1200.0
+        5462,
+        6946,
+        800,
+        1200
       ],
       "reference": "portrait-book-puzzle-pen-reference.svg",
       "replay": "portrait-book-puzzle-pen-replay.svg",
@@ -1182,6 +3382,147 @@
           "portrait-book-puzzle-pen-S-2.svg",
           "portrait-book-puzzle-pen-S-3.svg"
         ]
+      },
+      "spatial": {
+        "prompt": "пазлы на книге, ручка под книгой",
+        "input_mode": "components",
+        "provider_calls": 0,
+        "expected_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          },
+          {
+            "subject": "pen",
+            "relation": "below",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_relations": [
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "targets": [
+              "book"
+            ]
+          },
+          {
+            "subject": "pen",
+            "relation": "below",
+            "targets": [
+              "book"
+            ]
+          }
+        ],
+        "parsed_matches_expected": true,
+        "reference_relation_checks": [
+          {
+            "subject": "pen",
+            "relation": "below",
+            "target": "book",
+            "satisfied": true
+          },
+          {
+            "subject": "puzzle",
+            "relation": "on",
+            "target": "book",
+            "satisfied": true
+          }
+        ],
+        "desired_roles": {
+          "pen": "main",
+          "book": "background",
+          "puzzle": "main"
+        },
+        "reference_cropped_families": [
+          "book",
+          "puzzle"
+        ],
+        "variants": [
+          {
+            "variant": 1,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 2,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          },
+          {
+            "variant": 3,
+            "relation_checks": [
+              {
+                "subject": "pen",
+                "relation": "below",
+                "target": "book",
+                "satisfied": true
+              },
+              {
+                "subject": "puzzle",
+                "relation": "on",
+                "target": "book",
+                "satisfied": true
+              }
+            ],
+            "roles": {
+              "book": "main",
+              "puzzle": "main",
+              "pen": "main"
+            },
+            "desired_roles_satisfied": false,
+            "cropped_families": [],
+            "desired_crop_satisfied": false
+          }
+        ],
+        "best": "portrait-book-puzzle-pen-spatial-best.svg",
+        "best_variant": 3,
+        "selection_status": "native_measured"
       }
     }
   ],

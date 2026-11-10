@@ -1,0 +1,123 @@
+{
+  "request": {
+    "prompt": "лампа позади кошелька и монеты, кошелек ниже монеты",
+    "mode": "components",
+    "format": "landscape",
+    "detail": "L",
+    "palette": {
+      "id": "lilac",
+      "name": "Сирень",
+      "background": [
+        "#D7CDF5",
+        "#AA9BF0",
+        "#7864D7",
+        "#181817"
+      ],
+      "object": [
+        "#F9ECB0",
+        "#F9A3AA",
+        "#FFE3E1",
+        "#FFFFFF"
+      ]
+    },
+    "seed": 0,
+    "backgrounds": true,
+    "use_ai": false,
+    "light": null
+  },
+  "selected_families": [
+    "lamp",
+    "wallet",
+    "coin"
+  ],
+  "unknown_components": [],
+  "parsed_relations": {
+    "relations": [
+      {
+        "subject": "lamp",
+        "relation": "behind",
+        "targets": [
+          "wallet",
+          "coin"
+        ]
+      },
+      {
+        "subject": "wallet",
+        "relation": "below",
+        "targets": [
+          "coin"
+        ]
+      }
+    ]
+  },
+  "provider_calls": 0,
+  "original_observation": {
+    "status": "rejected",
+    "error": "Противоречивое размещение предметов. Уточните пространственные отношения.",
+    "commit": "c17ced7"
+  },
+  "status": "generated",
+  "scene_count": 3,
+  "relation_checks": [
+    [
+      {
+        "subject": "lamp",
+        "relation": "behind",
+        "target": "coin",
+        "satisfied": true
+      },
+      {
+        "subject": "lamp",
+        "relation": "behind",
+        "target": "wallet",
+        "satisfied": true
+      },
+      {
+        "subject": "wallet",
+        "relation": "below",
+        "target": "coin",
+        "satisfied": true
+      }
+    ],
+    [
+      {
+        "subject": "lamp",
+        "relation": "behind",
+        "target": "coin",
+        "satisfied": true
+      },
+      {
+        "subject": "lamp",
+        "relation": "behind",
+        "target": "wallet",
+        "satisfied": true
+      },
+      {
+        "subject": "wallet",
+        "relation": "below",
+        "target": "coin",
+        "satisfied": true
+      }
+    ],
+    [
+      {
+        "subject": "lamp",
+        "relation": "behind",
+        "target": "coin",
+        "satisfied": true
+      },
+      {
+        "subject": "lamp",
+        "relation": "behind",
+        "target": "wallet",
+        "satisfied": true
+      },
+      {
+        "subject": "wallet",
+        "relation": "below",
+        "target": "coin",
+        "satisfied": true
+      }
+    ]
+  ]
+}

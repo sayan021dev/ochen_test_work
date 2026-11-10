@@ -81,3 +81,73 @@ def test_audit_labels_coordinate_replay_as_diagnostic_and_records_no_provider_ca
         assert {pose["family"] for pose in example["poses"]} == set(example["families"])
         assert all(pose["matched_long_paths"] >= 3 for pose in example["poses"])
         assert all(pose["max_control_point_rms"] < 0.035 for pose in example["poses"])
+
+
+def test_visual_relation_check_separates_position_from_exact_geometry_and_supports():
+    from app.models import Element, Scene
+
+    from scripts.compare_figma_examples import assess_relations
+
+    scene = Scene(
+        palette=PALETTES[0],
+        scale=0.2,
+        elements=[
+            Element(id="book", family="book", x=100, y=220),
+            Element(id="phone", family="phone", x=120, y=180, support_ids=["book"]),
+        ],
+    )
+    relation = {"subject": "phone", "relation": "on", "targets": ["book"]}
+    assert assess_relations(scene, [relation])[0]["satisfied"] is True
+    scene.elements[1].support_ids = []
+    assert assess_relations(scene, [relation])[0]["satisfied"] is False
+    assert assess_relations(scene, [relation], require_supports=False)[0]["satisfied"] is True
+
+
+@pytest.mark.parametrize("format_name", ["square", "landscape", "portrait"])
+@pytest.mark.parametrize("brief_index", range(6))
+def test_spatial_reference_briefs_parse_exact_relations_and_keep_them_in_all_three_variants(
+    format_name, brief_index
+):
+    from app.layout import resolve_intent
+
+    from scripts.compare_figma_examples import SPATIAL_BRIEFS, assess_relations, relation_triples
+
+    prompt, expected = SPATIAL_BRIEFS[brief_index]
+    selected, unknown = select_components(prompt)
+    assert unknown == []
+    relations = resolve_intent(prompt, selected, None).model_dump()["relations"]
+    assert relation_triples(relations) == set(expected)
+    scenes = compose_variants(
+        selected,
+        ComposeRequest(
+            prompt=prompt,
+            mode="components",
+            format=format_name,
+            detail="L",
+            palette=PALETTES[0],
+            use_ai=False,
+        ),
+    )
+    assert len(scenes) == 3
+    for scene in scenes:
+        assert {item.family for item in scene.elements} == set(BRIEFS[brief_index][1])
+        assert all(check["satisfied"] for check in assess_relations(scene, relations))
+
+
+def test_spatial_audit_keeps_name_list_and_descriptive_cohorts_separate():
+    manifest = json.loads((ROOT / "examples/figma-reference/manifest.json").read_text())
+    metrics = json.loads((ROOT / "examples/figma-reference/metrics.json").read_text())
+    assert metrics["algorithm_count"] == 108
+    assert metrics["spatial_algorithm_count"] == 54
+    assert metrics["provider_calls"] == 0
+    for example in manifest["examples"]:
+        spatial = example["spatial"]
+        assert spatial["prompt"] != example["prompt"]
+        assert spatial["parsed_matches_expected"] is True
+        assert spatial["selection_status"] == "native_measured"
+        assert spatial["best_variant"] in {1, 2, 3}
+        assert len(spatial["variants"]) == 3
+        best = json.loads(
+            (ROOT / "examples/figma-reference" / spatial["best"]).with_suffix(".json").read_text()
+        )
+        assert {item["family"] for item in best["elements"]} == set(example["families"])

@@ -5,6 +5,12 @@
   "raster_max_dimension": 320,
   "mismatch_threshold": "RGBA difference >16/255; foreground difference from #D7CDF5 >12/255",
   "exact_algorithm_matches": 0,
+  "spatial_relation_definition": "Axial bound centres; behind/on require AABB overlap and z-order; generated on also requires support IDs. Does not prove physical silhouette contact.",
+  "spatial_algorithm_count": 54,
+  "spatial_exact_algorithm_matches": 0,
+  "spatial_relation_cases_passed": 54,
+  "spatial_role_cases_passed": 27,
+  "spatial_crop_cases_passed": 6,
   "exact_replay_matches": 0,
   "note": "Diagnostic raster measurement only; deliverable compositions remain editable SVG.",
   "examples": [
@@ -75,7 +81,82 @@
           "mean_rgb_absolute_error": 25.4479,
           "foreground_iou": 0.453
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": true,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 33929,
+          "changed_percent": 33.134,
+          "mean_rgb_absolute_error": 31.2697,
+          "foreground_iou": 0.376
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": true,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 31209,
+          "changed_percent": 30.478,
+          "mean_rgb_absolute_error": 27.8829,
+          "foreground_iou": 0.3964
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": true,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 28975,
+          "changed_percent": 28.296,
+          "mean_rgb_absolute_error": 25.599,
+          "foreground_iou": 0.4167
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "square-book-phone",
@@ -144,7 +225,82 @@
           "mean_rgb_absolute_error": 44.1287,
           "foreground_iou": 0.3079
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 54379,
+          "changed_percent": 53.104,
+          "mean_rgb_absolute_error": 42.9911,
+          "foreground_iou": 0.3656
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 54247,
+          "changed_percent": 52.976,
+          "mean_rgb_absolute_error": 41.9962,
+          "foreground_iou": 0.3453
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 54386,
+          "changed_percent": 53.111,
+          "mean_rgb_absolute_error": 41.6804,
+          "foreground_iou": 0.3215
+        }
+      ],
+      "spatial_best_variant": 2
     },
     {
       "id": "square-folder-wallet-coin",
@@ -213,7 +369,121 @@
           "mean_rgb_absolute_error": 39.6482,
           "foreground_iou": 0.191
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56664,
+          "changed_percent": 55.336,
+          "mean_rgb_absolute_error": 35.1072,
+          "foreground_iou": 0.3847
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56956,
+          "changed_percent": 55.621,
+          "mean_rgb_absolute_error": 35.25,
+          "foreground_iou": 0.3581
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 56967,
+          "changed_percent": 55.632,
+          "mean_rgb_absolute_error": 34.6978,
+          "foreground_iou": 0.3325
+        }
+      ],
+      "spatial_best_variant": 1
     },
     {
       "id": "square-flowers-headphones",
@@ -282,7 +552,82 @@
           "mean_rgb_absolute_error": 29.1751,
           "foreground_iou": 0.1293
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 42225,
+          "changed_percent": 41.235,
+          "mean_rgb_absolute_error": 41.2697,
+          "foreground_iou": 0.2212
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 41193,
+          "changed_percent": 40.228,
+          "mean_rgb_absolute_error": 39.9909,
+          "foreground_iou": 0.207
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 40313,
+          "changed_percent": 39.368,
+          "mean_rgb_absolute_error": 38.73,
+          "foreground_iou": 0.191
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "square-lamp-wallet-coin",
@@ -351,7 +696,121 @@
           "mean_rgb_absolute_error": 22.341,
           "foreground_iou": 0.258
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 38808,
+          "changed_percent": 37.898,
+          "mean_rgb_absolute_error": 23.7857,
+          "foreground_iou": 0.1506
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 38026,
+          "changed_percent": 37.135,
+          "mean_rgb_absolute_error": 23.4234,
+          "foreground_iou": 0.1459
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 37408,
+          "changed_percent": 36.531,
+          "mean_rgb_absolute_error": 23.1468,
+          "foreground_iou": 0.1408
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "square-book-puzzle-pen",
@@ -420,7 +879,103 @@
           "mean_rgb_absolute_error": 35.2458,
           "foreground_iou": 0.2347
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 48195,
+          "changed_percent": 47.065,
+          "mean_rgb_absolute_error": 31.9536,
+          "foreground_iou": 0.2539
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 47120,
+          "changed_percent": 46.016,
+          "mean_rgb_absolute_error": 31.3884,
+          "foreground_iou": 0.2262
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 320,
+          "changed_pixels": 46121,
+          "changed_percent": 45.04,
+          "mean_rgb_absolute_error": 30.8661,
+          "foreground_iou": 0.1989
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "landscape-phone-puzzle",
@@ -489,7 +1044,82 @@
           "mean_rgb_absolute_error": 33.8025,
           "foreground_iou": 0.2641
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": true,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 19319,
+          "changed_percent": 35.936,
+          "mean_rgb_absolute_error": 28.71,
+          "foreground_iou": 0.2167
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": true,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 19198,
+          "changed_percent": 35.711,
+          "mean_rgb_absolute_error": 29.02,
+          "foreground_iou": 0.1988
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": true,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 19137,
+          "changed_percent": 35.597,
+          "mean_rgb_absolute_error": 29.0153,
+          "foreground_iou": 0.1815
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "landscape-book-phone",
@@ -558,7 +1188,82 @@
           "mean_rgb_absolute_error": 62.2391,
           "foreground_iou": 0.2291
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 39958,
+          "changed_percent": 74.327,
+          "mean_rgb_absolute_error": 57.3627,
+          "foreground_iou": 0.2264
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 39822,
+          "changed_percent": 74.074,
+          "mean_rgb_absolute_error": 56.9579,
+          "foreground_iou": 0.2147
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 39706,
+          "changed_percent": 73.858,
+          "mean_rgb_absolute_error": 56.3561,
+          "foreground_iou": 0.2027
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "landscape-folder-wallet-coin",
@@ -627,7 +1332,121 @@
           "mean_rgb_absolute_error": 34.478,
           "foreground_iou": 0.2727
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 31645,
+          "changed_percent": 58.863,
+          "mean_rgb_absolute_error": 36.0941,
+          "foreground_iou": 0.2565
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 31438,
+          "changed_percent": 58.478,
+          "mean_rgb_absolute_error": 35.947,
+          "foreground_iou": 0.2392
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 31286,
+          "changed_percent": 58.196,
+          "mean_rgb_absolute_error": 35.8011,
+          "foreground_iou": 0.2216
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "landscape-flowers-headphones",
@@ -696,7 +1515,82 @@
           "mean_rgb_absolute_error": 39.318,
           "foreground_iou": 0.1804
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 20424,
+          "changed_percent": 37.991,
+          "mean_rgb_absolute_error": 36.9962,
+          "foreground_iou": 0.1655
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 20003,
+          "changed_percent": 37.208,
+          "mean_rgb_absolute_error": 36.4581,
+          "foreground_iou": 0.1614
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 19531,
+          "changed_percent": 36.33,
+          "mean_rgb_absolute_error": 35.6126,
+          "foreground_iou": 0.1572
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "landscape-lamp-wallet-coin",
@@ -765,7 +1659,121 @@
           "mean_rgb_absolute_error": 25.7455,
           "foreground_iou": 0.2163
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 20665,
+          "changed_percent": 38.439,
+          "mean_rgb_absolute_error": 24.0402,
+          "foreground_iou": 0.1468
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 20633,
+          "changed_percent": 38.38,
+          "mean_rgb_absolute_error": 23.7294,
+          "foreground_iou": 0.1327
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 20610,
+          "changed_percent": 38.337,
+          "mean_rgb_absolute_error": 23.5479,
+          "foreground_iou": 0.1207
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "landscape-book-puzzle-pen",
@@ -834,7 +1842,103 @@
           "mean_rgb_absolute_error": 36.7441,
           "foreground_iou": 0.2693
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 23497,
+          "changed_percent": 43.707,
+          "mean_rgb_absolute_error": 30.1977,
+          "foreground_iou": 0.1357
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 23212,
+          "changed_percent": 43.177,
+          "mean_rgb_absolute_error": 29.6804,
+          "foreground_iou": 0.1185
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 320,
+          "height": 168,
+          "changed_pixels": 22958,
+          "changed_percent": 42.705,
+          "mean_rgb_absolute_error": 29.1981,
+          "foreground_iou": 0.1035
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "portrait-phone-puzzle",
@@ -903,7 +2007,82 @@
           "mean_rgb_absolute_error": 20.381,
           "foreground_iou": 0.3923
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 17353,
+          "changed_percent": 25.459,
+          "mean_rgb_absolute_error": 21.7534,
+          "foreground_iou": 0.41
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 17059,
+          "changed_percent": 25.028,
+          "mean_rgb_absolute_error": 20.8945,
+          "foreground_iou": 0.393
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "puzzle",
+              "relation": "above",
+              "target": "phone",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "puzzle": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 16875,
+          "changed_percent": 24.758,
+          "mean_rgb_absolute_error": 20.457,
+          "foreground_iou": 0.3716
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "portrait-book-phone",
@@ -972,7 +2151,82 @@
           "mean_rgb_absolute_error": 39.0333,
           "foreground_iou": 0.2508
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 37176,
+          "changed_percent": 54.542,
+          "mean_rgb_absolute_error": 38.4559,
+          "foreground_iou": 0.2345
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 37023,
+          "changed_percent": 54.318,
+          "mean_rgb_absolute_error": 37.5339,
+          "foreground_iou": 0.2199
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "phone",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "phone": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 36825,
+          "changed_percent": 54.027,
+          "mean_rgb_absolute_error": 36.5602,
+          "foreground_iou": 0.2054
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "portrait-folder-wallet-coin",
@@ -1041,7 +2295,121 @@
           "mean_rgb_absolute_error": 35.0019,
           "foreground_iou": 0.097
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 36714,
+          "changed_percent": 53.864,
+          "mean_rgb_absolute_error": 30.7634,
+          "foreground_iou": 0.2186
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 36340,
+          "changed_percent": 53.316,
+          "mean_rgb_absolute_error": 30.1594,
+          "foreground_iou": 0.2089
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "folder",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "left_of",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "folder": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": true,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 36148,
+          "changed_percent": 53.034,
+          "mean_rgb_absolute_error": 30.1247,
+          "foreground_iou": 0.197
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "portrait-flowers-headphones",
@@ -1110,7 +2478,82 @@
           "mean_rgb_absolute_error": 38.5427,
           "foreground_iou": 0.1156
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 27586,
+          "changed_percent": 40.472,
+          "mean_rgb_absolute_error": 37.4933,
+          "foreground_iou": 0.1026
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26844,
+          "changed_percent": 39.384,
+          "mean_rgb_absolute_error": 36.2991,
+          "foreground_iou": 0.0989
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "flowers",
+              "relation": "behind",
+              "target": "headphones",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "flowers": "main",
+            "headphones": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26166,
+          "changed_percent": 38.389,
+          "mean_rgb_absolute_error": 35.1993,
+          "foreground_iou": 0.094
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "portrait-lamp-wallet-coin",
@@ -1179,7 +2622,121 @@
           "mean_rgb_absolute_error": 25.4528,
           "foreground_iou": 0.3393
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 30800,
+          "changed_percent": 45.188,
+          "mean_rgb_absolute_error": 30.652,
+          "foreground_iou": 0.1677
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 29826,
+          "changed_percent": 43.759,
+          "mean_rgb_absolute_error": 29.1124,
+          "foreground_iou": 0.1685
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "coin",
+              "satisfied": true
+            },
+            {
+              "subject": "lamp",
+              "relation": "above",
+              "target": "wallet",
+              "satisfied": true
+            },
+            {
+              "subject": "wallet",
+              "relation": "below",
+              "target": "coin",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "lamp": "main",
+            "wallet": "main",
+            "coin": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 29064,
+          "changed_percent": 42.641,
+          "mean_rgb_absolute_error": 27.8638,
+          "foreground_iou": 0.1681
+        }
+      ],
+      "spatial_best_variant": 3
     },
     {
       "id": "portrait-book-puzzle-pen",
@@ -1248,7 +2805,103 @@
           "mean_rgb_absolute_error": 28.8189,
           "foreground_iou": 0.21
         }
-      ]
+      ],
+      "spatial": [
+        {
+          "variant": 1,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 27474,
+          "changed_percent": 40.308,
+          "mean_rgb_absolute_error": 27.7496,
+          "foreground_iou": 0.2074
+        },
+        {
+          "variant": 2,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26988,
+          "changed_percent": 39.595,
+          "mean_rgb_absolute_error": 27.2243,
+          "foreground_iou": 0.1933
+        },
+        {
+          "variant": 3,
+          "relation_checks": [
+            {
+              "subject": "pen",
+              "relation": "below",
+              "target": "book",
+              "satisfied": true
+            },
+            {
+              "subject": "puzzle",
+              "relation": "on",
+              "target": "book",
+              "satisfied": true
+            }
+          ],
+          "roles": {
+            "book": "main",
+            "puzzle": "main",
+            "pen": "main"
+          },
+          "desired_roles_satisfied": false,
+          "cropped_families": [],
+          "desired_crop_satisfied": false,
+          "width": 213,
+          "height": 320,
+          "changed_pixels": 26388,
+          "changed_percent": 38.715,
+          "mean_rgb_absolute_error": 26.688,
+          "foreground_iou": 0.1855
+        }
+      ],
+      "spatial_best_variant": 3
     }
   ]
 }
