@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "title": "пазлы, папка, монета, лампа, наушники, целиком",
+  "format": "landscape",
+  "detail": "S",
+  "scale": 0.6757526377106511,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "fit",
+  "crop": null,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "puzzle",
+      "role": "main",
+      "x": 912.7921,
+      "y": 323.8945,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-2",
+      "family": "folder",
+      "role": "main",
+      "x": 451.883,
+      "y": 72.45,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-3",
+      "family": "coin",
+      "role": "main",
+      "x": 451.883,
+      "y": 323.8945,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-4",
+      "family": "lamp",
+      "role": "main",
+      "x": 103.3481,
+      "y": 124.2713,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-5",
+      "family": "headphones",
+      "role": "main",
+      "x": 583.7841,
+      "y": 323.8945,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

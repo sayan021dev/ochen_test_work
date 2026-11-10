@@ -185,9 +185,17 @@ export function createEditorStore(initial: Scene) {
     patchElement: (id, patch) =>
       get().change({
         ...get().scene,
-        elements: get().scene.elements.map((e) =>
-          e.id === id ? { ...e, ...patch } : e,
-        ),
+        elements: get().scene.elements.map((e) => {
+          if (e.id !== id) return e;
+          const next = { ...e, ...patch };
+          if (patch.role === "background" && next.color_map)
+            next.color_map = Object.fromEntries(
+              Object.entries(next.color_map).filter(([, target]) =>
+                target?.startsWith("background-"),
+              ),
+            );
+          return next;
+        }),
       }),
     add: (family) => {
       const s = get();

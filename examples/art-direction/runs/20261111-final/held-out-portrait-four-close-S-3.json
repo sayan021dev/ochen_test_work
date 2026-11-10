@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "title": "фоновая книга позади кошелька, ручка справа от кошелька, цветы слева от кошелька, крупный план",
+  "format": "portrait",
+  "detail": "S",
+  "scale": 0.835289493442462,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "close",
+  "crop": null,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "book",
+      "role": "background",
+      "x": 126.9039,
+      "y": 281.6962,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-2",
+      "family": "wallet",
+      "role": "main",
+      "x": 297.1938,
+      "y": 427.7147,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-3",
+      "family": "pen",
+      "role": "main",
+      "x": 587.6576,
+      "y": 716.769,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-4",
+      "family": "flowers",
+      "role": "main",
+      "x": 0.0,
+      "y": 716.769,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

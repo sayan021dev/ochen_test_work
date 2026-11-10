@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "title": "лампа стоит на телефоне и на лампе лежит ручка",
+  "format": "square",
+  "detail": "L",
+  "scale": 0.6300819563796813,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "fit",
+  "crop": null,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-2",
+      "family": "phone",
+      "role": "main",
+      "x": 178.9615,
+      "y": 624.1118,
+      "angle": 0.0,
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-1",
+      "family": "lamp",
+      "role": "main",
+      "x": 225.0168,
+      "y": 85.0,
+      "angle": 0.0,
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [
+        "item-2"
+      ],
+      "color_map": {}
+    },
+    {
+      "id": "item-3",
+      "family": "pen",
+      "role": "main",
+      "x": 494.2543,
+      "y": 164.8835,
+      "angle": 0.0,
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [
+        "item-1"
+      ],
+      "color_map": {}
+    }
+  ]
+}

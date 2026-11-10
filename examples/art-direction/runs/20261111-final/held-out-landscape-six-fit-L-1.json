@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "title": "книга, телефон, пазлы, кошелек, монета, ручка, целиком",
+  "format": "landscape",
+  "detail": "L",
+  "scale": 0.3620444384617534,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "fit",
+  "crop": null,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "book",
+      "role": "main",
+      "x": 108.5488,
+      "y": 138.2021,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-2",
+      "family": "phone",
+      "role": "main",
+      "x": 655.5827,
+      "y": 53.55,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-3",
+      "family": "puzzle",
+      "role": "main",
+      "x": 655.5827,
+      "y": 244.2505,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-4",
+      "family": "wallet",
+      "role": "main",
+      "x": 655.5827,
+      "y": 381.3204,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-5",
+      "family": "coin",
+      "role": "main",
+      "x": 907.3776,
+      "y": 381.3204,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-6",
+      "family": "pen",
+      "role": "main",
+      "x": 907.3776,
+      "y": 473.1224,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

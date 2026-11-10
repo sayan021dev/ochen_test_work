@@ -128,3 +128,42 @@ def test_global_light_uses_the_active_cast_only_on_receivers_for_supported_objec
     assert cast.get("data-shadow-source") == "body-silhouette"
     assert root.find(".//*[@data-supported-shadow-source='pen']") is not None
     assert root.find(".//*[@data-ground-shadow-cut='pen']") is None
+
+
+def test_unlinked_upper_layers_cast_on_actual_lower_surfaces_without_becoming_supported():
+    scene = Scene.model_validate(
+        {
+            "palette": PALETTES[0],
+            "elements": [
+                {"id": "rear", "family": "phone", "x": 0, "y": 0},
+                {"id": "hidden", "family": "wallet", "x": 0, "y": 0, "hidden": True},
+                {"id": "middle", "family": "book", "x": 0, "y": 0},
+                {"id": "upper", "family": "pen", "x": 0, "y": 0},
+            ],
+        }
+    )
+    root = ET.fromstring(render_scene(scene, custom_shadows_enabled=False))
+    overlay = root.find(".//*[@data-contact-shadow-owner='upper']")
+    assert overlay is not None
+    assert overlay.get("data-contact-shadow-receivers") == "rear middle"
+    maskid = overlay.get("mask")[5:-1]
+    mask = root.find(f".//s:mask[@id='{maskid}']", NS)
+    assert [(n.get("data-receiver-body"), n.get("data-receiver-fill")) for n in mask] == [
+        ("rear", "allow"),
+        ("middle", "allow"),
+    ]
+    # Inferred layer contact never declares the object elevated: its original
+    # floor cast and original source body separation remain available.
+    assert root.find(".//*[@data-supported-shadow-source='upper']") is None
+    ground = root.find(".//*[@data-scene-shadows]")
+    assert ground.find("s:g[@data-shadow-owner-id='upper']", NS) is not None
+    assert all(not element.support_ids for element in scene.elements)
+    scene.elements[0], scene.elements[-1] = scene.elements[-1], scene.elements[0]
+    reordered = ET.fromstring(render_scene(scene, custom_shadows_enabled=False))
+    assert reordered.find(".//*[@data-contact-shadow-owner='upper']") is None
+    assert (
+        reordered.find(".//*[@data-contact-shadow-owner='rear']").get(
+            "data-contact-shadow-receivers"
+        )
+        == "upper middle"
+    )

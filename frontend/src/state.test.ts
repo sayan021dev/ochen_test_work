@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditorStore, defaultScene } from "./state";
-import type { Palette } from "./types";
+import type { Element, Palette } from "./types";
 
 const palette: Palette = {
   id: "test",
@@ -163,11 +163,9 @@ it("a replacement browser session detaches ownership while preserving scene and 
 it("detail changes keep a dragged shadow's displacement in scene pixels", () => {
   const store = createEditorStore(defaultScene(palette));
   const first = store.getState().scene.elements[0];
-  store
-    .getState()
-    .patchElement(first.id, {
-      shadow: { angle: 25, length: 1.2, opacity: 0.7, x: 100, y: -60 },
-    });
+  store.getState().patchElement(first.id, {
+    shadow: { angle: 25, length: 1.2, opacity: 0.7, x: 100, y: -60 },
+  });
   const before = store.getState().scene;
   store.getState().setDetail("S");
   const after = store.getState().scene;
@@ -180,5 +178,64 @@ it("detail changes keep a dragged shadow's displacement in scene pixels", () => 
   store.getState().setDetail("L");
   expect(store.getState().scene.elements[0].shadow).toEqual(
     before.elements[0].shadow,
+  );
+});
+
+it("background role changes remove forbidden paint targets and undo restores them", () => {
+  const scene = defaultScene(palette);
+  const color_map: Element["color_map"] = {
+    "object-0": "object-1",
+    "object-1": "background-2",
+    "background-0": "background-1",
+    "background-2": "object-3",
+  };
+  scene.elements[0] = { ...scene.elements[0], color_map };
+  const original = structuredClone(scene.elements[0]);
+  const store = createEditorStore(scene);
+  store.getState().patchElement(original.id, { role: "background" });
+  expect(store.getState().scene.elements[0].color_map).toEqual({
+    "object-1": "background-2",
+    "background-0": "background-1",
+  });
+  expect(store.getState().past).toHaveLength(1);
+  store.getState().undo();
+  expect(store.getState().scene.elements[0]).toEqual(original);
+  store.getState().redo();
+  expect(store.getState().scene.elements[0].role).toBe("background");
+  expect(Object.values(store.getState().scene.elements[0].color_map!)).toEqual([
+    "background-2",
+    "background-1",
+  ]);
+});
+
+it("a role patch filters its replacement paint map as well as the saved one", () => {
+  const store = createEditorStore(defaultScene(palette));
+  const original = store.getState().scene.elements[0];
+  store.getState().patchElement(original.id, {
+    role: "background",
+    color_map: { "background-0": "object-0", "background-1": "background-2" },
+  });
+  expect(store.getState().scene.elements[0].color_map).toEqual({
+    "background-1": "background-2",
+  });
+});
+
+it("ordinary edits and duplication retain per-object color choices", () => {
+  const source = defaultScene(palette);
+  source.elements[0].color_map = { "object-0": "object-1" };
+  const store = createEditorStore(source);
+  const original = source.elements[0];
+  store.getState().patchElement(original.id, { x: 200, angle: 20 });
+  expect(store.getState().scene.elements[0].color_map).toEqual(
+    original.color_map,
+  );
+  store.getState().select(original.id);
+  store.getState().duplicate();
+  const copy = store.getState().scene.elements.at(-1)!;
+  expect(copy.color_map).toEqual(original.color_map);
+  store.getState().patchElement(copy.id, { role: "background" });
+  expect(store.getState().scene.elements.at(-1)!.color_map).toEqual({});
+  expect(store.getState().scene.elements[0].color_map).toEqual(
+    original.color_map,
   );
 });

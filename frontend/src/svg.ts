@@ -1,4 +1,4 @@
-import type { Palette } from "./types";
+import type { Palette, PaintRole } from "./types";
 import { applyCustomShadow, type ShadowEffect } from "./shadow";
 
 const original = {
@@ -11,6 +11,7 @@ export function prepareAsset(
   palette: Palette,
   prefix: string,
   effect?: ShadowEffect,
+  colorMap: Partial<Record<PaintRole, PaintRole>> = {},
 ): string {
   const document = new DOMParser().parseFromString(source, "image/svg+xml");
   if (effect) applyCustomShadow(document, effect);
@@ -49,7 +50,15 @@ export function prepareAsset(
           value.toLowerCase() === "white" ? "#FFFFFF" : value.toUpperCase();
         for (const role of ["background", "object"] as const) {
           const index = original[role].indexOf(normalized);
-          if (index >= 0) element.setAttribute(name, palette[role][index]);
+          if (index >= 0) {
+            const sourceRole = `${role}-${index}` as PaintRole;
+            const targetRole = colorMap[sourceRole] ?? sourceRole;
+            const [group, slot] = targetRole.split("-") as [
+              "background" | "object",
+              string,
+            ];
+            element.setAttribute(name, palette[group][Number(slot)]);
+          }
         }
       }
     }
@@ -66,12 +75,19 @@ export function prepareAssetLayer(
   effect: ShadowEffect,
   layer: "body" | "shadow",
   custom = true,
+  colorMap: Partial<Record<PaintRole, PaintRole>> = {},
 ): string {
-  const markup = prepareAsset(source, palette, prefix, {
-    ...effect,
-    separateLayers: true,
-    preserveSource: !custom,
-  });
+  const markup = prepareAsset(
+    source,
+    palette,
+    prefix,
+    {
+      ...effect,
+      separateLayers: true,
+      preserveSource: !custom,
+    },
+    colorMap,
+  );
   const root = new DOMParser().parseFromString(
     `<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`,
     "image/svg+xml",

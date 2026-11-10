@@ -6,10 +6,18 @@ All sizes stay in source units until one common scale fits the whole composition
 
 import re
 from dataclasses import dataclass
+from itertools import pairwise
 from typing import Literal
 
 from pydantic import Field, model_validator
 
+from app.art_direction import (
+    ArtDirection,
+    mentions,
+    parse_art_direction,
+    resolve_art_direction,
+    strip_art_directives,
+)
 from app.models import Family, Model
 
 RelationKind = Literal["left_of", "right_of", "above", "below", "on", "behind", "in_front_of"]
@@ -29,24 +37,9 @@ class LayoutRelation(Model):
 
 class LayoutIntent(Model):
     relations: list[LayoutRelation] = Field(max_length=30)
+    art: ArtDirection | None = None
 
 
-# Word boundaries keep 'над' out of 'надежда', and inflected nouns keep exact IDs.
-NOUN_PATTERNS = {
-    "book": r"книг[а-я]*|books?",
-    "phone": r"телефон[а-я]*|phones?",
-    "puzzle": r"пазл[а-я]*|puzzles?",
-    "coin": r"монет[а-я]*|coins?",
-    "headphones": r"наушник[а-я]*|headphones?",
-    "lamp": r"ламп[а-я]*|lamps?",
-    "flowers": r"цвет(?:ы|ов|ам|ами|ах|ок|ка|ку|ком|ке)|букет[а-я]*|ваз[а-я]*|flowers?",
-    "wallet": r"кошел[еь]к[а-я]*|кошельк[а-я]*|wallets?",
-    "folder": r"папк[а-я]*|folders?",
-    "pen": r"ручк[а-я]*|pens?",
-}
-NOUN_RE = re.compile(
-    r"\b(?:" + "|".join(f"(?P<{f}>{p})" for f, p in NOUN_PATTERNS.items()) + r")\b"
-)
 RELATIONS = {
     "left_of": r"слева(?:\s+от)?|левее(?:\s+от)?|to\s+the\s+left\s+of|left\s+of",
     "right_of": r"справа(?:\s+от)?|правее(?:\s+от)?|to\s+the\s+right\s+of|right\s+of",
@@ -62,14 +55,47 @@ GROUP_PRONOUN = re.compile(r"\b(?:ними|них|ими|ними|them|both|вс
 SINGLE_PRONOUN = re.compile(r"\b(?:ней|ним|него|нее|ею|нем|it)\b")
 
 
-def mentions(prompt: str):
-    return list(NOUN_RE.finditer(prompt.lower().replace("ё", "е")))
+def _art_clause_boundaries(original: str, stripped: str, nouns) -> set[int]:
+    """Retain independent art clauses that space-preserving stripping would hide.
+
+    A single decorated noun on either side of a comma is an independent clause.
+    Oblique single-word adjectives still decorate genuine lists of targets, e.g.
+    'на книге, фоновой лампе'. Explicit conjunction groups are handled by callers.
+    """
+    separators = [-1, *(m.start() for m in re.finditer(r"[,;\n]", original)), len(original)]
+    boundaries = set()
+    for start, end in pairwise(separators):
+        clause_nouns = [noun for noun in nouns if start < noun.start() < end]
+        if len(clause_nouns) != 1 or original[start + 1 : end] == stripped[start + 1 : end]:
+            continue
+        if REL_RE.search(stripped[start + 1 : end]):
+            continue
+        removed = "".join(
+            char if char != stripped[index] else " "
+            for index, char in enumerate(original[start + 1 : end], start + 1)
+        )
+        words = re.findall(r"[а-я]+", removed)
+        if len(words) == 1 and re.fullmatch(
+            r"[а-я]+(?:ой|ому|ым|ыми|ого|ую|ей|ом|ых|их)", words[0]
+        ):
+            continue
+        boundaries.update((start, end))
+    return boundaries
 
 
 def parse_layout_intent(prompt: str, families: list[str]) -> LayoutIntent:
     """Recognize literal RU/EN instructions; broader language can come from the LLM."""
-    text = prompt.lower().replace("ё", "е")
+    original_text = prompt.lower().replace("ё", "е")
+    text = strip_art_directives(prompt)
     nouns = [m for m in mentions(text) if m.lastgroup in families]
+    art_boundaries = _art_clause_boundaries(original_text, text, nouns)
+
+    def separate_art_clauses(before, after):
+        gap = text[before.end() : after.start()]
+        if re.search(r"\b(?:и|and)\b|&", gap):
+            return False
+        return any(before.end() <= boundary < after.start() for boundary in art_boundaries)
+
     relations = []
     last_subjects: list[str] = []
     for index in range(len(nouns) - 1):
@@ -138,6 +164,8 @@ def parse_layout_intent(prompt: str, families: list[str]) -> LayoutIntent:
             while left > 0 and CONNECTOR.fullmatch(
                 text[nouns[left - 1].end() : nouns[left].start()]
             ):
+                if separate_art_clauses(nouns[left - 1], nouns[left]):
+                    break
                 connector = text[nouns[left - 1].end() : nouns[left].start()]
                 if "," in connector and any(
                     r.subject == nouns[left - 1].lastgroup or nouns[left - 1].lastgroup in r.targets
@@ -150,6 +178,8 @@ def parse_layout_intent(prompt: str, families: list[str]) -> LayoutIntent:
             while right + 1 < len(nouns) and CONNECTOR.fullmatch(
                 text[nouns[right].end() : nouns[right + 1].start()]
             ):
+                if separate_art_clauses(nouns[right], nouns[right + 1]):
+                    break
                 following_end = nouns[right + 2].start() if right + 2 < len(nouns) else len(text)
                 following = text[nouns[right + 1].end() : following_end]
                 if REL_RE.search(following):
@@ -201,7 +231,8 @@ def parse_layout_intent(prompt: str, families: list[str]) -> LayoutIntent:
                                 subject=subject, relation=match.lastgroup, targets=[reference]
                             )
                         )
-    return LayoutIntent(relations=relations)
+    art = parse_art_direction(prompt, families)
+    return LayoutIntent(relations=relations, art=art if art != ArtDirection() else None)
 
 
 def resolve_intent(prompt: str, families: list[str], proposed: LayoutIntent | None) -> LayoutIntent:
@@ -236,7 +267,10 @@ def resolve_intent(prompt: str, families: list[str], proposed: LayoutIntent | No
                     subject=relation.subject, relation=relation.relation, targets=targets
                 )
             )
-    return LayoutIntent(relations=inferred + literal.relations)
+    art = resolve_art_direction(prompt, families, proposed.art if proposed else None)
+    return LayoutIntent(
+        relations=inferred + literal.relations, art=art if art != ArtDirection() else None
+    )
 
 
 @dataclass
@@ -326,6 +360,12 @@ def pack(
                 if r.relation == "on"
                 else (heights[j] - heights[i]) / 2 - min(heights[i], heights[j]) * 0.15
             )
+            if r.relation == "on" and dimensions[i].get("contact") and dimensions[j].get("contact"):
+                foot = dimensions[i]["contact"]["contact"]
+                surface = dimensions[j]["contact"]["surface"]
+                if (i, j) not in contact_offsets:
+                    dx = surface[0] - foot[0]
+                dy = surface[1] - foot[1]
             if _flexible_overlap and r.relation != "on":
                 overlap_x = min(widths[i], widths[j]) * 0.05
                 overlap_y = min(heights[i], heights[j]) * 0.05
@@ -441,6 +481,31 @@ def pack(
                 return pack(dimensions, families, intent, aspect, variant, _flexible_overlap=True)
             raise ValueError("Не удалось разместить предметы без наложений. Уточните отношения.")
         _, xedges, yedges, boxes = min(options, key=lambda item: item[0])
+    if _flexible_overlap:
+        # When one backdrop overlaps a group, individually centered contacts may
+        # be incompatible with that group's own axial relations. Prefer the
+        # union's center instead of the minimal solver's top-left pile, but only
+        # if every hard edge (including non-contact separation) remains true.
+        for relation in contact:
+            if relation.relation == "on":
+                continue
+            i = lookup[relation.subject]
+            targets = [boxes[lookup[t]] for t in relation.targets]
+            cx = (min(b.x for b in targets) + max(b.x + b.width for b in targets)) / 2
+            cy = (min(b.y for b in targets) + max(b.y + b.height for b in targets)) / 2
+            source = boxes[i]
+            for x, y in (
+                (cx - source.width / 2, cy - source.height / 2),
+                (cx - source.width / 2, source.y),
+                (source.x, cy - source.height / 2),
+            ):
+                candidate = list(boxes)
+                candidate[i] = Box(x, y, source.width, source.height)
+                if all(candidate[b].x >= candidate[a].x + d - 1e-7 for a, b, d in xedges) and all(
+                    candidate[b].y >= candidate[a].y + d - 1e-7 for a, b, d in yedges
+                ):
+                    boxes = candidate
+                    break
     # Topological ordering keeps a placed-on object above its support, regardless of roles.
     order = list(range(n))
     for _ in range(n):

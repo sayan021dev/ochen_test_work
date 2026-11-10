@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "title": "фоновая лампа позади желтого кошелька и монеты, кошелек ниже монеты, лампа выходит за верхний край",
+  "format": "square",
+  "detail": "L",
+  "scale": 1.543864307936069,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "bleed",
+  "crop": {
+    "family": "lamp",
+    "horizontal": "center",
+    "vertical": "top"
+  },
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "lamp",
+      "role": "background",
+      "x": -110.204,
+      "y": -371.5,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-2",
+      "family": "wallet",
+      "role": "main",
+      "x": 133.362,
+      "y": 378.8029,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {
+        "background-0": "object-0"
+      }
+    },
+    {
+      "id": "item-3",
+      "family": "coin",
+      "role": "main",
+      "x": 133.362,
+      "y": 9.3486,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

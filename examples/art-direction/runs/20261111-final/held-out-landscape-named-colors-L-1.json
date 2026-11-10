@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "title": "желтый телефон справа от розового кошелька, монета ниже телефона, крупный план",
+  "format": "landscape",
+  "detail": "L",
+  "scale": 0.7919865034778524,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "close",
+  "crop": null,
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "phone",
+      "role": "main",
+      "x": 548.4131,
+      "y": 56.5829,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {
+        "object-0": "object-0"
+      }
+    },
+    {
+      "id": "item-2",
+      "family": "wallet",
+      "role": "main",
+      "x": 20.7446,
+      "y": 171.3029,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {
+        "background-0": "object-1"
+      }
+    },
+    {
+      "id": "item-3",
+      "family": "coin",
+      "role": "main",
+      "x": 750.3122,
+      "y": 450.605,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

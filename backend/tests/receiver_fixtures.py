@@ -83,6 +83,15 @@ def build_fixtures():
         for index, scene in enumerate(variants):
             result.append(_record(f"chain-{detail}-{index}-source", scene, False))
         source = variants[0]
+        natural = source.model_copy(deep=True)
+        for element in natural.elements:
+            element.support_ids = []
+        result.append(_record(f"natural-{detail}-source", natural, False))
+        mapped = natural.model_copy(deep=True)
+        for element in mapped.elements:
+            if element.role == "main":
+                element.color_map = {"object-1": "background-2", "object-3": "object-0"}
+        result.append(_record(f"natural-{detail}-mapped", mapped, False))
         custom = source.model_copy(deep=True)
         custom.light = SceneLight(enabled=True, x=50, y=50, height=1000, opacity=0.35)
         result.append(_record(f"chain-{detail}-global", custom))
@@ -129,6 +138,45 @@ def build_fixtures():
                     "hole": [100, 100],
                     "blocked": [40, 45],
                     "outside": [0, 0],
+                },
+            )
+        )
+    for transformed in (False, True):
+        pose = {
+            "x": 100,
+            "y": 100,
+            "angle": 25 if transformed else 0,
+            "scale_x": 1.3 if transformed else 1,
+            "scale_y": 0.8 if transformed else 1,
+        }
+        scene = Scene.model_validate(
+            {
+                "palette": PALETTES[0],
+                "format": "square",
+                "scale": 1,
+                "transparent": True,
+                "elements": [
+                    {"id": "receiver", "family": "phone", **pose},
+                    {"id": "blocker", "family": "book", **pose},
+                    {"id": "caster", "family": "pen", "x": 0, "y": 0},
+                    {"id": "foreground", "family": "book", **{**pose, "y": 200}},
+                ],
+            }
+        )
+        result.append(
+            _record(
+                f"natural-synthetic-{'transformed' if transformed else 'plain'}",
+                scene,
+                False,
+                replacements,
+                {
+                    "owner": "caster",
+                    "receiver": "receiver",
+                    "solid": [40, 100],
+                    "hole": [100, 100],
+                    "blocked": [40, 45],
+                    "outside": [0, 0],
+                    "inferred": True,
                 },
             )
         )

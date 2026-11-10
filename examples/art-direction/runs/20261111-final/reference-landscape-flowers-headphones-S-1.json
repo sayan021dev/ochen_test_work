@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "title": "фоновые цветы позади наушников, цветы выходят за верхний край",
+  "format": "landscape",
+  "detail": "S",
+  "scale": 1.8082849921681214,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "bleed",
+  "crop": {
+    "family": "flowers",
+    "horizontal": "center",
+    "vertical": "top"
+  },
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "flowers",
+      "role": "background",
+      "x": 451.7226,
+      "y": -148.534,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-2",
+      "family": "headphones",
+      "role": "main",
+      "x": 342.493,
+      "y": 2.374,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

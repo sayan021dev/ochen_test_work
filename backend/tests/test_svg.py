@@ -258,3 +258,23 @@ def test_optional_free_transform_exports_independent_axes_without_rewriting_sour
     )
     group = result.find(".//s:g[@data-element-id]", NS)
     assert "scale(0.6000000000000001 0.27999999999999997)" in group.get("transform")
+
+
+def test_instance_color_mapping_uses_source_roles_and_leaves_mask_colors_neutral():
+    from app.svg import recolor_and_namespace
+
+    source = parse_safe_svg(
+        '<svg xmlns="http://www.w3.org/2000/svg"><defs><mask id="m">'
+        '<path d="M0 0H10V10Z" fill="white"/></mask></defs>'
+        '<path d="M0 0H10V10Z" fill="#F9A3AA" stroke="#7864D7" mask="url(#m)"/>'
+        '<path d="M20 0H30V10Z" fill="#FFE3E1"/></svg>'
+    )
+    before = ET.tostring(source)
+    result = recolor_and_namespace(source, PALETTES[1], "mapped", {"object-1": "background-2"})
+    paths = result.findall("s:path", NS)
+    assert paths[0].get("fill") == PALETTES[1]["background"][2]
+    assert paths[0].get("stroke") == PALETTES[1]["background"][2]
+    assert paths[0].get("data-fill-role") == "object-1"
+    assert paths[1].get("fill") == PALETTES[1]["object"][2]
+    assert result.find(".//s:mask/s:path", NS).get("fill") == "white"
+    assert ET.tostring(source) == before

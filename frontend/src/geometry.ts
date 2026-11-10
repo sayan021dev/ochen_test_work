@@ -130,24 +130,246 @@ export function needsShadowPass(
       ),
   );
 }
+
+type CameraBox = {
+  element: Element;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+};
+type Camera = { factor: number; tx: number; ty: number };
+
+function artisticFormatCamera(
+  scene: Scene,
+  format: Format,
+  assets: Asset[],
+): Camera {
+  const [width, height] = FORMATS[format];
+  const [oldWidth, oldHeight] = FORMATS[scene.format];
+  const maximum = (scene.detail === "L" ? 4 : 8) / scene.scale;
+  const minimum = 0.03 / scene.scale;
+  const initial = clamp(
+    Math.min(width, height) / Math.min(oldWidth, oldHeight),
+    minimum,
+    maximum,
+  );
+  const boxes: CameraBox[] = scene.elements
+    .filter((e) => !e.hidden)
+    .flatMap((element) => {
+      const asset = assets.find(
+        (a) =>
+          a.family === element.family &&
+          a.detail === scene.detail &&
+          a.role === element.role,
+      );
+      if (!asset) return [];
+      const corners = elementCorners(
+        element,
+        scene.scale,
+        asset.width,
+        asset.height,
+      );
+      return [
+        {
+          element,
+          left: Math.min(...corners.map((p) => p.x)),
+          right: Math.max(...corners.map((p) => p.x)),
+          top: Math.min(...corners.map((p) => p.y)),
+          bottom: Math.max(...corners.map((p) => p.y)),
+        },
+      ];
+    });
+  let crop = scene.crop;
+  if (
+    (!crop || (crop.horizontal === "center" && crop.vertical === "center")) &&
+    scene.framing === "bleed"
+  ) {
+    // Older scenes have no semantic crop metadata. Recover the strongest visible
+    // clipped object and its edge(s), without relying on any catalogue family.
+    const clipped = boxes
+      .filter(
+        (b) =>
+          (!crop || b.element.family === crop.family) &&
+          b.right > 0 &&
+          b.left < oldWidth &&
+          b.bottom > 0 &&
+          b.top < oldHeight,
+      )
+      .map((box) => {
+        const w = box.right - box.left,
+          h = box.bottom - box.top;
+        const left = Math.max(0, -box.left / w),
+          right = Math.max(0, (box.right - oldWidth) / w);
+        const top = Math.max(0, -box.top / h),
+          bottom = Math.max(0, (box.bottom - oldHeight) / h);
+        return {
+          box,
+          left,
+          right,
+          top,
+          bottom,
+          amount: Math.max(left, right, top, bottom),
+        };
+      })
+      .filter((c) => c.amount > 1e-6)
+      .sort((a, b) => b.amount - a.amount);
+    if (clipped.length) {
+      const c = clipped[0];
+      crop = {
+        family: c.box.element.family,
+        horizontal:
+          Math.max(c.left, c.right) > 1e-6
+            ? c.left >= c.right
+              ? "left"
+              : "right"
+            : "center",
+        vertical:
+          Math.max(c.top, c.bottom) > 1e-6
+            ? c.top >= c.bottom
+              ? "top"
+              : "bottom"
+            : "center",
+      };
+    }
+  }
+  const target = crop && boxes.find((b) => b.element.family === crop.family);
+  function camera(factor: number): Camera {
+    let tx = width / 2 - (oldWidth * factor) / 2;
+    let ty = height / 2 - (oldHeight * factor) / 2;
+    if (crop && target) {
+      const w = target.right - target.left,
+        h = target.bottom - target.top;
+      if (crop.horizontal === "left") {
+        const fraction = clamp(-target.left / w, 0.04, 0.95);
+        tx = -(fraction * w + target.left) * factor;
+      } else if (crop.horizontal === "right") {
+        const fraction = clamp((target.right - oldWidth) / w, 0.04, 0.95);
+        tx = width - (target.right - fraction * w) * factor;
+      }
+      if (crop.vertical === "top") {
+        const fraction = clamp(-target.top / h, 0.04, 0.95);
+        ty = -(fraction * h + target.top) * factor;
+      } else if (crop.vertical === "bottom") {
+        const fraction = clamp((target.bottom - oldHeight) / h, 0.04, 0.95);
+        ty = height - (target.bottom - fraction * h) * factor;
+      }
+    }
+    return { factor, tx, ty };
+  }
+  const area = (b: CameraBox) => (b.right - b.left) * (b.bottom - b.top);
+  const main = boxes.filter((b) => b.element.role === "main");
+  const largest = Math.max(0, ...boxes.map(area));
+  function visibleFraction(box: CameraBox, c: Camera): number {
+    const left = c.tx + box.left * c.factor,
+      right = c.tx + box.right * c.factor;
+    const top = c.ty + box.top * c.factor,
+      bottom = c.ty + box.bottom * c.factor;
+    return (
+      (Math.max(0, Math.min(width, right) - Math.max(0, left)) *
+        Math.max(0, Math.min(height, bottom) - Math.max(0, top))) /
+      ((right - left) * (bottom - top))
+    );
+  }
+  function safe(c: Camera): boolean {
+    if (
+      !boxes.every(
+        (b) =>
+          visibleFraction(b, c) >=
+          (b.element.role === "background"
+            ? 0.28
+            : area(b) <= largest * 0.22
+              ? 0.98
+              : 0.55) -
+            1e-8,
+      )
+    )
+      return false;
+    if (
+      main.length &&
+      !main.some((b) => {
+        const x = c.tx + ((b.left + b.right) * c.factor) / 2;
+        const y = c.ty + ((b.top + b.bottom) * c.factor) / 2;
+        return x >= 0 && x <= width && y >= 0 && y <= height;
+      })
+    )
+      return false;
+    // Keep every existing support contact in view using the same conservative
+    // bbox-intersection criterion as the server camera guard.
+    return boxes.every((owner) =>
+      (owner.element.support_ids ?? []).every((id) => {
+        const support = boxes.find((b) => b.element.id === id);
+        if (!support) return true;
+        const contact = {
+          ...owner,
+          left: Math.max(owner.left, support.left),
+          right: Math.min(owner.right, support.right),
+          top: Math.max(owner.top, support.top),
+          bottom: Math.min(owner.bottom, support.bottom),
+        };
+        return (
+          contact.right <= contact.left ||
+          contact.bottom <= contact.top ||
+          visibleFraction(contact, c) >= 0.25
+        );
+      }),
+    );
+  }
+  for (let step = 0; step <= 80; step++) {
+    const factor = Math.max(minimum, initial * Math.pow(0.94, step));
+    const candidate = camera(factor);
+    if (safe(candidate)) return candidate;
+    if (factor === minimum) break;
+  }
+  if (!boxes.length) return camera(initial);
+  // Impossible crop directives yield a readable complete composition rather
+  // than silently dropping objects. This changes only the shared camera.
+  const left = Math.min(...boxes.map((b) => b.left)),
+    right = Math.max(...boxes.map((b) => b.right));
+  const top = Math.min(...boxes.map((b) => b.top)),
+    bottom = Math.max(...boxes.map((b) => b.bottom));
+  const factor = clamp(
+    Math.min(
+      initial,
+      (width * 0.86) / (right - left),
+      (height * 0.86) / (bottom - top),
+    ),
+    minimum,
+    maximum,
+  );
+  return {
+    factor,
+    tx: width / 2 - ((left + right) * factor) / 2,
+    ty: height / 2 - ((top + bottom) * factor) / 2,
+  };
+}
+
 export function centerForFormat(
   scene: Scene,
   format: Format,
   assets: Asset[],
   customShadowsEnabled = true,
 ): Scene {
-  const b = sceneBounds(scene, assets, customShadowsEnabled);
-  if (!b) return { ...scene, format };
+  const artistic = scene.framing === "close" || scene.framing === "bleed";
+  if (artistic && scene.format === format) return scene;
+  const b = artistic ? null : sceneBounds(scene, assets, customShadowsEnabled);
+  if (!artistic && !b) return { ...scene, format };
   const [w, h] = FORMATS[format],
-    cx = (b.left + b.right) / 2,
-    cy = (b.top + b.bottom) / 2;
-  const factor = Math.min(
-    1,
-    (w * 0.86) / Math.max(1, b.right - b.left),
-    (h * 0.86) / Math.max(1, b.bottom - b.top),
-  );
-  const scale = Math.max(0.03, scene.scale * factor),
+    [oldWidth, oldHeight] = FORMATS[scene.format],
+    cx = artistic ? oldWidth / 2 : (b!.left + b!.right) / 2,
+    cy = artistic ? oldHeight / 2 : (b!.top + b!.bottom) / 2;
+  const camera = artistic ? artisticFormatCamera(scene, format, assets) : null;
+  const factor = camera
+    ? camera.factor
+    : Math.min(
+        1,
+        (w * 0.86) / Math.max(1, b!.right - b!.left),
+        (h * 0.86) / Math.max(1, b!.bottom - b!.top),
+      );
+  const scale = clamp(scene.scale * factor, 0.03, scene.detail === "L" ? 4 : 8),
     actual = scale / scene.scale;
+  const tx = camera ? camera.tx : w / 2 - cx * actual;
+  const ty = camera ? camera.ty : h / 2 - cy * actual;
   return {
     ...scene,
     format,
@@ -156,19 +378,19 @@ export function centerForFormat(
       ? {
           light: {
             ...scene.light,
-            x: boundedPosition(w / 2 + (scene.light.x - cx) * actual, true),
-            y: boundedPosition(h / 2 + (scene.light.y - cy) * actual, true),
+            x: boundedPosition(tx + scene.light.x * actual, true),
+            y: boundedPosition(ty + scene.light.y * actual, true),
             height: clamp(scene.light.height * actual, 50, 5000),
           },
         }
       : {}),
     elements: scene.elements.map((e) =>
-      e.hidden
+      e.hidden && !artistic
         ? e
         : {
             ...e,
-            x: boundedPosition(w / 2 + (e.x - cx) * actual, true),
-            y: boundedPosition(h / 2 + (e.y - cy) * actual, true),
+            x: boundedPosition(tx + e.x * actual, true),
+            y: boundedPosition(ty + e.y * actual, true),
           },
     ),
   };

@@ -86,3 +86,18 @@ it("custom shadow is opt-in, vector-only, and keeps original mode reversible", (
   expect(changed).not.toContain("<filter");
   expect(prepareAsset(source, palette, "plain")).toBe(original);
 });
+
+it("per-instance color roles survive a custom palette without recoloring masks", () => {
+  const fixture =
+    '<svg xmlns="http://www.w3.org/2000/svg"><defs><mask id="alpha"><rect width="10" height="10" fill="white"/></mask></defs><path d="M0 0H10V10Z" fill="#D7CDF5" stroke="#181817" mask="url(#alpha)"/></svg>';
+  const markup = prepareAsset(fixture, palette, "mapped", undefined, {
+    "background-0": "object-0",
+  });
+  const doc = new DOMParser().parseFromString(
+    `<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`,
+    "image/svg+xml",
+  );
+  expect(doc.querySelector("path")?.getAttribute("fill")).toBe("#555555");
+  expect(doc.querySelector("path")?.getAttribute("stroke")).toBe("#444444");
+  expect(doc.querySelector("mask rect")?.getAttribute("fill")).toBe("white");
+});

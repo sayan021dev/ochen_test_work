@@ -8,6 +8,7 @@ import {
   FORMATS,
   type Asset,
   type Palette,
+  type PaintRole,
   type Scene,
   type Shadow,
 } from "./types";
@@ -23,6 +24,7 @@ const Artwork = memo(function Artwork({
   pass = "all",
   referenceId,
   receiverOnlyBody = false,
+  colorMap,
 }: {
   source: string;
   palette: Palette;
@@ -32,6 +34,7 @@ const Artwork = memo(function Artwork({
   pass?: "all" | "body" | "shadow";
   referenceId?: string;
   receiverOnlyBody?: boolean;
+  colorMap?: Partial<Record<PaintRole, PaintRole>>;
 }) {
   const markup = useMemo(() => {
     const prepared =
@@ -50,6 +53,7 @@ const Artwork = memo(function Artwork({
             },
             pass,
             !!shadow,
+            colorMap,
           )
         : prepareAsset(
             source,
@@ -64,6 +68,7 @@ const Artwork = memo(function Artwork({
                   height: asset.height,
                 }
               : undefined,
+            colorMap,
           );
     if (!referenceId) return prepared;
     const document = new DOMParser().parseFromString(
@@ -79,7 +84,17 @@ const Artwork = memo(function Artwork({
     return [...document.documentElement.children]
       .map((node) => new XMLSerializer().serializeToString(node))
       .join("");
-  }, [source, palette, id, shadow, asset, pass, referenceId, receiverOnlyBody]);
+  }, [
+    source,
+    palette,
+    id,
+    shadow,
+    asset,
+    pass,
+    referenceId,
+    receiverOnlyBody,
+    colorMap,
+  ]);
   return <g fill="none" dangerouslySetInnerHTML={{ __html: markup }} />;
 });
 
@@ -111,10 +126,20 @@ export function Illustration({
         : [];
     });
   const ids = new Set(entries.map((entry) => entry.element.id));
-  const receivers = new Map(
+  const supports = new Map(
     entries.map(({ element }) => [
       element.id,
       (element.support_ids ?? []).filter((id) => ids.has(id)),
+    ]),
+  );
+  const receivers = new Map(
+    entries.map(({ element }, index) => [
+      element.id,
+      split
+        ? supports.get(element.id)!.length
+          ? supports.get(element.id)!
+          : entries.slice(0, index).map(({ element: lower }) => lower.id)
+        : [],
     ]),
   );
   const contacts = entries.some(
@@ -205,18 +230,19 @@ export function Illustration({
                   <Artwork
                     source={sources[asset.id]}
                     palette={scene.palette}
+                    colorMap={element.color_map}
                     id={`${prefix}-${element.id}-cast`}
                     shadow={shadow}
                     asset={asset}
                     pass="shadow"
-                    receiverOnlyBody={receivers.get(element.id)!.length > 0}
+                    receiverOnlyBody={supports.get(element.id)!.length > 0}
                     referenceId={
                       contacts ? `${prefix}-cast-${element.id}` : undefined
                     }
                   />
                 </g>
               );
-              return receivers.get(element.id)!.length ? (
+              return supports.get(element.id)!.length ? (
                 <defs
                   key={element.id}
                   data-supported-shadow-source={element.id}
@@ -254,11 +280,12 @@ export function Illustration({
               <Artwork
                 source={sources[asset.id]}
                 palette={scene.palette}
+                colorMap={element.color_map}
                 id={`${prefix}-${element.id}`}
                 shadow={shadow}
                 asset={asset}
                 pass={split ? "body" : "all"}
-                receiverOnlyBody={receivers.get(element.id)!.length > 0}
+                receiverOnlyBody={supports.get(element.id)!.length > 0}
                 referenceId={
                   contacts ? `${prefix}-body-${element.id}` : undefined
                 }

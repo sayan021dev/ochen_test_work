@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "title": "фоновые цветы позади телефона, монета ниже телефона, цветы выходят за верхний край",
+  "format": "square",
+  "detail": "L",
+  "scale": 1.2682067424709476,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "bleed",
+  "crop": {
+    "family": "flowers",
+    "horizontal": "center",
+    "vertical": "top"
+  },
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "flowers",
+      "role": "background",
+      "x": 245.5155,
+      "y": -236.0,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-2",
+      "family": "phone",
+      "role": "main",
+      "x": 114.9167,
+      "y": 32.8211,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-3",
+      "family": "coin",
+      "role": "main",
+      "x": 438.2174,
+      "y": 756.9423,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

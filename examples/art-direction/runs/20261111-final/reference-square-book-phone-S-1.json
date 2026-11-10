@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "title": "телефон на книге, книга выходит за левый край",
+  "format": "square",
+  "detail": "S",
+  "scale": 1.4237771393779477,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "bleed",
+  "crop": {
+    "family": "book",
+    "horizontal": "left",
+    "vertical": "center"
+  },
+  "light": null,
+  "elements": [
+    {
+      "id": "item-2",
+      "family": "book",
+      "role": "main",
+      "x": -82.3452,
+      "y": 272.3619,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-1",
+      "family": "phone",
+      "role": "main",
+      "x": 428.6132,
+      "y": 269.0525,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [
+        "item-2"
+      ],
+      "color_map": {}
+    }
+  ]
+}

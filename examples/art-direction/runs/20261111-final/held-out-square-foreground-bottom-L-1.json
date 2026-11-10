@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "title": "телефон над книгой, ручка справа от телефона, книга выходит за нижний край",
+  "format": "square",
+  "detail": "L",
+  "scale": 0.6257728293053043,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "bleed",
+  "crop": {
+    "family": "book",
+    "horizontal": "center",
+    "vertical": "bottom"
+  },
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "phone",
+      "role": "main",
+      "x": 64.4193,
+      "y": 75.6453,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-2",
+      "family": "book",
+      "role": "main",
+      "x": 51.539,
+      "y": 426.9754,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-3",
+      "family": "pen",
+      "role": "main",
+      "x": 625.2983,
+      "y": 130.7969,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

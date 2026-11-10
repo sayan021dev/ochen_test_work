@@ -27,6 +27,7 @@ type Fixture = {
     hole: number[];
     blocked: number[];
     outside: number[];
+    inferred?: boolean;
   } | null;
 };
 let fixtures: Fixture[] = [];
@@ -191,7 +192,7 @@ test("actual receiver alpha keeps vector holes and unrelated foreground surfaces
     expect(result, fixture.name).toEqual({
       solid: 255,
       hole: 0,
-      blocked: 0,
+      blocked: fixture.samples!.inferred ? 255 : 0,
       outside: 0,
     });
   }
@@ -353,4 +354,123 @@ test("supported original casts never paint empty air outside their receivers", a
       ).toBeGreaterThan(0);
     }
   console.log("Source casts restricted to receivers", JSON.stringify(results));
+});
+
+test("ordinary upper-layer casts shade lower ink while retaining floor casts, holes and foreground occlusion", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  const results = [];
+  for (const fixture of fixtures.filter((f) => f.name.startsWith("natural-"))) {
+    const result = await page.evaluate(async (fixture) => {
+      const raster = async (source: string) => {
+        const image = new Image();
+        image.src = "data:image/svg+xml," + encodeURIComponent(source);
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d")!;
+        context.drawImage(image, 0, 0);
+        return {
+          width: canvas.width,
+          pixels: context.getImageData(0, 0, canvas.width, canvas.height).data,
+        };
+      };
+      const doc = new DOMParser().parseFromString(
+        fixture.preview,
+        "image/svg+xml",
+      );
+      // Removing only receiver overlays leaves the same floor casts and bodies.
+      // It is an independent baseline for visible surface darkening.
+      const overlays = [...doc.querySelectorAll("[data-contact-shadow-owner]")];
+      for (const overlay of overlays) overlay.remove();
+      const base = await raster(new XMLSerializer().serializeToString(doc));
+      const preview = await raster(fixture.preview),
+        exported = await raster(fixture.exported);
+      let darkenedPixels = 0,
+        exportDifferences = 0;
+      for (let i = 0; i < preview.pixels.length; i += 4) {
+        if (base.pixels[i + 3] > 250 && preview.pixels[i] + 8 < base.pixels[i])
+          darkenedPixels++;
+        if (
+          [0, 1, 2, 3].some(
+            (channel) =>
+              Math.abs(
+                preview.pixels[i + channel] - exported.pixels[i + channel],
+              ) > 2,
+          )
+        )
+          exportDifferences++;
+      }
+      const unchangedSamples = fixture.samples
+        ? [
+            // Ring hole stays the same ground shadow, with no second overlay.
+            [
+              fixture.scene.elements.find((e) => e.id === "receiver")!,
+              fixture.samples.hole,
+            ],
+            // A body above the caster occludes its shadow, even though lower layers receive it.
+            [
+              fixture.scene.elements.find((e) => e.id === "foreground")!,
+              fixture.samples.blocked,
+            ],
+          ].map(([item, point]) => {
+            const element = item as Item,
+              local = point as number[];
+            const angle = (element.angle * Math.PI) / 180;
+            const px = local[0] * element.scale_x * fixture.scene.scale;
+            const py = local[1] * element.scale_y * fixture.scene.scale;
+            const x = Math.floor(
+              element.x + px * Math.cos(angle) - py * Math.sin(angle),
+            );
+            const y = Math.floor(
+              element.y + px * Math.sin(angle) + py * Math.cos(angle),
+            );
+            const index = (y * preview.width + x) * 4;
+            return [0, 1, 2, 3].every(
+              (channel) =>
+                preview.pixels[index + channel] ===
+                base.pixels[index + channel],
+            );
+          })
+        : [];
+      return {
+        name: fixture.name,
+        darkenedPixels,
+        exportDifferences,
+        unchangedSamples,
+        noSupportRewrites: fixture.scene.elements.every(
+          (e) => !e.support_ids.length,
+        ),
+        noElevatedSources: !doc.querySelector("[data-supported-shadow-source]"),
+        groundCastCount: doc.querySelectorAll(
+          "[data-scene-shadows] > [data-shadow-owner-id]",
+        ).length,
+      };
+    }, fixture);
+    results.push(result);
+    expect(result.darkenedPixels, fixture.name).toBeGreaterThan(0);
+    expect(result.exportDifferences, fixture.name).toBe(0);
+    expect(result.unchangedSamples.every(Boolean), fixture.name).toBe(true);
+    expect(result.noSupportRewrites, fixture.name).toBe(true);
+    expect(result.noElevatedSources, fixture.name).toBe(true);
+    expect(result.groundCastCount, fixture.name).toBe(
+      fixture.scene.elements.length,
+    );
+  }
+  console.log("Ordinary layer shadow pixels", JSON.stringify(results));
+  const actual = fixtures.filter((f) => /^natural-[SL]-source$/.test(f.name));
+  await page.setContent(
+    `<body style="margin:20px;background:#1d1d20;color:white;font:16px sans-serif">${actual.map((fixture) => `<section><h2>${fixture.name}</h2><img style="width:600px;max-width:100%" src="data:image/svg+xml,${encodeURIComponent(fixture.preview)}"></section>`).join("")}</body>`,
+  );
+  await page
+    .locator("img")
+    .evaluateAll((images) =>
+      Promise.all(images.map((image) => (image as HTMLImageElement).decode())),
+    );
+  await page.screenshot({
+    path: test.info().outputPath("ordinary-shadow-surfaces.png"),
+    fullPage: true,
+  });
 });

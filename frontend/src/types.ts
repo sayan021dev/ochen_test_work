@@ -10,6 +10,7 @@ export type Family =
   | "folder"
   | "pen";
 export type Detail = "L" | "S";
+export type PaintRole = `${"background" | "object"}-${0 | 1 | 2 | 3}`;
 export type Shadow = {
   angle: number;
   length: number;
@@ -79,6 +80,7 @@ export type Element = {
   locked: boolean;
   shadow?: Shadow | null;
   support_ids?: string[];
+  color_map?: Partial<Record<PaintRole, PaintRole>>;
 };
 export type Scene = {
   version: 1;
@@ -88,6 +90,12 @@ export type Scene = {
   scale: number;
   palette: Palette;
   transparent: boolean;
+  framing?: "fit" | "close" | "bleed";
+  crop?: {
+    family: Family;
+    horizontal: "left" | "center" | "right";
+    vertical: "top" | "center" | "bottom";
+  } | null;
   light?: SceneLight | null;
   elements: Element[];
 };

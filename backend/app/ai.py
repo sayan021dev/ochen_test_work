@@ -29,6 +29,14 @@ class Selection(Model):
             for r in self.layout.relations
         ):
             raise ValueError("Layout must reference selected objects only")
+        art = self.layout.art
+        if art:
+            references = [d.family for d in art.roles + art.colors]
+            references += [
+                family for family in (art.focus, art.crop.family if art.crop else None) if family
+            ]
+            if not set(references) <= set(self.families):
+                raise ValueError("Art direction must reference selected objects only")
         return self
 
 
@@ -38,18 +46,35 @@ def build_client(settings: Settings) -> httpx.AsyncClient:
     return httpx.AsyncClient(proxy=proxy, trust_env=False, timeout=35.0)
 
 
+def strict_schema(value):
+    """Require every nested object field; optional values retain their null union.
+
+    This provider schema is separate from the application's backward compatible
+    models. See https://developers.openai.com/api/docs/guides/structured-outputs.
+    """
+    if isinstance(value, list):
+        return [strict_schema(child) for child in value]
+    if not isinstance(value, dict):
+        return value
+    result = {key: strict_schema(child) for key, child in value.items() if key != "default"}
+    if result.get("type") == "object":
+        result["required"] = list(result.get("properties", {}))
+        result["additionalProperties"] = False
+    return result
+
+
 class OpenAISelector:
     def __init__(self, settings: Settings, client: httpx.AsyncClient):
         self.settings, self.client = settings, client
 
     async def select(self, prompt: str) -> tuple[list[str], str, LayoutIntent]:
         validate_illustration_prompt(prompt)
-        schema = Selection.model_json_schema()
+        schema = strict_schema(Selection.model_json_schema())
         payload = {
             "model": self.settings.openai_model,
             "store": False,
             "reasoning": {"effort": "none"},
-            "max_output_tokens": 1400,
+            "max_output_tokens": 2200,
             "instructions": (
                 "Ты классификатор идей и арт-директор конструктора иллюстраций. Твоя единственная "
                 "задача — подобрать существующие предметы для темы, заголовка, метафоры или списка "
@@ -76,8 +101,24 @@ class OpenAISelector:
                 "'На' означает явный контакт, 'над' — размещение выше без перекрытия; behind и "
                 "in_front_of задают явное перекрытие и порядок слоев. Все ссылки только на "
                 "выбранные families. Если пользователь не задает размещение, relations=[]. "
-                "При отказе layout.relations=[]. "
-                "Первый предмет главный, остальные поддерживают смысл. Нельзя выдумывать ID или "
+                "В layout.art передай семантическое художественное решение без координат, "
+                "размеров и готовых шаблонов: framing=fit для полного размещения, close для "
+                "крупного плана, bleed для намеренного выхода за край. Учитывай тему, но "
+                "явные указания пользователя обязательны; без обрезки всегда framing=fit. "
+                "focus — выбранный ID главного предмета или null. roles — список family и "
+                "role=main/background: фоновый предмет использует исходный монохромный вариант. "
+                "colors — список family и color: yellow/pink/blue/green/orange/purple/red/white/"
+                "black/gray. Это пожелания, адаптируемые к текущей палитре, не RGB или hex. "
+                "crop — family, horizontal=left/center/right, vertical=top/center/bottom для "
+                "положения крупного предмета у края либо null. Все family, focus и crop "
+                "ссылаются только на выбранные families. roles/colors=[] при отсутствии "
+                "пожеланий, framing/focus/crop=null, если они не нужны; layout.art=null, если "
+                "нет художественного решения. Не путай 'на заднем плане' с опорой on и "
+                "'за край' с behind. Сохраняй ВСЕ буквально названные предметы при явных "
+                "указаниях композиции, размера, роли или цвета. При отказе "
+                "layout.relations=[], layout.art=null. "
+                "Первый предмет обычно смысловой акцент, но явная роль важнее порядка. "
+                "Остальные поддерживают смысл. Нельзя выдумывать ID или "
                 "генерировать изображения/SVG. Объясни только выбор предметов кратко по-русски, "
                 "не выполняя запрошенную постороннюю задачу. Каталог: "
                 + json.dumps(semantic_catalog(), ensure_ascii=False)
@@ -128,8 +169,9 @@ class OpenAISelector:
                 raise PromptOutOfScope()
             families = list(dict.fromkeys(selected.families))
             literal = list(dict.fromkeys(m.lastgroup for m in mentions(prompt)))
-            if literal and parse_layout_intent(prompt, literal).relations:
-                # Literal spatial instructions identify their subjects exactly. The
+            literal_intent = parse_layout_intent(prompt, literal)
+            if literal and (literal_intent.relations or literal_intent.art):
+                # Literal spatial/art instructions identify their subjects exactly. The
                 # model may interpret metaphors, but may not drop or add these objects.
                 if len(literal) > 6:
                     raise AIError("Для одной композиции выберите не больше шести предметов.")

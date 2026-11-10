@@ -70,7 +70,9 @@ def parse_safe_svg(content: str) -> ET.Element:
     return root
 
 
-def recolor_and_namespace(root: ET.Element, palette: dict, prefix: str) -> ET.Element:
+def recolor_and_namespace(
+    root: ET.Element, palette: dict, prefix: str, color_map: dict[str, str] | None = None
+) -> ET.Element:
     result = copy.deepcopy(root)
     ids = {n.get("id"): f"{prefix}_{i}" for i, n in enumerate(result.iter()) if n.get("id")}
     colors = {
@@ -104,8 +106,11 @@ def recolor_and_namespace(root: ET.Element, palette: dict, prefix: str) -> ET.El
                 normalized = ALIASES.get(value.lower(), value.upper())
                 if normalized in colors:
                     role, index = colors[normalized]
-                    node.set(key, palette[role][index].upper())
-                    node.set(f"data-{key}-role", f"{role}-{index}")
+                    source_role = f"{role}-{index}"
+                    target_role = (color_map or {}).get(source_role, source_role)
+                    target_group, target_index = target_role.rsplit("-", 1)
+                    node.set(key, palette[target_group][int(target_index)].upper())
+                    node.set(f"data-{key}-role", source_role)
     return result
 
 
@@ -140,9 +145,16 @@ def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
     split = needs_shadow_pass(scene, custom_shadows_enabled)
     visible = [element for element in scene.elements if not element.hidden]
     visible_ids = {element.id for element in visible}
-    receivers = {
+    supports = {
         element.id: [identifier for identifier in element.support_ids if identifier in visible_ids]
         for element in visible
+    }
+    # Unlinked upper layers can shade the actual ink of earlier layers. The
+    # receiver mask, rather than a bounding rectangle, decides where ink meets.
+    # Explicit supports still mean elevation and suppress the floating floor cast.
+    receivers = {
+        element.id: supports[element.id] or [lower.id for lower in visible[:index]] if split else []
+        for index, element in enumerate(visible)
     }
     contacts = any(receivers.values())
     assets = {
@@ -177,8 +189,8 @@ def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
             )
             ET.SubElement(alpha, f"{{{NS}}}use", {"href": f"#scene-body-{element.id}"})
         for index, caster in enumerate(visible):
-            supports = set(receivers[caster.id])
-            if not supports:
+            allowed_ids = set(receivers[caster.id])
+            if not allowed_ids:
                 continue
             identifier = f"scene-receivers-{caster.id}"
             mask = ET.SubElement(
@@ -195,7 +207,7 @@ def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
                 },
             )
             for receiver in visible[:index]:
-                allowed = receiver.id in supports
+                allowed = receiver.id in allowed_ids
                 part = ET.SubElement(
                     mask,
                     f"{{{NS}}}g",
@@ -232,12 +244,13 @@ def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
                     shadow or Shadow(),
                     separate_layers=split,
                     preserve_source=shadow is None,
-                    receiver_only_body=bool(receivers[element.id]),
+                    receiver_only_body=bool(supports[element.id]),
                 )
             source = recolor_and_namespace(
                 original,
                 scene.palette.model_dump(),
                 "i_" + element.id + ("_cast" if paint_pass == "shadow" else ""),
+                element.color_map,
             )
             if split and shadow is None:
                 for node in source:
@@ -256,33 +269,30 @@ def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
                         node.set("id", f"scene-cast-{element.id}")
                     if node.get("data-shadow-body") is not None:
                         node.set("id", f"scene-body-{element.id}")
-                if receivers[element.id]:
-                    if paint_pass == "shadow":
-                        # An elevated object has no local floor underneath it.
-                        # Keep its cast available for receiver <use> references,
-                        # without painting the remainder into empty scene space.
-                        parent = ET.SubElement(
-                            parent,
-                            f"{{{NS}}}defs",
-                            {"data-supported-shadow-source": element.id},
-                        )
-                    else:
-                        overlay = ET.SubElement(
-                            artwork,
-                            f"{{{NS}}}g",
-                            {
-                                "data-contact-shadow-owner": element.id,
-                                "data-contact-shadow-receivers": " ".join(receivers[element.id]),
-                                "pointer-events": "none",
-                                "mask": f"url(#scene-receivers-{element.id})",
-                            },
-                        )
-                        located = ET.SubElement(
-                            overlay, f"{{{NS}}}g", {"transform": transform(element)}
-                        )
-                        ET.SubElement(
-                            located, f"{{{NS}}}use", {"href": f"#scene-cast-{element.id}"}
-                        )
+                if paint_pass == "shadow" and supports[element.id]:
+                    # An elevated object has no local floor underneath it.
+                    # Keep its cast available for receiver <use> references,
+                    # without painting the remainder into empty scene space.
+                    parent = ET.SubElement(
+                        parent,
+                        f"{{{NS}}}defs",
+                        {"data-supported-shadow-source": element.id},
+                    )
+                if receivers[element.id] and paint_pass == "body":
+                    overlay = ET.SubElement(
+                        artwork,
+                        f"{{{NS}}}g",
+                        {
+                            "data-contact-shadow-owner": element.id,
+                            "data-contact-shadow-receivers": " ".join(receivers[element.id]),
+                            "pointer-events": "none",
+                            "mask": f"url(#scene-receivers-{element.id})",
+                        },
+                    )
+                    located = ET.SubElement(
+                        overlay, f"{{{NS}}}g", {"transform": transform(element)}
+                    )
+                    ET.SubElement(located, f"{{{NS}}}use", {"href": f"#scene-cast-{element.id}"})
             group = ET.SubElement(
                 parent,
                 f"{{{NS}}}g",

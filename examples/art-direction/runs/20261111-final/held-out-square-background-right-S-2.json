@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "title": "фоновая папка справа от цветов, наушники слева от цветов, папка выходит за правый край",
+  "format": "square",
+  "detail": "S",
+  "scale": 1.163856446575924,
+  "palette": {
+    "id": "lilac",
+    "name": "Сирень",
+    "background": [
+      "#D7CDF5",
+      "#AA9BF0",
+      "#7864D7",
+      "#181817"
+    ],
+    "object": [
+      "#F9ECB0",
+      "#F9A3AA",
+      "#FFE3E1",
+      "#FFFFFF"
+    ]
+  },
+  "transparent": false,
+  "framing": "bleed",
+  "crop": {
+    "family": "folder",
+    "horizontal": "right",
+    "vertical": "center"
+  },
+  "light": null,
+  "elements": [
+    {
+      "id": "item-1",
+      "family": "folder",
+      "role": "background",
+      "x": 738.0488,
+      "y": 188.3745,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-2",
+      "family": "flowers",
+      "role": "main",
+      "x": 329.3273,
+      "y": 142.0223,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    },
+    {
+      "id": "item-3",
+      "family": "headphones",
+      "role": "main",
+      "x": -220.0,
+      "y": 178.7862,
+      "angle": 0.0,
+      "scale_x": 1,
+      "scale_y": 1,
+      "hidden": false,
+      "locked": false,
+      "shadow": null,
+      "support_ids": [],
+      "color_map": {}
+    }
+  ]
+}

@@ -10,7 +10,7 @@ import {
   resizeElement,
   rotateElement,
 } from "./geometry";
-import type { Scene, Asset, Element } from "./types";
+import { FORMATS, type Scene, type Asset, type Element } from "./types";
 const item: Element = {
   id: "a",
   family: "lamp",
@@ -219,4 +219,299 @@ it("legacy zero length with offsets still contributes visible projection bounds"
   const box = sceneBounds({ ...scene, elements: [owner] }, [projectionAsset])!;
   expect(box.right).toBeCloseTo(800);
   expect(box.bottom).toBeCloseTo(200);
+});
+
+it.each(["close", "bleed"] as const)(
+  "%s format changes preserve viewport zoom and intentional cropping",
+  (framing) => {
+    const source: Scene = {
+      ...scene,
+      framing,
+      format: "square",
+      scale: 2,
+      elements: [{ ...item, x: -100, y: -100 }],
+    };
+    const next = centerForFormat(source, "portrait", assets);
+    expect(next.framing).toBe(framing);
+    expect(next.scale).toBeLessThanOrEqual(1.6);
+    const bounds = sceneBounds(next, assets)!;
+    if (framing === "bleed")
+      expect(
+        bounds.left < 0 ||
+          bounds.right > 800 ||
+          bounds.top < 0 ||
+          bounds.bottom > 1200,
+      ).toBe(true);
+    expect(bounds.right).toBeGreaterThan(0);
+    expect(bounds.top).toBeLessThan(1200);
+    expect(bounds.bottom).toBeGreaterThan(0);
+  },
+);
+
+it("artistic format changes apply one common transform to hidden objects and light", () => {
+  const shadow = { angle: 125, length: 1.4, opacity: 0.7, x: 10, y: -20 };
+  const source: Scene = {
+    ...scene,
+    framing: "bleed",
+    scale: 1,
+    elements: [
+      { ...item, x: -100, y: 50, angle: 15, scale_x: 1.7, shadow },
+      { ...item, id: "hidden", x: 800, y: 200, hidden: true, locked: true },
+    ],
+    light: { enabled: true, x: 300, y: -80, height: 200, opacity: 0.4 },
+  };
+  const next = centerForFormat(source, "square", assets);
+  const factor = next.scale / source.scale;
+  const tx = next.elements[0].x - source.elements[0].x * factor;
+  const ty = next.elements[0].y - source.elements[0].y * factor;
+  for (let i = 0; i < source.elements.length; i++) {
+    const before = source.elements[i],
+      after = next.elements[i];
+    expect(after.x).toBeCloseTo(tx + before.x * factor, 3);
+    expect(after.y).toBeCloseTo(ty + before.y * factor, 3);
+    expect(after.angle).toBe(before.angle);
+    expect(after.scale_x).toBe(before.scale_x);
+    expect(after.shadow).toEqual(before.shadow);
+    expect(after.hidden).toBe(before.hidden);
+    expect(after.locked).toBe(before.locked);
+  }
+  expect(next.light!.x).toBeCloseTo(tx + 300 * factor, 3);
+  expect(next.light!.y).toBeCloseTo(ty - 80 * factor, 3);
+  expect(next.light!.height).toBeCloseTo(200 * factor);
+  expect(next.light!.opacity).toBe(source.light!.opacity);
+});
+
+it("close framing keeps objects visible and leaves the same format unchanged", () => {
+  const source: Scene = {
+    ...scene,
+    framing: "close",
+    elements: [{ ...item, x: -120, y: 30 }],
+  };
+  expect(centerForFormat(source, source.format, assets)).toEqual(source);
+  const next = centerForFormat(source, "square", assets);
+  const restored = centerForFormat(next, source.format, assets);
+  for (const result of [next, restored]) {
+    const bounds = sceneBounds(result, assets)!;
+    expect(bounds.right).toBeGreaterThan(0);
+    expect(bounds.left).toBeLessThan(FORMATS[result.format][0]);
+    expect(bounds.bottom).toBeGreaterThan(0);
+    expect(bounds.top).toBeLessThan(FORMATS[result.format][1]);
+  }
+});
+
+it.each(["L", "S"] as const)(
+  "artistic resizing keeps %s scale and coordinates within scene validation limits",
+  (detail) => {
+    const source: Scene = {
+      ...scene,
+      detail,
+      framing: "bleed",
+      format: "standard",
+      scale: detail === "L" ? 4 : 8,
+      elements: [{ ...item, x: -5000, y: 5000 }],
+    };
+    const next = centerForFormat(source, "fullhd", assets);
+    expect(next.scale).toBeLessThanOrEqual(detail === "L" ? 4 : 8);
+    expect(next.scale).toBeGreaterThanOrEqual(0.03);
+    for (const element of next.elements) {
+      expect(Math.abs(element.x)).toBeLessThanOrEqual(5000);
+      expect(Math.abs(element.y)).toBeLessThanOrEqual(5000);
+    }
+    expect(FORMATS[next.format]).toEqual([1920, 1080]);
+  },
+);
+
+const cameraAssets = [
+  {
+    family: "folder",
+    role: "background",
+    detail: "L",
+    width: 1240.61865234375,
+    height: 658.5882568359375,
+  },
+  {
+    family: "flowers",
+    role: "main",
+    detail: "L",
+    width: 590.5732421875,
+    height: 747.106506,
+  },
+  {
+    family: "headphones",
+    role: "main",
+    detail: "L",
+    width: 888.14990234375,
+    height: 691.54150390625,
+  },
+] as Asset[];
+
+function visibleFraction(
+  result: Scene,
+  element: Element,
+  list: Asset[],
+): number {
+  const asset = list.find(
+    (a) => a.family === element.family && a.role === element.role,
+  )!;
+  const w = asset.width * result.scale,
+    h = asset.height * result.scale;
+  const [width, height] = FORMATS[result.format];
+  return (
+    (Math.max(0, Math.min(width, element.x + w) - Math.max(0, element.x)) *
+      Math.max(0, Math.min(height, element.y + h) - Math.max(0, element.y))) /
+    (w * h)
+  );
+}
+
+it.each([true, false])(
+  "format switching retains a cropped background and both main objects (metadata=%s)",
+  (metadata) => {
+    // A real previously generated unseen request. The old viewport-centred
+    // transform places the entire folder outside the square after this switch.
+    const source: Scene = {
+      ...scene,
+      format: "landscape",
+      framing: "bleed",
+      scale: 0.6176762837409738,
+      ...(metadata
+        ? {
+            crop: {
+              family: "folder" as const,
+              horizontal: "right" as const,
+              vertical: "center" as const,
+            },
+          }
+        : {}),
+      elements: [
+        {
+          ...item,
+          id: "folder",
+          family: "folder",
+          role: "background",
+          x: 938.7213,
+          y: 111.6028,
+        },
+        { ...item, id: "flowers", family: "flowers", x: 539.4547, y: 84.265 },
+        {
+          ...item,
+          id: "headphones",
+          family: "headphones",
+          x: -43.618,
+          y: 101.4256,
+        },
+      ],
+    };
+    const next = centerForFormat(source, "square", cameraAssets);
+    const folder = next.elements[0];
+    const beforeOutside =
+      (source.elements[0].x + cameraAssets[0].width * source.scale - 1200) /
+      (cameraAssets[0].width * source.scale);
+    const afterOutside =
+      (folder.x + cameraAssets[0].width * next.scale - 1000) /
+      (cameraAssets[0].width * next.scale);
+    expect(afterOutside).toBeCloseTo(beforeOutside, 3);
+    expect(visibleFraction(next, folder, cameraAssets)).toBeGreaterThanOrEqual(
+      0.28 - 1e-6,
+    );
+    for (const element of next.elements.slice(1))
+      expect(
+        visibleFraction(next, element, cameraAssets),
+      ).toBeGreaterThanOrEqual(0.55 - 1e-6);
+  },
+);
+
+const formatPairs = (["square", "landscape", "portrait"] as const).flatMap(
+  (from) =>
+    (["square", "landscape", "portrait"] as const)
+      .filter((to) => to !== from)
+      .flatMap((to) =>
+        (["left", "right", "top", "bottom"] as const).map((edge) => ({
+          from,
+          to,
+          edge,
+        })),
+      ),
+);
+it.each(formatPairs)(
+  "preserves $edge crop fraction from $from to $to",
+  ({ from, to, edge }) => {
+    const [w, h] = FORMATS[from];
+    const crop = {
+      family: "lamp" as const,
+      horizontal:
+        edge === "left" || edge === "right" ? edge : ("center" as const),
+      vertical:
+        edge === "top" || edge === "bottom" ? edge : ("center" as const),
+    };
+    const source: Scene = {
+      ...scene,
+      format: from,
+      framing: "bleed",
+      crop,
+      scale: 1,
+      elements: [
+        {
+          ...item,
+          x: edge === "left" ? -60 : edge === "right" ? w - 240 : (w - 300) / 2,
+          y: edge === "top" ? -40 : edge === "bottom" ? h - 160 : (h - 200) / 2,
+        },
+      ],
+    };
+    const list = [{ ...assets[0], width: 300, height: 200 }];
+    const next = centerForFormat(source, to, list);
+    const [nw, nh] = FORMATS[to],
+      element = next.elements[0];
+    const outside = {
+      left: -element.x / (300 * next.scale),
+      right: (element.x + 300 * next.scale - nw) / (300 * next.scale),
+      top: -element.y / (200 * next.scale),
+      bottom: (element.y + 200 * next.scale - nh) / (200 * next.scale),
+    }[edge];
+    expect(outside).toBeCloseTo(0.2, 3);
+    expect(visibleFraction(next, element, list)).toBeGreaterThanOrEqual(0.55);
+  },
+);
+
+it("an impossible crop restores a small foreground object instead of dropping it", () => {
+  const list = [
+    { ...assets[0], family: "book", width: 1000, height: 700 },
+    { ...assets[0], family: "coin", width: 40, height: 30 },
+  ] as Asset[];
+  const source: Scene = {
+    ...scene,
+    format: "square",
+    framing: "bleed",
+    scale: 1,
+    crop: { family: "book", horizontal: "left", vertical: "center" },
+    elements: [
+      { ...item, id: "book", family: "book", x: -200, y: 100 },
+      { ...item, id: "coin", family: "coin", x: -240, y: 300 },
+    ],
+  };
+  const next = centerForFormat(source, "landscape", list);
+  expect(visibleFraction(next, next.elements[1], list)).toBeGreaterThanOrEqual(
+    0.9,
+  );
+  expect(visibleFraction(next, next.elements[0], list)).toBeGreaterThanOrEqual(
+    0.55,
+  );
+  expect(next.elements[1].x - next.elements[0].x).toBeCloseTo(
+    -40 * next.scale,
+    3,
+  );
+});
+
+it("infers the chosen edge for an unspecified center/center bleed crop", () => {
+  const source: Scene = {
+    ...scene,
+    format: "square",
+    framing: "bleed",
+    scale: 1,
+    crop: { family: "lamp", horizontal: "center", vertical: "center" },
+    elements: [{ ...item, x: -60, y: 100 }],
+  };
+  const list = [{ ...assets[0], width: 300, height: 200 }];
+  const next = centerForFormat(source, "landscape", list);
+  expect(next.elements[0].x).toBeLessThan(0);
+  expect(-next.elements[0].x / (300 * next.scale)).toBeCloseTo(0.2, 3);
 });

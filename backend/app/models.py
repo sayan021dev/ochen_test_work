@@ -5,6 +5,16 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 ElementId = Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
 Color = Annotated[str, Field(pattern=r"^#[0-9A-Fa-f]{6}$")]
 Finite = Annotated[float, Field(allow_inf_nan=False)]
+PaintRole = Literal[
+    "background-0",
+    "background-1",
+    "background-2",
+    "background-3",
+    "object-0",
+    "object-1",
+    "object-2",
+    "object-3",
+]
 Family = Literal[
     "book", "phone", "puzzle", "coin", "headphones", "lamp", "flowers", "wallet", "folder", "pen"
 ]
@@ -58,6 +68,15 @@ class Element(Model):
     locked: bool = False
     shadow: Shadow | None = None
     support_ids: list[ElementId] = Field(default_factory=list, max_length=6)
+    color_map: dict[PaintRole, PaintRole] = Field(default_factory=dict, max_length=8)
+
+    @model_validator(mode="after")
+    def background_colors_only(self):
+        if self.role == "background" and any(
+            target.startswith("object-") for target in self.color_map.values()
+        ):
+            raise ValueError("Фоновый предмет использует только цвета фона")
+        return self
 
 
 def support_order(elements: list[Element]) -> list[Element]:
@@ -99,6 +118,12 @@ class SceneLight(Model):
     opacity: Finite = Field(default=0.35, ge=0, le=1)
 
 
+class CameraCrop(Model):
+    family: Family
+    horizontal: Literal["left", "center", "right"] = "center"
+    vertical: Literal["top", "center", "bottom"] = "center"
+
+
 class Scene(Model):
     version: Literal[1] = 1
     title: str = Field(default="Новая композиция", min_length=1, max_length=120)
@@ -107,6 +132,8 @@ class Scene(Model):
     scale: Finite = Field(default=0.4, ge=0.03, le=8)
     palette: Palette
     transparent: bool = False
+    framing: Literal["fit", "close", "bleed"] = "fit"
+    crop: CameraCrop | None = None
     light: SceneLight | None = None
     elements: list[Element] = Field(default_factory=list, max_length=48)
 

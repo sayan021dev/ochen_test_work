@@ -151,7 +151,15 @@ def assert_relation(scene, relation):
             assert min(x + w, tx + tw) > max(x, tx)
             assert min(y + h, ty + th) > max(y, ty)
             if kind == "on":
-                assert y < ty
+                items = {element.family: element for element in scene.elements}
+                caster, receiver = items[subject], items[target]
+                foot = asset_for(subject, scene.detail, caster.role)["contact"]["contact"]
+                surface = asset_for(target, scene.detail, receiver.role)["contact"]["surface"]
+                # A flat coin can start below the top of a book while resting
+                # on its page. Compare physical contact, not SVG top-left order.
+                assert y + foot[1] * scene.scale == pytest.approx(
+                    ty + surface[1] * scene.scale, abs=0.001
+                )
             assert (order.index(subject) < order.index(target)) == (kind == "behind")
 
 
@@ -396,11 +404,16 @@ def test_ai_relations_for_other_targets_survive_literal_subject_override():
     }
 
 
-def test_one_subject_stays_centered_on_its_support():
+def test_one_subject_places_its_source_contact_on_the_receiving_surface():
     request = ComposeRequest(prompt="пазл на монете", mode="components", palette=PALETTES[0])
     for scene in compose_variants(["puzzle", "coin"], request):
-        b = boxes(scene)
-        assert abs(b["puzzle"][0] + b["puzzle"][2] / 2 - b["coin"][0] - b["coin"][2] / 2) < 0.001
+        items = {e.family: e for e in scene.elements}
+        a, b = items["puzzle"], items["coin"]
+        foot = asset_for("puzzle", scene.detail, "main")["contact"]["contact"]
+        surface = asset_for("coin", scene.detail, "main")["contact"]["surface"]
+        assert a.x + foot[0] * scene.scale == pytest.approx(
+            b.x + surface[0] * scene.scale, abs=0.001
+        )
 
 
 @pytest.mark.parametrize(
