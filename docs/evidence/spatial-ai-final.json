@@ -1,0 +1,199 @@
+[
+  {
+    "prompt": "пазл на монете а под ними книга",
+    "ok": true,
+    "families": [
+      "puzzle",
+      "coin",
+      "book"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "puzzle",
+          "relation": "on",
+          "targets": [
+            "coin"
+          ]
+        },
+        {
+          "subject": "book",
+          "relation": "below",
+          "targets": [
+            "puzzle",
+            "coin"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 3.4
+  },
+  {
+    "prompt": "Папка позади наушников, ручка под ними",
+    "ok": true,
+    "families": [
+      "folder",
+      "headphones",
+      "pen"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "folder",
+          "relation": "behind",
+          "targets": [
+            "headphones"
+          ]
+        },
+        {
+          "subject": "pen",
+          "relation": "below",
+          "targets": [
+            "folder",
+            "headphones"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.46
+  },
+  {
+    "prompt": "Пазл и монета на книге",
+    "ok": true,
+    "families": [
+      "puzzle",
+      "coin",
+      "book"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "puzzle",
+          "relation": "on",
+          "targets": [
+            "book"
+          ]
+        },
+        {
+          "subject": "coin",
+          "relation": "on",
+          "targets": [
+            "book"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.11
+  },
+  {
+    "prompt": "Монета слева от книги, а телефон справа от неё",
+    "ok": true,
+    "families": [
+      "coin",
+      "book",
+      "phone"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "coin",
+          "relation": "left_of",
+          "targets": [
+            "book"
+          ]
+        },
+        {
+          "subject": "phone",
+          "relation": "right_of",
+          "targets": [
+            "book"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 1.91
+  },
+  {
+    "prompt": "Над книгой монета, справа от книги телефон",
+    "ok": true,
+    "families": [
+      "book",
+      "coin",
+      "phone"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "coin",
+          "relation": "above",
+          "targets": [
+            "book"
+          ]
+        },
+        {
+          "subject": "phone",
+          "relation": "right_of",
+          "targets": [
+            "book"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.07
+  },
+  {
+    "prompt": "Цветная книга слева от монеты",
+    "ok": true,
+    "families": [
+      "book",
+      "coin"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "book",
+          "relation": "left_of",
+          "targets": [
+            "coin"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.31
+  },
+  {
+    "prompt": "book left of coin and higher than phone",
+    "ok": true,
+    "families": [
+      "book",
+      "coin",
+      "phone"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "book",
+          "relation": "above",
+          "targets": [
+            "phone"
+          ]
+        },
+        {
+          "subject": "book",
+          "relation": "left_of",
+          "targets": [
+            "coin"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.13
+  }
+]

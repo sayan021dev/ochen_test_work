@@ -1,0 +1,299 @@
+[
+  {
+    "prompt": "пазл на монете а под ними книга",
+    "ok": true,
+    "families": [
+      "puzzle",
+      "coin",
+      "book"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "puzzle",
+          "relation": "on",
+          "targets": [
+            "coin"
+          ]
+        },
+        {
+          "subject": "book",
+          "relation": "below",
+          "targets": [
+            "puzzle",
+            "coin"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 4.13
+  },
+  {
+    "prompt": "Книга слева от лампы, а наушники справа от лампы",
+    "ok": true,
+    "families": [
+      "book",
+      "lamp",
+      "headphones"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "book",
+          "relation": "left_of",
+          "targets": [
+            "lamp"
+          ]
+        },
+        {
+          "subject": "headphones",
+          "relation": "right_of",
+          "targets": [
+            "lamp"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.92
+  },
+  {
+    "prompt": "Монета над кошельком, ручка справа от кошелька",
+    "ok": true,
+    "families": [
+      "coin",
+      "wallet",
+      "pen"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "coin",
+          "relation": "above",
+          "targets": [
+            "wallet",
+            "pen"
+          ]
+        },
+        {
+          "subject": "pen",
+          "relation": "right_of",
+          "targets": [
+            "wallet"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.25
+  },
+  {
+    "prompt": "Лампа над книгой, телефон под книгой",
+    "ok": true,
+    "families": [
+      "lamp",
+      "book",
+      "phone"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "lamp",
+          "relation": "above",
+          "targets": [
+            "book",
+            "phone"
+          ]
+        },
+        {
+          "subject": "phone",
+          "relation": "below",
+          "targets": [
+            "book"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.34
+  },
+  {
+    "prompt": "Папка слева от телефона, цветы справа от телефона",
+    "ok": true,
+    "families": [
+      "folder",
+      "phone",
+      "flowers"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "folder",
+          "relation": "left_of",
+          "targets": [
+            "phone",
+            "flowers"
+          ]
+        },
+        {
+          "subject": "flowers",
+          "relation": "right_of",
+          "targets": [
+            "phone"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.15
+  },
+  {
+    "prompt": "Книга и лампа слева от монеты",
+    "ok": true,
+    "families": [
+      "book",
+      "lamp",
+      "coin"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "book",
+          "relation": "left_of",
+          "targets": [
+            "coin"
+          ]
+        },
+        {
+          "subject": "lamp",
+          "relation": "left_of",
+          "targets": [
+            "coin"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.96
+  },
+  {
+    "prompt": "Папка позади наушников, ручка под ними",
+    "ok": false,
+    "error_type": "ValueError",
+    "reason": "",
+    "seconds": 2.09
+  },
+  {
+    "prompt": "Book to the left of the lamp, coin below them",
+    "ok": true,
+    "families": [
+      "book",
+      "lamp",
+      "coin"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "book",
+          "relation": "left_of",
+          "targets": [
+            "lamp",
+            "coin"
+          ]
+        },
+        {
+          "subject": "coin",
+          "relation": "below",
+          "targets": [
+            "book",
+            "lamp"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.7
+  },
+  {
+    "prompt": "Над книгой монета, справа от книги телефон",
+    "ok": true,
+    "families": [
+      "book",
+      "coin",
+      "phone"
+    ],
+    "relations": {
+      "relations": [
+        {
+          "subject": "phone",
+          "relation": "right_of",
+          "targets": [
+            "book"
+          ]
+        },
+        {
+          "subject": "coin",
+          "relation": "above",
+          "targets": [
+            "book"
+          ]
+        },
+        {
+          "subject": "coin",
+          "relation": "right_of",
+          "targets": [
+            "book"
+          ]
+        }
+      ]
+    },
+    "variants": 3,
+    "seconds": 2.22
+  },
+  {
+    "prompt": "Книга, лампа, монета, телефон, папка и ручка",
+    "ok": true,
+    "families": [
+      "book",
+      "lamp",
+      "coin",
+      "phone",
+      "folder",
+      "pen"
+    ],
+    "relations": {
+      "relations": []
+    },
+    "variants": 3,
+    "seconds": 2.27
+  },
+  {
+    "prompt": "Фокус на главном",
+    "ok": true,
+    "families": [
+      "headphones",
+      "lamp"
+    ],
+    "relations": {
+      "relations": []
+    },
+    "variants": 3,
+    "seconds": 2.27
+  },
+  {
+    "prompt": "Как научиться программировать",
+    "ok": true,
+    "families": [
+      "book",
+      "pen",
+      "puzzle",
+      "phone"
+    ],
+    "relations": {
+      "relations": []
+    },
+    "variants": 3,
+    "seconds": 2.37
+  }
+]

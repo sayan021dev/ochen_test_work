@@ -1,0 +1,61 @@
+[
+  {
+    "prompt": "пазл на монете а под ними книга",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Книга слева от лампы, а наушники справа от лампы",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Монета над кошельком, ручка справа от кошелька",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Лампа над книгой, телефон под книгой",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Папка слева от телефона, цветы справа от телефона",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Книга и лампа слева от монеты",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Папка позади наушников, ручка под ними",
+    "status": "original failure retained; checked in final live cohort"
+  },
+  {
+    "prompt": "Book to the left of the lamp, coin below them",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Над книгой монета, справа от книги телефон",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Книга, лампа, монета, телефон, папка и ручка",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Фокус на главном",
+    "ok": true,
+    "variants": 3
+  },
+  {
+    "prompt": "Как научиться программировать",
+    "ok": true,
+    "variants": 3
+  }
+]
