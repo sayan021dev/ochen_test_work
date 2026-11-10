@@ -13,6 +13,9 @@ services:
       AI_REQUEST_LIMIT: ${AI_REQUEST_LIMIT:-100}
       AI_SESSION_LIMIT: ${AI_SESSION_LIMIT:-20}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SITE_PASSWORD: ${SITE_PASSWORD:-}
+      REQUIRE_SITE_PASSWORD: ${REQUIRE_SITE_PASSWORD:-false}
+      AUTH_SECRET: ${AUTH_SECRET:-}
     depends_on:
       db:
         condition: service_healthy

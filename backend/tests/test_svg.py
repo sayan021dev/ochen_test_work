@@ -229,3 +229,24 @@ def test_optional_coin_restores_continuous_sidewall_when_fused_shadow_is_hidden(
     path = repair.find("s:path", NS)
     assert path.get("d").count("A") == 2
     assert path.get("stroke") == PALETTES[0]["background"][3]
+
+
+def test_optional_free_transform_exports_independent_axes_without_rewriting_source_paths():
+    result = ET.fromstring(
+        render_scene(
+            scene(
+                elements=[
+                    {
+                        "id": "resize",
+                        "family": "lamp",
+                        "x": 10,
+                        "y": 20,
+                        "scale_x": 1.5,
+                        "scale_y": 0.7,
+                    }
+                ]
+            )
+        )
+    )
+    group = result.find(".//s:g[@data-element-id]", NS)
+    assert "scale(0.6000000000000001 0.27999999999999997)" in group.get("transform")

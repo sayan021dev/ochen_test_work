@@ -7,7 +7,20 @@ Finite = Annotated[float, Field(allow_inf_nan=False)]
 Family = Literal[
     "book", "phone", "puzzle", "coin", "headphones", "lamp", "flowers", "wallet", "folder", "pen"
 ]
-FORMATS = {"square": (1000, 1000), "landscape": (1200, 630), "portrait": (800, 1200)}
+Format = Literal[
+    "square", "landscape", "portrait", "standard", "hd", "fullhd", "post", "story", "wide"
+]
+FORMATS = {
+    "square": (1000, 1000),
+    "landscape": (1200, 630),
+    "portrait": (800, 1200),
+    "standard": (800, 600),
+    "hd": (1280, 720),
+    "fullhd": (1920, 1080),
+    "post": (1080, 1080),
+    "story": (1080, 1920),
+    "wide": (1600, 900),
+}
 
 
 class Model(BaseModel):
@@ -22,9 +35,13 @@ class Palette(Model):
 
 
 class Shadow(Model):
-    angle: Finite = Field(default=35, ge=0, le=360)
+    angle: Finite = Field(default=0, ge=0, le=360)
     length: Finite = Field(default=1, ge=0, le=2)
-    opacity: Finite = Field(default=0.35, ge=0, le=1)
+    opacity: Finite = Field(default=1, ge=0, le=1)
+    x: Finite = Field(default=0, ge=-5000, le=5000)
+    y: Finite = Field(default=0, ge=-5000, le=5000)
+    scale_x: Finite = Field(default=1, ge=0.05, le=6)
+    scale_y: Finite = Field(default=1, ge=0.05, le=6)
 
 
 class Element(Model):
@@ -34,6 +51,8 @@ class Element(Model):
     x: Finite = Field(ge=-5000, le=5000)
     y: Finite = Field(ge=-5000, le=5000)
     angle: Finite = Field(default=0.0, ge=-360, le=360)
+    scale_x: Finite = Field(default=1, ge=0.05, le=6)
+    scale_y: Finite = Field(default=1, ge=0.05, le=6)
     hidden: bool = False
     locked: bool = False
     shadow: Shadow | None = None
@@ -42,7 +61,7 @@ class Element(Model):
 class Scene(Model):
     version: Literal[1] = 1
     title: str = Field(default="Новая композиция", min_length=1, max_length=120)
-    format: Literal["square", "landscape", "portrait"] = "landscape"
+    format: Format = "landscape"
     detail: Literal["L", "S"] = "L"
     scale: Finite = Field(default=0.4, ge=0.03, le=8)
     palette: Palette
@@ -65,7 +84,7 @@ class Scene(Model):
 class ComposeRequest(Model):
     prompt: str = Field(min_length=1, max_length=1000)
     mode: Literal["components", "metaphor"] = "metaphor"
-    format: Literal["square", "landscape", "portrait"] = "landscape"
+    format: Format = "landscape"
     detail: Literal["L", "S"] = "L"
     palette: Palette
     seed: int = Field(default=0, ge=0, le=1000000)

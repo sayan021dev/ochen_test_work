@@ -1,12 +1,23 @@
 // Build-time only: original files are read, never rewritten. Review the contact sheet after changes.
 import { chromium } from "../frontend/node_modules/@playwright/test/index.mjs";
 import { readFileSync, writeFileSync } from "node:fs";
+import ts from "../frontend/node_modules/typescript/lib/typescript.js";
+// Use the production SVG helper for mask-aware selection bounds. Raster samples
+// are build-time metadata only; no bitmap enters the library or exported SVG.
+const shadowHelper = ts
+  .transpileModule(readFileSync("frontend/src/shadow.ts", "utf8"), {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.ESNext,
+    },
+  })
+  .outputText.replace(/^export /gm, "");
 const catalog = JSON.parse(readFileSync("assets/catalog.json", "utf8")).assets;
 // Reviewed source path indices: silhouette underpaint can contain both outline and cast shadow.
 const exclusions = {
   book: [1, 2],
   phone: [0, 94],
-  puzzle: [0, 11],
+  puzzle: [0, 2, 11, 18],
   coin: [81, 82, 135],
   headphones: [0, 1],
   lamp: [0, 1],
@@ -15,12 +26,60 @@ const exclusions = {
   folder: [0, 1, 16],
   pen: [0],
 };
+// Reviewed original ground-shadow paths in L/main. Fused silhouettes are
+// additionally restricted to local ground regions, never the complete outline.
+const castIndices = {
+  book: [2],
+  phone: [94],
+  puzzle: [2, 11, 18],
+  coin: [81, 135],
+  headphones: [0, 1],
+  lamp: [1],
+  flowers: [2],
+  wallet: [1],
+  folder: [16],
+  pen: [0],
+};
+const castRegions = {
+  headphones: [
+    [
+      [-0.01, 0.46],
+      [0.4, 0.34],
+      [0.41, 0.7],
+      [-0.01, 0.73],
+    ],
+    [
+      [0.43, 0.79],
+      [0.88, 0.69],
+      [0.91, 1.02],
+      [0.43, 1.02],
+    ],
+  ],
+  pen: [
+    [
+      [0, -0.15],
+      [1.05, 0.9],
+      [1.05, 1.05],
+      [0, 0],
+    ],
+  ],
+  wallet: [
+    [
+      [0.34, 0.98],
+      [0.96, 0.43],
+      [1.05, 0.5],
+      [1.05, 1.1],
+      [0.34, 1.1],
+    ],
+  ],
+};
 const browser = await chromium.launch({
   headless: true,
   channel: process.env.CI ? undefined : "chrome",
 });
 try {
   const page = await browser.newPage();
+  await page.addScriptTag({ content: shadowHelper });
   const measured = [];
   for (const asset of catalog) {
     await page.setContent(readFileSync(`assets/${asset.file}`, "utf8"));
@@ -72,7 +131,33 @@ try {
           .sort((a, b) => a.score - b.score)[0].id;
       }),
     );
-    const body = asset.paths.filter((p) => !excluded.has(p.id));
+    const castIds = new Set(
+      castIndices[asset.family].map((index) => {
+        const target = baseline.paths[index].box.map(
+          (n, i) => n / (i % 2 ? baseline.height : baseline.width),
+        );
+        return asset.paths
+          .filter((p) => ["#181817", "#7864D7"].includes(p.fill))
+          .map((p) => ({
+            id: p.id,
+            score: p.box.reduce(
+              (sum, n, i) =>
+                sum +
+                (n / (i % 2 ? asset.height : asset.width) - target[i]) ** 2,
+              0,
+            ),
+          }))
+          .sort((a, b) => a.score - b.score)[0].id;
+      }),
+    );
+    for (const id of castIds) excluded.add(id);
+    const body = asset.paths.filter(
+      (p) =>
+        !excluded.has(p.id) &&
+        (asset.family !== "headphones" ||
+          (!["#181817", "#7864D7"].includes(p.fill) &&
+            p.box[2] * p.box[3] > asset.width * asset.height * 0.001)),
+    );
     const x = Math.min(...body.map((p) => p.box[0])),
       y = Math.min(...body.map((p) => p.box[1]));
     const right = Math.max(...body.map((p) => p.box[0] + p.box[2])),
@@ -80,11 +165,18 @@ try {
     const entry = {
       source_sha256: asset.sha256,
       body_path_ids: body.map((p) => p.id),
+      cast_path_ids: asset.paths
+        .filter((p) => castIds.has(p.id))
+        .map((p) => p.id),
       anchor: [(x + right) / 2, bottom],
       width: right - x,
       height: bottom - y,
       outline: asset.detail === "L" ? 4 : 2,
     };
+    if (castRegions[asset.family])
+      entry.cast_regions = castRegions[asset.family].map((polygon) =>
+        polygon.map(([x, y]) => [x * asset.width, y * asset.height]),
+      );
     if (asset.family === "flowers" || asset.family === "lamp")
       entry.preserve_above =
         asset.height * (asset.family === "flowers" ? 0.7 : 0.5);
@@ -92,9 +184,7 @@ try {
       entry.erase_path_ids = [
         asset.paths.find((p) => p.id === [...excluded][1]).id,
       ];
-    if (
-      ["pen", "coin", "wallet", "folder", "headphones"].includes(asset.family)
-    ) {
+    if (["pen", "coin", "wallet", "folder"].includes(asset.family)) {
       const outline =
         asset.family === "coin"
           ? asset.paths.filter(
@@ -119,6 +209,39 @@ try {
       entry.hull = [...half(points), ...half([...points].reverse())].map((p) =>
         p.map((n) => Math.round(n * 1000) / 1000),
       );
+    }
+    if (asset.family === "headphones") {
+      // These three original white pieces outline the headband. Keeping their
+      // hull retains the rear band's black depth without a hull across the cups.
+      const band = [18, 19, 21].map((index) => {
+        const target = baseline.paths[index].box.map(
+          (n, i) => n / (i % 2 ? baseline.height : baseline.width),
+        );
+        return [...asset.paths].sort((a, b) => {
+          const score = (p) =>
+            p.box.reduce(
+              (sum, n, i) =>
+                sum +
+                (n / (i % 2 ? asset.height : asset.width) - target[i]) ** 2,
+              0,
+            );
+          return score(a) - score(b);
+        })[0];
+      });
+      const points = band
+        .flatMap((p) => p.points)
+        .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const cross = (o, a, b) =>
+        (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+      const half = (ps) => {
+        const h = [];
+        for (const p of ps) {
+          while (h.length > 1 && cross(h.at(-2), h.at(-1), p) <= 0) h.pop();
+          h.push(p);
+        }
+        return h.slice(0, -1);
+      };
+      entry.keep_polygons = [[...half(points), ...half([...points].reverse())]];
     }
     if (asset.family === "coin") {
       const top = asset.paths[1].box,
@@ -150,11 +273,74 @@ try {
         Math.max(...entry.hull.map((p) => p[1])) -
         Math.min(...entry.hull.map((p) => p[1]));
     } else {
-      const contact = body
+      const contactPaths =
+        asset.family === "headphones"
+          ? body.filter(
+              (p) =>
+                p.fill !== "#181817" &&
+                p.fill !== "#7864D7" &&
+                p.box[2] * p.box[3] > asset.width * asset.height * 0.01,
+            )
+          : body;
+      const contact = contactPaths
         .flatMap((p) => p.points)
         .reduce((a, b) => (b[1] > a[1] ? b : a));
       entry.anchor = contact;
     }
+    entry.cast_bbox = await page.evaluate(
+      async ({ source, asset, entry }) => {
+        const doc = new DOMParser().parseFromString(source, "image/svg+xml");
+        applyCustomShadow(doc, {
+          metadata: entry,
+          settings: { angle: 0, length: 1, opacity: 0.999 },
+          role: asset.role,
+          width: asset.width,
+          height: asset.height,
+        });
+        const root = doc.documentElement;
+        root.lastElementChild.remove(); // isolate the real cast, including both masks/clip
+        root.querySelector("[data-custom-shadow]").setAttribute("opacity", "1");
+        const image = new Image();
+        image.src =
+          "data:image/svg+xml;charset=utf-8," +
+          encodeURIComponent(new XMLSerializer().serializeToString(root));
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(asset.width);
+        canvas.height = Math.ceil(asset.height);
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const pixels = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        ).data;
+        let left = canvas.width,
+          top = canvas.height,
+          right = -1,
+          bottom = -1;
+        for (let y = 0; y < canvas.height; y++)
+          for (let x = 0; x < canvas.width; x++) {
+            if (pixels[(y * canvas.width + x) * 4 + 3] === 0) continue;
+            left = Math.min(left, x);
+            top = Math.min(top, y);
+            right = Math.max(right, x);
+            bottom = Math.max(bottom, y);
+          }
+        if (right < left || bottom < top)
+          throw new Error("Empty original cast: " + asset.id);
+        const sx = asset.width / canvas.width,
+          sy = asset.height / canvas.height;
+        return [
+          left * sx,
+          top * sy,
+          (right - left + 1) * sx,
+          (bottom - top + 1) * sy,
+        ];
+      },
+      { source: readFileSync(`assets/${asset.file}`, "utf8"), asset, entry },
+    );
     result[asset.id] = entry;
   }
   writeFileSync(

@@ -14,11 +14,13 @@ from sqlalchemy import select, text, update
 from sqlalchemy.orm import Session
 
 from app.ai import AIError, OpenAISelector, build_client
+from app.auth import install_auth
 from app.catalog import ASSET_ROOT, PALETTES, ROOT, public_catalog
 from app.composition import compose_variants, select_components, select_offline_metaphor
 from app.config import Settings
 from app.db import BudgetExceeded, Project, make_engine, reserve_ai_request
 from app.models import FORMATS, ComposeRequest, ProjectWrite, Scene
+from app.prompts import validate_illustration_prompt
 from app.svg import render_scene
 
 
@@ -38,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Иллюстрации · Очень", version="0.1.0", lifespan=lifespan)
     app.state.engine = make_engine(config.database_url)
+    install_auth(app, config, csrf_token)
     app.state.ai_cache = {}
     # One worker in V1: check + add happen without an await on its event loop.
     # Reject before reserving budget, so repeated clicks cannot spend extra tokens.
@@ -49,6 +52,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         session = request.cookies.get("illustration_session", "")
         request.state.session = session if re.fullmatch(r"[A-Za-z0-9_-]{40,64}", session) else ""
         request.state.owner = hashlib.sha256(request.state.session.encode()).hexdigest()
+        if app.state.auth.requires_auth(request.url.path) and not app.state.auth.is_authorized(
+            request
+        ):
+            return JSONResponse({"detail": "Введите пароль для доступа"}, 401)
         if request.method in {"POST", "PUT", "DELETE", "PATCH"}:
             origin = request.headers.get("origin")
             if (origin and origin not in config.allowed_origins) or not request.state.session:
@@ -113,6 +120,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def compose(payload: ComposeRequest, request: Request):
         provider = "components"
         try:
+            validate_illustration_prompt(payload.prompt)
             if payload.mode == "components":
                 families, unknown = select_components(payload.prompt)
                 if unknown:

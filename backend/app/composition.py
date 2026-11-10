@@ -93,6 +93,7 @@ def compose_variants(families: list[str], request: ComposeRequest) -> list[Scene
         )
         width, height = scene.size
         scene.scale = min(
+            4 if request.detail == "L" else 8,
             width / (max(a["width"] for a in dimensions) * 1.6),
             height / (max(a["height"] for a in dimensions) * 1.4),
         )

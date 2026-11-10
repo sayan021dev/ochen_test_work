@@ -143,6 +143,8 @@ def render_scene(scene: Scene) -> str:
         if element.shadow is not None:
             original = with_custom_shadow(original, asset, element.shadow)
         source = recolor_and_namespace(original, scene.palette.model_dump(), "i_" + element.id)
+        sx, sy = scene.scale * element.scale_x, scene.scale * element.scale_y
+        scale = str(sx) if sx == sy else f"{sx} {sy}"
         group = ET.SubElement(
             artwork,
             f"{{{NS}}}g",
@@ -152,8 +154,7 @@ def render_scene(scene: Scene) -> str:
                 "data-source-node": asset["source_node_id"],
                 "data-role": element.role,
                 "transform": (
-                    f"translate({element.x} {element.y}) "
-                    f"rotate({element.angle}) scale({scene.scale})"
+                    f"translate({element.x} {element.y}) rotate({element.angle}) scale({scale})"
                 ),
             },
         )

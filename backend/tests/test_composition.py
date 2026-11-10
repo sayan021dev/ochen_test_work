@@ -61,3 +61,25 @@ def test_single_subject_layout_works_for_every_original_size(family, detail):
     scenes = compose_variants([family], request)
     assert len(scenes) == 3
     assert scenes[0].elements[0].family == family
+
+
+def test_every_size_preset_supports_small_coin_in_both_detail_sets():
+    from app.catalog import PALETTES
+    from app.composition import compose_variants
+    from app.models import FORMATS, ComposeRequest
+
+    for format in FORMATS:
+        for detail in ("S", "L"):
+            request = ComposeRequest(
+                prompt="монета",
+                mode="components",
+                format=format,
+                detail=detail,
+                palette=PALETTES[0],
+            )
+            result = compose_variants(["coin"], request)
+            assert len(result) == 3
+            assert all(
+                scene.format == format and scene.scale <= (4 if detail == "L" else 8)
+                for scene in result
+            )

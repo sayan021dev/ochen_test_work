@@ -5,6 +5,7 @@ import httpx
 import pytest
 from app.ai import AIError, OpenAISelector, build_client
 from app.config import Settings
+from app.prompts import PromptOutOfScope
 
 
 def settings(**kw):
@@ -23,6 +24,7 @@ def response_payload(selection=None):
                         "text": json.dumps(
                             selection
                             or {
+                                "accepted": True,
                                 "families": ["book", "lamp"],
                                 "explanation": "Книга и свет помогают учиться.",
                             }
@@ -40,6 +42,7 @@ def test_model_receives_only_catalog_and_returns_validated_ids():
         assert payload["model"] == "gpt-6-luna"
         assert payload["store"] is False
         assert payload["text"]["format"]["strict"] is True
+        assert "accepted" in payload["text"]["format"]["schema"]["required"]
         assert "tools" not in payload
         assert "<svg" not in request.content.decode()
         assert request.headers["authorization"] == "Bearer test-only-key"
@@ -62,7 +65,21 @@ def test_model_receives_only_catalog_and_returns_validated_ids():
         {"status": "completed", "output": [None]},
         {"status": "completed", "output": [{"type": "message", "content": [None]}]},
         {"status": "completed", "output": [{"type": "message", "content": None}]},
-        response_payload({"families": ["dragon"], "explanation": "bad"}),
+        response_payload({"accepted": True, "families": ["dragon"], "explanation": "bad"}),
+        response_payload({"families": ["book"], "explanation": "missing decision"}),
+        response_payload({"accepted": "true", "families": ["book"], "explanation": "bad"}),
+        response_payload({"accepted": True, "families": [], "explanation": "bad"}),
+        response_payload({"accepted": False, "families": ["book"], "explanation": "bad"}),
+        response_payload({"accepted": False, "families": [], "explanation": "x" * 501}),
+        {
+            "status": "completed",
+            "output": [
+                {
+                    "type": "message",
+                    "content": [{"type": "output_text", "text": {"families": ["book"]}}],
+                }
+            ],
+        },
         {"status": "incomplete", "output": []},
         {
             "status": "completed",
@@ -98,6 +115,38 @@ def test_timeout_is_safe_and_does_not_echo_credentials():
     with pytest.raises(AIError) as exc:
         asyncio.run(run())
     assert "private" not in str(exc.value)
+
+
+def test_semantic_rejection_does_not_forward_model_response():
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(
+                    200,
+                    json=response_payload(
+                        {"accepted": False, "families": [], "explanation": "private model answer"}
+                    ),
+                )
+            )
+        ) as client:
+            await OpenAISelector(settings(), client).select("Составь договор аренды квартиры")
+
+    with pytest.raises(PromptOutOfScope) as exc:
+        asyncio.run(run())
+    assert "иллюстрац" in str(exc.value)
+    assert "private" not in str(exc.value)
+
+
+def test_obvious_unrelated_task_does_not_call_provider():
+    def serve(_):
+        pytest.fail("Unrelated requests must not reach OpenAI")
+
+    async def run():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(serve)) as client:
+            await OpenAISelector(settings(), client).select("Напиши скрипт на Python")
+
+    with pytest.raises(PromptOutOfScope):
+        asyncio.run(run())
 
 
 def test_http_proxy_is_explicitly_used_for_https_openai(monkeypatch):
