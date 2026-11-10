@@ -161,7 +161,6 @@ function Editor({
     { scene, selected } = state;
   const [mode, setMode] = useState<"metaphor" | "components">("metaphor");
   const [prompt, setPrompt] = useState(""),
-    [useAI, setUseAI] = useState(data.ai.configured),
     [backgrounds, setBackgrounds] = useState(true);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -514,7 +513,7 @@ function Editor({
         palette: scene.palette,
         seed: 0,
         backgrounds,
-        use_ai: useAI,
+        use_ai: mode === "metaphor" && data.ai.configured,
       });
       if (!unchanged(store, snapshot)) {
         setError(
@@ -799,7 +798,7 @@ function Editor({
             {!busy && <ArrowRight size={16} />}
           </button>
           <div className="generation-options">
-            <label>
+            <label title="Добавляет в композицию дополнительные предметы заднего плана. Отключите, чтобы оставить только главные объекты.">
               <input
                 type="checkbox"
                 checked={backgrounds}
@@ -807,24 +806,6 @@ function Editor({
               />
               Фоновые объекты
             </label>
-            {mode === "metaphor" && (
-              <label
-                title={
-                  data.ai.configured
-                    ? data.ai.model
-                    : "API не настроен: доступен словарь"
-                }
-              >
-                <input
-                  type="checkbox"
-                  aria-label="Использовать OpenAI"
-                  checked={useAI}
-                  disabled={!data.ai.configured}
-                  onChange={(e) => setUseAI(e.target.checked)}
-                />
-                OpenAI
-              </label>
-            )}
           </div>
         </div>
         <Library

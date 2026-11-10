@@ -123,7 +123,16 @@ test("unknown components and provider errors keep the current scene", async ({
 test("offline metaphor, palette import, keyboard and responsive layout", async ({
   page,
 }) => {
-  await page.getByLabel("Использовать OpenAI").uncheck();
+  await page.route("**/api/bootstrap", async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({
+      response,
+      json: { ...body, ai: { ...body.ai, configured: false } },
+    });
+  });
+  await page.reload();
+  await expect(page.getByTestId("artboard")).toBeVisible();
   await page.getByLabel("Описание композиции").fill("Собрать знания в систему");
   await page
     .getByRole("button", { name: "Собрать композицию", exact: true })
@@ -633,4 +642,44 @@ test("rotation handle changes angle around the object center and is one undo ste
   await expect(item).not.toHaveAttribute("transform", before!);
   await page.getByRole("button", { name: "Отменить", exact: true }).click();
   await expect(item).toHaveAttribute("transform", before!);
+});
+
+test("AI selection is automatic and background objects explain their purpose", async ({
+  page,
+}) => {
+  await page.route("**/api/bootstrap", async (route) => {
+    const response = await route.fetch(),
+      body = await response.json();
+    await route.fulfill({
+      response,
+      json: { ...body, ai: { ...body.ai, configured: true } },
+    });
+  });
+  await page.reload();
+  await expect(page.getByTestId("artboard")).toBeVisible();
+  await expect(page.getByLabel("Использовать OpenAI")).toHaveCount(0);
+  const backgrounds = page.getByLabel("Фоновые объекты", { exact: true });
+  await expect(backgrounds).toBeChecked();
+  await expect(backgrounds.locator("..")).toHaveAttribute(
+    "title",
+    /заднего плана/,
+  );
+  await backgrounds.uncheck();
+  await page.route("**/api/compose", (route) =>
+    route.fulfill({
+      status: 502,
+      json: { detail: "Подставной провайдер: без платного вызова" },
+    }),
+  );
+  await page.getByLabel("Описание композиции").fill("Фокус на главном");
+  const request = page.waitForRequest(
+    (r) => r.url().endsWith("/api/compose") && r.method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Собрать композицию", exact: true })
+    .click();
+  expect((await request).postDataJSON()).toMatchObject({
+    use_ai: true,
+    backgrounds: false,
+  });
 });
