@@ -1,6 +1,8 @@
 import {
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   CircleHelp,
   PencilLine,
   FolderOpen,
@@ -168,6 +170,8 @@ function Editor({
     [saveStatus, setSaveStatus] = useState("Не сохранено");
   const [conflict, setConflict] = useState(false),
     [composition, setComposition] = useState<Composition | null>(null);
+  const [variantsOpen, setVariantsOpen] = useState(true);
+  const leftPanelScroll = useRef<HTMLDivElement>(null);
   const [palettes, setPalettes] = useState(data.palettes),
     [zoom, setZoom] = useState(1),
     [leftOpen, setLeftOpen] = useState(false),
@@ -524,6 +528,7 @@ function Editor({
       store.getState().change(result.scenes[0]);
       store.getState().select(null);
       setComposition(result);
+      setVariantsOpen(true);
       setZoom(1);
       setLeftOpen(false);
     } catch (e) {
@@ -638,7 +643,15 @@ function Editor({
     setComposition(null);
     setConflict(false);
   };
-  const showLibrary = () => setLeftOpen(!leftOpen);
+  useEffect(() => {
+    if (leftOpen) leftPanelScroll.current?.scrollTo({ top: 0 });
+  }, [leftOpen]);
+  const showLibrary = () => {
+    if (!leftOpen) {
+      setRightOpen(false);
+    }
+    setLeftOpen(!leftOpen);
+  };
   const openGallery = () => {
     setShowProjects(true);
     setShowWelcome(false);
@@ -718,105 +731,116 @@ function Editor({
           </button>
         </div>
       </header>
-      <aside className="left-panel" aria-label="Идея и библиотека">
-        <div className="prompt-section">
-          <div className="section-title">
-            <span className="eyebrow">НАЧНИТЕ С ИДЕИ</span>
-            <button
-              className="icon mobile-only"
-              aria-label="Закрыть библиотеку"
-              onClick={() => setLeftOpen(false)}
-            >
-              <X size={17} />
-            </button>
-          </div>
-          <h2>Что соберём?</h2>
-          <p className="intro-copy">Опишите смысл. Предметы найдутся.</p>
-          <div
-            className="segmented prompt-tabs"
-            role="tablist"
-            aria-label="Сценарий сборки"
-          >
-            <button
-              role="tab"
-              aria-selected={mode === "metaphor"}
-              onClick={() => setMode("metaphor")}
-            >
-              <Sparkles size={14} />
-              Идея
-            </button>
-            <button
-              role="tab"
-              aria-selected={mode === "components"}
-              onClick={() => setMode("components")}
-            >
-              <Layers3 size={14} />
-              Предметы
-            </button>
-          </div>
-          <div className="prompt-input">
-            <textarea
-              aria-label="Описание композиции"
-              placeholder={
-                mode === "metaphor"
-                  ? "Например, «Собрать знания в систему»"
-                  : "Книга, лампа, наушники…"
-              }
-              value={prompt}
-              maxLength={1000}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter")
-                  void generate();
-              }}
-            />
-            <span className="prompt-counter">{prompt.length}/1000</span>
-          </div>
-          <div className="prompt-examples">
-            <span>Попробуйте</span>
-            {(mode === "metaphor"
-              ? ["Фокус на главном", "Собрать знания в систему"]
-              : ["Книга, лампа, наушники", "Кошелёк, монета"]
-            ).map((example) => (
-              <button key={example} onClick={() => setPrompt(example)}>
-                {example}
-                <ArrowUpRightIcon />
-              </button>
-            ))}
-          </div>
+      <aside
+        className="left-panel"
+        id="idea-panel"
+        aria-label="Идея и библиотека"
+      >
+        <div className="left-panel-heading">
+          <h2>Идея и предметы</h2>
           <button
-            className="primary generate-button"
-            disabled={busy}
-            onClick={() => void generate()}
+            className="icon"
+            aria-label="Закрыть библиотеку"
+            onClick={() => setLeftOpen(false)}
           >
-            {busy ? (
-              <Loader2 size={17} className="spin" />
-            ) : (
-              <Sparkles size={16} />
-            )}
-            <span>{busy ? "Собираем композицию…" : "Собрать композицию"}</span>
-            {!busy && <ArrowRight size={16} />}
+            <X size={17} />
           </button>
-          <div className="generation-options">
-            <label title="Добавляет в композицию дополнительные предметы заднего плана. Отключите, чтобы оставить только главные объекты.">
-              <input
-                type="checkbox"
-                checked={backgrounds}
-                onChange={(e) => setBackgrounds(e.target.checked)}
-              />
-              Фоновые объекты
-            </label>
-          </div>
         </div>
-        <Library
-          assets={data.assets}
-          detail={scene.detail}
-          onAdd={(family) => {
-            state.add(family);
-            setLeftOpen(false);
-          }}
-          disabled={busy || scene.elements.length >= 48}
-        />
+        <div className="left-panel-scroll" ref={leftPanelScroll}>
+          <div className="prompt-section">
+            <div className="section-title">
+              <span className="eyebrow">НАЧНИТЕ С ИДЕИ</span>
+            </div>
+            <h2>Что соберём?</h2>
+            <p className="intro-copy">Опишите смысл. Предметы найдутся.</p>
+            <div
+              className="segmented prompt-tabs"
+              role="tablist"
+              aria-label="Сценарий сборки"
+            >
+              <button
+                role="tab"
+                aria-selected={mode === "metaphor"}
+                onClick={() => setMode("metaphor")}
+              >
+                <Sparkles size={14} />
+                Идея
+              </button>
+              <button
+                role="tab"
+                aria-selected={mode === "components"}
+                onClick={() => setMode("components")}
+              >
+                <Layers3 size={14} />
+                Предметы
+              </button>
+            </div>
+            <div className="prompt-input">
+              <textarea
+                aria-label="Описание композиции"
+                placeholder={
+                  mode === "metaphor"
+                    ? "Например, «Собрать знания в систему»"
+                    : "Книга, лампа, наушники…"
+                }
+                value={prompt}
+                maxLength={1000}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter")
+                    void generate();
+                }}
+              />
+              <span className="prompt-counter">{prompt.length}/1000</span>
+            </div>
+            <div className="prompt-examples">
+              <span>Попробуйте</span>
+              {(mode === "metaphor"
+                ? ["Фокус на главном", "Собрать знания в систему"]
+                : ["Книга, лампа, наушники", "Кошелёк, монета"]
+              ).map((example) => (
+                <button key={example} onClick={() => setPrompt(example)}>
+                  {example}
+                  <ArrowUpRightIcon />
+                </button>
+              ))}
+            </div>
+            <button
+              className="primary generate-button"
+              disabled={busy}
+              onClick={() => void generate()}
+            >
+              {busy ? (
+                <Loader2 size={17} className="spin" />
+              ) : (
+                <Sparkles size={16} />
+              )}
+              <span>
+                {busy ? "Собираем композицию…" : "Собрать композицию"}
+              </span>
+              {!busy && <ArrowRight size={16} />}
+            </button>
+            <div className="generation-options">
+              <label title="Добавляет в композицию дополнительные предметы заднего плана. Отключите, чтобы оставить только главные объекты.">
+                <input
+                  type="checkbox"
+                  checked={backgrounds}
+                  onChange={(e) => setBackgrounds(e.target.checked)}
+                />
+                Фоновые объекты
+              </label>
+            </div>
+          </div>
+          <Library
+            assets={data.assets}
+            detail={scene.detail}
+            onAdd={(family) => {
+              state.add(family);
+              setLeftOpen(false);
+            }}
+            disabled={busy || scene.elements.length >= 48}
+          />
+        </div>
       </aside>
       <main className="workspace" ref={workspace}>
         <div className="document-toolbar">
@@ -974,14 +998,19 @@ function Editor({
             </div>
           </div>
         </div>
-        <div className="composition-bottom">
-          {composition && (
-            <section className="variants" aria-label="Варианты композиции">
+        {composition && (
+          <section
+            className={`composition-bottom ${variantsOpen ? "is-expanded" : "is-collapsed"}`}
+            aria-label="Варианты композиции"
+          >
+            <div
+              id="composition-variants"
+              className="variants"
+              hidden={!variantsOpen}
+            >
               <div className="section-title">
                 <h2>Можно и так</h2>
-                <span className="tiny-label">
-                  Те же предметы, другой акцент
-                </span>
+                <span className="variants-count">3 варианта</span>
               </div>
               <div className="variant-grid">
                 {composition.scenes.map((variant, i) => (
@@ -989,7 +1018,7 @@ function Editor({
                     key={i}
                     className="variant-card"
                     aria-label={`Вариант композиции ${i + 1}`}
-                    onClick={() =>
+                    onClick={() => {
                       state.change({
                         ...variant,
                         palette: scene.palette,
@@ -1001,10 +1030,16 @@ function Editor({
                               ? 2
                               : 0.5
                             : 1),
-                      })
-                    }
+                      });
+                      setVariantsOpen(false);
+                    }}
                   >
-                    <svg viewBox={`0 0 ${FORMATS[variant.format].join(" ")}`}>
+                    <span className="variant-number">0{i + 1}</span>
+                    <svg
+                      className="variant-preview"
+                      viewBox={`0 0 ${FORMATS[variant.format].join(" ")}`}
+                      aria-hidden="true"
+                    >
                       <Illustration
                         scene={variant}
                         assets={data.assets}
@@ -1012,16 +1047,34 @@ function Editor({
                         prefix={`variant-${i}`}
                       />
                     </svg>
-                    <span>
-                      0{i + 1}
-                      <ArrowRight size={13} />
-                    </span>
                   </button>
                 ))}
               </div>
-            </section>
-          )}
-        </div>
+            </div>
+            <button
+              className="variants-toggle"
+              aria-label={
+                variantsOpen
+                  ? "Скрыть варианты композиции"
+                  : "Показать варианты композиции"
+              }
+              aria-expanded={variantsOpen}
+              aria-controls="composition-variants"
+              onClick={() => setVariantsOpen(!variantsOpen)}
+            >
+              {!variantsOpen && (
+                <span>
+                  Можно и так <small>3 варианта</small>
+                </span>
+              )}
+              {variantsOpen ? (
+                <ChevronDown size={18} />
+              ) : (
+                <ChevronUp size={18} />
+              )}
+            </button>
+          </section>
+        )}
         <input
           ref={projectInput}
           className="sr-only"
@@ -1042,11 +1095,22 @@ function Editor({
         onClose={() => setRightOpen(false)}
       />
       <nav className="mobile-panels" aria-label="Панели редактора">
-        <button onClick={showLibrary}>
+        <button
+          onClick={showLibrary}
+          aria-expanded={leftOpen}
+          aria-controls="idea-panel"
+        >
           <PanelLeft size={17} />
           Идея и предметы
         </button>
-        <button onClick={() => setRightOpen(!rightOpen)}>
+        <button
+          onClick={() => {
+            setLeftOpen(false);
+            setRightOpen(!rightOpen);
+          }}
+          aria-expanded={rightOpen}
+          aria-controls="settings-panel"
+        >
           <Settings2 size={17} />
           Настройки
         </button>

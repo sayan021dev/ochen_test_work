@@ -148,9 +148,17 @@ h3,
   font-size: var(--type-sm);
   font-weight: 500;
 }
-.document-title input {
+.document-title input,
+.variants-toggle > span,
+.variants .section-title h2 {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.variants-count {
   font-size: 13px;
-  font-weight: 500;
+  color: var(--text-secondary);
 }
 .save-status {
   margin-right: 0;
@@ -526,4 +534,72 @@ h3,
 }
 .document-title input {
   cursor: text;
+}
+/* On short viewports, show the idea field immediately below the fixed panel heading. */
+@media (max-width: 1180px) and (max-height: 600px) {
+  .left-panel-scroll .prompt-section {
+    padding-top: var(--space-3);
+  }
+  .left-panel-scroll .prompt-section > .section-title,
+  .left-panel-scroll .intro-copy {
+    display: none;
+  }
+  .left-panel-scroll .prompt-section h2 {
+    font-size: 22px;
+    margin-top: 0;
+    margin-bottom: var(--space-3);
+  }
+  .left-panel-scroll .prompt-tabs {
+    margin-bottom: var(--space-3);
+  }
+  .left-panel-scroll .prompt-input textarea {
+    min-height: 84px;
+    height: 84px;
+  }
+}
+/* Browser page zoom also reduces viewport height: keep room for the canvas. */
+@media (max-height: 600px) {
+  .document-toolbar {
+    min-height: 48px;
+    padding-block: 6px;
+  }
+  .canvas-toolbar {
+    min-height: 42px;
+    padding-block: 4px;
+  }
+  .canvas-preset select {
+    padding-block: 5px;
+  }
+  .stage-bottom {
+    min-height: 30px;
+  }
+  .composition-bottom {
+    padding-bottom: 4px;
+  }
+  .variant-card {
+    padding-block: 6px;
+  }
+  .variant-card .variant-preview {
+    height: 52px;
+  }
+  .variants .section-title {
+    margin-bottom: 5px;
+  }
+  .composition-bottom {
+    position: relative;
+    z-index: 4;
+  }
+  .composition-bottom .variants {
+    position: absolute;
+    bottom: calc(100% + 34px);
+    left: var(--space-5);
+    right: var(--space-5);
+    padding: var(--space-3);
+    max-height: calc(100dvh - 190px);
+    overflow-y: auto;
+    background: #252529;
+    border: 1px solid #444047;
+    border-radius: 10px;
+    box-shadow: 0 -10px 30px #0004;
+  }
 }

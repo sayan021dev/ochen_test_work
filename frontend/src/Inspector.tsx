@@ -155,7 +155,11 @@ export function Inspector({
       )
     : null;
   return (
-    <aside className="inspector" aria-label="Настройки композиции">
+    <aside
+      className="inspector"
+      id="settings-panel"
+      aria-label="Настройки композиции"
+    >
       <div className="panel-heading">
         <h2>
           {element
@@ -230,8 +234,10 @@ export function Inspector({
             {element.shadow ? (
               <>
                 <p className="shadow-hint">
-                  Поворачивает исходную тень. Ноль градусов сохраняет её
-                  направление; 100% — исходная длина.
+                  <span>
+                    Тень закреплена у предмета. Меняйте направление и длину.
+                  </span>
+                  <span>100% — исходная длина.</span>
                 </p>
                 <button
                   className="secondary shadow-select"

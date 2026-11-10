@@ -598,7 +598,9 @@ test("palette can be created interactively and projects have real SVG previews",
   const card = page.getByRole("button", {
     name: "Открыть проект «Галерея с превью»",
   });
-  await expect(card.locator("svg path").first()).toBeVisible();
+  await expect(
+    card.locator("svg [data-element-id] path:visible").first(),
+  ).toBeVisible();
   await card.click();
   await expect(page.getByLabel("Название проекта")).toHaveValue(
     "Галерея с превью",
