@@ -180,47 +180,40 @@ def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
             supports = set(receivers[caster.id])
             if not supports:
                 continue
-            for inverse in (False, True):
-                identifier = f"scene-{'ground-cut' if inverse else 'receivers'}-{caster.id}"
-                mask = ET.SubElement(
-                    definitions,
-                    f"{{{NS}}}mask",
+            identifier = f"scene-receivers-{caster.id}"
+            mask = ET.SubElement(
+                definitions,
+                f"{{{NS}}}mask",
+                {
+                    "id": identifier,
+                    "maskUnits": "userSpaceOnUse",
+                    "mask-type": "luminance",
+                    "x": "0",
+                    "y": "0",
+                    "width": str(width),
+                    "height": str(height),
+                },
+            )
+            for receiver in visible[:index]:
+                allowed = receiver.id in supports
+                part = ET.SubElement(
+                    mask,
+                    f"{{{NS}}}g",
                     {
-                        "id": identifier,
-                        "maskUnits": "userSpaceOnUse",
-                        "mask-type": "luminance",
-                        "x": "0",
-                        "y": "0",
-                        "width": str(width),
-                        "height": str(height),
+                        "transform": transform(receiver),
+                        "data-receiver-body": receiver.id,
+                        "data-receiver-fill": "allow" if allowed else "cut",
                     },
                 )
-                if inverse:
-                    ET.SubElement(
-                        mask,
-                        f"{{{NS}}}rect",
-                        {"width": str(width), "height": str(height), "fill": "white"},
-                    )
-                for receiver in visible[:index]:
-                    allowed = receiver.id in supports
-                    part = ET.SubElement(
-                        mask,
-                        f"{{{NS}}}g",
-                        {
-                            "transform": transform(receiver),
-                            "data-receiver-body": receiver.id,
-                            "data-receiver-fill": "allow" if allowed else "cut",
-                        },
-                    )
-                    ET.SubElement(
-                        part,
-                        f"{{{NS}}}rect",
-                        {
-                            **bounds(assets[receiver.id]),
-                            "fill": "white" if allowed != inverse else "black",
-                            "mask": f"url(#scene-body-alpha-{receiver.id})",
-                        },
-                    )
+                ET.SubElement(
+                    part,
+                    f"{{{NS}}}rect",
+                    {
+                        **bounds(assets[receiver.id]),
+                        "fill": "white" if allowed else "black",
+                        "mask": f"url(#scene-body-alpha-{receiver.id})",
+                    },
+                )
     passes = ["shadow", "body"] if split else ["all"]
     shadow_pass = (
         ET.SubElement(artwork, f"{{{NS}}}g", {"data-scene-shadows": "true"}) if split else None
@@ -239,6 +232,7 @@ def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
                     shadow or Shadow(),
                     separate_layers=split,
                     preserve_source=shadow is None,
+                    receiver_only_body=bool(receivers[element.id]),
                 )
             source = recolor_and_namespace(
                 original,
@@ -264,13 +258,13 @@ def render_scene(scene: Scene, *, custom_shadows_enabled: bool = True) -> str:
                         node.set("id", f"scene-body-{element.id}")
                 if receivers[element.id]:
                     if paint_pass == "shadow":
+                        # An elevated object has no local floor underneath it.
+                        # Keep its cast available for receiver <use> references,
+                        # without painting the remainder into empty scene space.
                         parent = ET.SubElement(
                             parent,
-                            f"{{{NS}}}g",
-                            {
-                                "data-ground-shadow-cut": element.id,
-                                "mask": f"url(#scene-ground-cut-{element.id})",
-                            },
+                            f"{{{NS}}}defs",
+                            {"data-supported-shadow-source": element.id},
                         )
                     else:
                         overlay = ET.SubElement(

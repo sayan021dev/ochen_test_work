@@ -59,6 +59,7 @@ def with_custom_shadow(
     *,
     separate_layers: bool = False,
     preserve_source: bool = False,
+    receiver_only_body: bool = False,
 ) -> ET.Element:
     meta = asset["shadow"]
     original = copy.deepcopy(root)
@@ -178,8 +179,12 @@ def with_custom_shadow(
         cast.set("clip-path", "url(#custom-cast-region)")
     for node in cast_source.iter():
         node.attrib.pop("id", None)
-    # Source preservation is explicit. Custom shadows use the reviewed clean
-    # body matte, avoiding faint remnants of original cast antialias contours.
+    # Elevated source bodies use the reviewed matte, except assets whose
+    # regional cast cut protects fused internal self-shading (the lamp base).
+    # Those keep that regional boundary and cover the cast antialias fringe
+    # in the subtraction copy. No original body paths or fills are changed.
+    regional_source = preserve_source and "cast_regions" in meta and "preserve_above" in meta
+    source_subtraction = preserve_source and (not receiver_only_body or regional_source)
     body = ET.Element(f"{{{NS}}}g", {"data-shadow-body": "true"})
     subject = ET.SubElement(
         body,
@@ -187,7 +192,7 @@ def with_custom_shadow(
         {
             "data-shadow-subject": "true",
             "mask": "url(#custom-source-body-mask)"
-            if preserve_source
+            if source_subtraction
             else "url(#custom-body-mask)",
         },
     )
@@ -198,7 +203,7 @@ def with_custom_shadow(
             for child in list(parent):
                 if child.tag == f"{{{NS}}}path" and child.get("id") in excluded:
                     parent.remove(child)
-    if preserve_source:
+    if source_subtraction:
         source_mask = ET.SubElement(
             defs,
             f"{{{NS}}}mask",
@@ -219,6 +224,10 @@ def with_custom_shadow(
         )
         subtraction = _black_copy(cast, "black")
         subtraction.set("data-mask-cut", "true")
+        if receiver_only_body:
+            for node in subtraction.iter(f"{{{NS}}}path"):
+                node.set("stroke", "black")
+                node.set("stroke-width", str(meta["outline"]))
         source_mask.append(subtraction)
     if "sidewall" in meta and not preserve_source:
         cx, cy, rx, ry, depth = meta["sidewall"]

@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 
 type Item = {
   id: string;
+  family: string;
   x: number;
   y: number;
   angle: number;
@@ -15,7 +16,7 @@ type Item = {
 };
 type Fixture = {
   name: string;
-  scene: { elements: Item[] };
+  scene: { elements: Item[]; scale: number };
   enabled: boolean;
   preview: string;
   exported: string;
@@ -30,7 +31,7 @@ type Fixture = {
 };
 let fixtures: Fixture[] = [];
 test.beforeAll(() => {
-  const path = resolve("../tmp/receiver-native-fixtures.json");
+  const path = resolve(`../tmp/receiver-native-fixtures-${process.pid}.json`);
   execFileSync(
     process.execPath,
     ["node_modules/vitest/vitest.mjs", "run", "src/receiver-renderer.test.tsx"],
@@ -194,4 +195,162 @@ test("actual receiver alpha keeps vector holes and unrelated foreground surfaces
       outside: 0,
     });
   }
+});
+
+test("supported original casts never paint empty air outside their receivers", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  const results = [];
+  for (const fixture of fixtures.filter((f) => f.name.endsWith("-source"))) {
+    const result = await page.evaluate(async (fixture) => {
+      const NS = "http://www.w3.org/2000/svg";
+      const raster = async (source: string) => {
+        const image = new Image();
+        image.src = "data:image/svg+xml," + encodeURIComponent(source);
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d")!;
+        context.drawImage(image, 0, 0);
+        return context.getImageData(0, 0, canvas.width, canvas.height).data;
+      };
+      const failures = [];
+      for (const caster of fixture.scene.elements.filter(
+        (e) => e.support_ids.length,
+      )) {
+        const doc = new DOMParser().parseFromString(
+            fixture.preview,
+            "image/svg+xml",
+          ),
+          root = doc.documentElement;
+        const ground = root.querySelector(
+          `[data-shadow-owner-id="${caster.id}"]`,
+        )!;
+        const groundPaint = ground.closest("defs")
+          ? null
+          : (ground.closest("[data-ground-shadow-cut]") ?? ground);
+        const contact = root.querySelector(
+          `[data-contact-shadow-owner="${caster.id}"]`,
+        )!;
+        const templates = doc.createElementNS(NS, "defs");
+        for (const child of [...root.children])
+          if (child.localName !== "defs") templates.append(child);
+        root.append(templates);
+        if (groundPaint) root.append(groundPaint);
+        root.append(contact);
+        const paint = await raster(new XMLSerializer().serializeToString(root));
+        groundPaint?.remove();
+        contact.remove();
+        const receiverMask = doc.createElementNS(NS, "rect");
+        receiverMask.setAttribute("width", root.getAttribute("width")!);
+        receiverMask.setAttribute("height", root.getAttribute("height")!);
+        receiverMask.setAttribute("fill", "white");
+        receiverMask.setAttribute("mask", contact.getAttribute("mask")!);
+        root.append(receiverMask);
+        const receivers = await raster(
+          new XMLSerializer().serializeToString(root),
+        );
+        receiverMask.remove();
+        const body = root.querySelector(`[data-element-id="${caster.id}"]`)!;
+        const cleanMask = body.querySelector(
+          "[data-mask-part='body']",
+        )!.parentElement!;
+        const matte = doc.createElementNS(NS, "g");
+        matte.setAttribute("transform", body.getAttribute("transform")!);
+        const area = doc.createElementNS(NS, "rect");
+        for (const key of ["x", "y", "width", "height"])
+          area.setAttribute(key, cleanMask.getAttribute(key)!);
+        area.setAttribute("fill", "white");
+        const assetWidth = Number(cleanMask.getAttribute("width")) / 7;
+        if (caster.family === "lamp") {
+          // Empty source-floor region to the right of the actual lamp base.
+          // Keep the separate black self-shadow on the base itself intact.
+          const unit = assetWidth / 945.9432373046875;
+          for (const [key, value] of Object.entries({
+            x: 650,
+            y: 800,
+            width: 200,
+            height: 240,
+          }))
+            area.setAttribute(key, String(value * unit));
+        } else area.setAttribute("mask", `url(#${cleanMask.id})`);
+        matte.append(area);
+        root.append(matte);
+        const bodyShape = await raster(
+          new XMLSerializer().serializeToString(root),
+        );
+        matte.remove();
+        root.append(body);
+        const bodyPaint = await raster(
+          new XMLSerializer().serializeToString(root),
+        );
+        let maxRegionalEdgeAlpha = 0,
+          regionalEdgePixels = 0;
+        let airPixels = 0,
+          receiverPixels = 0,
+          bodyAirPixels = 0;
+        for (let i = 3; i < paint.length; i += 4) {
+          if (paint[i] > 16 && receivers[i] === 0) airPixels++;
+          if (paint[i] > 16 && receivers[i] > 16) receiverPixels++;
+          const outsideBody =
+            caster.family === "lamp"
+              ? bodyShape[i] === 255
+              : bodyShape[i] === 0;
+          if (outsideBody && caster.family === "lamp") {
+            maxRegionalEdgeAlpha = Math.max(maxRegionalEdgeAlpha, bodyPaint[i]);
+            if (bodyPaint[i] > 0) regionalEdgePixels++;
+          }
+          // Regional clip edges retain tiny antialias samples; an air stripe
+          // exceeds 16/255 alpha. Pen matte remains stricter at 2/255.
+          if (outsideBody && bodyPaint[i] > (caster.family === "lamp" ? 16 : 2))
+            bodyAirPixels++;
+        }
+        let baseSelfShadow: number[] | null = null;
+        if (caster.family === "lamp") {
+          const unit = assetWidth / 945.9432373046875;
+          const angle = (caster.angle * Math.PI) / 180;
+          const x = 330 * unit * fixture.scene.scale * caster.scale_x;
+          const y = 810 * unit * fixture.scene.scale * caster.scale_y;
+          const px = Math.floor(
+            caster.x + x * Math.cos(angle) - y * Math.sin(angle),
+          );
+          const py = Math.floor(
+            caster.y + x * Math.sin(angle) + y * Math.cos(angle),
+          );
+          const offset = (py * Number(root.getAttribute("width")) + px) * 4;
+          baseSelfShadow = [...bodyPaint.slice(offset, offset + 4)];
+        }
+        failures.push({
+          caster: caster.id,
+          baseSelfShadow,
+          maxRegionalEdgeAlpha,
+          regionalEdgePixels,
+          airPixels,
+          receiverPixels,
+          bodyAirPixels,
+        });
+      }
+      return failures;
+    }, fixture);
+    results.push({ fixture: fixture.name, result });
+  }
+  for (const { fixture, result } of results)
+    for (const sample of result) {
+      expect(sample.airPixels, JSON.stringify({ fixture, ...sample })).toBe(0);
+      if (sample.baseSelfShadow)
+        expect(
+          sample.baseSelfShadow,
+          JSON.stringify({ fixture, ...sample }),
+        ).toEqual([24, 24, 23, 255]);
+      expect(sample.bodyAirPixels, JSON.stringify({ fixture, ...sample })).toBe(
+        0,
+      );
+      expect(
+        sample.receiverPixels,
+        JSON.stringify({ fixture, ...sample }),
+      ).toBeGreaterThan(0);
+    }
+  console.log("Source casts restricted to receivers", JSON.stringify(results));
 });

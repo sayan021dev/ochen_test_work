@@ -112,6 +112,31 @@ def test_only_explicit_preserve_source_keeps_ordinary_original_cast(asset):
     assert result.find(".//*[@data-shadow-occluder]") is None
 
 
+@pytest.mark.parametrize("asset", CATALOG, ids=lambda a: a["id"])
+def test_supported_source_body_clips_only_visibility_without_redrawing_original_paths(asset):
+    original = original_asset(asset)
+    result = with_custom_shadow(
+        original,
+        asset,
+        Shadow(),
+        separate_layers=True,
+        preserve_source=True,
+        receiver_only_body=True,
+    )
+    body = result.find("s:g[@data-shadow-body]/s:g[@data-shadow-subject]", NS)
+    assert body.get("mask") == (
+        "url(#custom-source-body-mask)"
+        if "cast_regions" in asset["shadow"] and "preserve_above" in asset["shadow"]
+        else "url(#custom-body-mask)"
+    )
+    assert [
+        (p.get("d"), p.get("fill"), p.get("stroke")) for p in body.findall(".//s:path", NS)
+    ] == [(p.get("d"), p.get("fill"), p.get("stroke")) for p in original.findall(".//s:path", NS)]
+    assert result.find(".//*[@data-shadow-body-repair]") is None
+    if "preserve_above" not in asset["shadow"]:
+        assert result.find(".//*[@data-source-body-mask]") is None
+
+
 def test_zero_length_and_edge_on_projection_are_empty_but_body_is_retained():
     asset = next(a for a in CATALOG if a["id"] == "l-main-folder")
     x1, y1, x2, y2 = asset["shadow"]["projection"]["ground"]

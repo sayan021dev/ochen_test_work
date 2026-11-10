@@ -7,6 +7,7 @@ export type ShadowEffect = {
   height: number;
   separateLayers?: boolean;
   preserveSource?: boolean;
+  receiverOnlyBody?: boolean;
 };
 const NS = "http://www.w3.org/2000/svg";
 function projectionValues(meta: ShadowMetadata, shadow: Shadow): number[] {
@@ -187,10 +188,14 @@ export function applyCustomShadow(
   for (const node of [...castSource.querySelectorAll("[id]")])
     node.removeAttribute("id");
   cast.append(castSource);
+  const sourceSubtraction =
+    preserveSource &&
+    (!effect.receiverOnlyBody ||
+      (!!meta.cast_regions && meta.preserve_above !== undefined));
   const body = create("g", { "data-shadow-body": "true" });
   const subject = create("g", {
     "data-shadow-subject": "true",
-    mask: preserveSource
+    mask: sourceSubtraction
       ? "url(#custom-source-body-mask)"
       : "url(#custom-body-mask)",
   });
@@ -201,7 +206,7 @@ export function applyCustomShadow(
     for (const path of [...subject.querySelectorAll("path")])
       if (excluded.has(path.id)) path.remove();
   }
-  if (preserveSource) {
+  if (sourceSubtraction) {
     const sourceMask = create("mask", {
       id: "custom-source-body-mask",
       maskUnits: "userSpaceOnUse",
@@ -219,6 +224,11 @@ export function applyCustomShadow(
     sourceMask.append(create("rect", rectAttrs));
     const subtraction = blackCopy(cast, "black");
     subtraction.setAttribute("data-mask-cut", "true");
+    if (effect.receiverOnlyBody)
+      for (const path of subtraction.querySelectorAll("path")) {
+        path.setAttribute("stroke", "black");
+        path.setAttribute("stroke-width", String(meta.outline));
+      }
     sourceMask.append(subtraction);
     defs.append(sourceMask);
   }

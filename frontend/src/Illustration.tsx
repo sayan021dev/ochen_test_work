@@ -22,6 +22,7 @@ const Artwork = memo(function Artwork({
   asset,
   pass = "all",
   referenceId,
+  receiverOnlyBody = false,
 }: {
   source: string;
   palette: Palette;
@@ -30,6 +31,7 @@ const Artwork = memo(function Artwork({
   asset: Asset;
   pass?: "all" | "body" | "shadow";
   referenceId?: string;
+  receiverOnlyBody?: boolean;
 }) {
   const markup = useMemo(() => {
     const prepared =
@@ -44,6 +46,7 @@ const Artwork = memo(function Artwork({
               role: asset.role,
               width: asset.width,
               height: asset.height,
+              receiverOnlyBody,
             },
             pass,
             !!shadow,
@@ -76,7 +79,7 @@ const Artwork = memo(function Artwork({
     return [...document.documentElement.children]
       .map((node) => new XMLSerializer().serializeToString(node))
       .join("");
-  }, [source, palette, id, shadow, asset, pass, referenceId]);
+  }, [source, palette, id, shadow, asset, pass, referenceId, receiverOnlyBody]);
   return <g fill="none" dangerouslySetInnerHTML={{ __html: markup }} />;
 });
 
@@ -128,10 +131,10 @@ export function Illustration({
     ? entries.flatMap(({ element: caster }, index) => {
         const supports = new Set(receivers.get(caster.id));
         if (!supports.size) return [];
-        return [false, true].map((inverse) => (
+        return (
           <mask
-            key={`${caster.id}-${inverse}`}
-            id={`${prefix}-${inverse ? "ground-cut" : "receivers"}-${caster.id}`}
+            key={caster.id}
+            id={`${prefix}-receivers-${caster.id}`}
             maskUnits="userSpaceOnUse"
             mask-type="luminance"
             x="0"
@@ -139,7 +142,6 @@ export function Illustration({
             width={width}
             height={height}
           >
-            {inverse && <rect width={width} height={height} fill="white" />}
             {entries.slice(0, index).map(({ element: receiver, asset }) => {
               const allowed = supports.has(receiver.id);
               return (
@@ -151,14 +153,14 @@ export function Illustration({
                 >
                   <rect
                     {...bounds(asset)}
-                    fill={allowed !== inverse ? "white" : "black"}
+                    fill={allowed ? "white" : "black"}
                     mask={`url(#${prefix}-body-alpha-${receiver.id})`}
                   />
                 </g>
               );
             })}
           </mask>
-        ));
+        );
       })
     : [];
   return (
@@ -207,6 +209,7 @@ export function Illustration({
                     shadow={shadow}
                     asset={asset}
                     pass="shadow"
+                    receiverOnlyBody={receivers.get(element.id)!.length > 0}
                     referenceId={
                       contacts ? `${prefix}-cast-${element.id}` : undefined
                     }
@@ -214,13 +217,12 @@ export function Illustration({
                 </g>
               );
               return receivers.get(element.id)!.length ? (
-                <g
+                <defs
                   key={element.id}
-                  data-ground-shadow-cut={element.id}
-                  mask={`url(#${prefix}-ground-cut-${element.id})`}
+                  data-supported-shadow-source={element.id}
                 >
                   {painted}
-                </g>
+                </defs>
               ) : (
                 painted
               );
@@ -256,6 +258,7 @@ export function Illustration({
                 shadow={shadow}
                 asset={asset}
                 pass={split ? "body" : "all"}
+                receiverOnlyBody={receivers.get(element.id)!.length > 0}
                 referenceId={
                   contacts ? `${prefix}-body-${element.id}` : undefined
                 }

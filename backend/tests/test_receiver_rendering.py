@@ -42,6 +42,23 @@ def test_source_contact_chain_remains_when_every_custom_effect_is_disabled():
         assert use.get("href").removeprefix("#") in ids
 
 
+def test_supported_source_casts_are_contact_only_instead_of_floating_on_empty_canvas():
+    root = ET.fromstring(render_scene(chain(), custom_shadows_enabled=False))
+    ground = root.find(".//*[@data-scene-shadows]", NS)
+    painted_owners = [
+        node.get("data-shadow-owner-id")
+        for child in ground
+        if child.tag != f"{{{NS['s']}}}defs"
+        for node in child.iter()
+        if node.get("data-shadow-owner-id")
+    ]
+    assert painted_owners == ["phone"]
+    for identifier in ("lamp", "pen"):
+        definition = ground.find(f"s:defs//*[@data-shadow-owner-id='{identifier}']", NS)
+        assert definition is not None
+        assert root.find(f".//*[@data-contact-shadow-owner='{identifier}']") is not None
+
+
 def test_receiver_mask_uses_body_alpha_and_preserves_unrelated_foreground_occlusion():
     scene = Scene.model_validate(
         {
@@ -103,10 +120,11 @@ def test_explicit_supports_force_the_separate_pass_even_before_ink_intersects():
     assert needs_shadow_pass(scene)
 
 
-def test_global_light_uses_the_same_active_cast_on_ground_and_receivers():
+def test_global_light_uses_the_active_cast_only_on_receivers_for_supported_objects():
     root = ET.fromstring(render_scene(chain()))
     overlay = root.find(".//*[@data-contact-shadow-owner='pen']")
     castid = overlay.find(".//s:use", NS).get("href")[1:]
     cast = root.find(f".//s:g[@id='{castid}']", NS)
     assert cast.get("data-shadow-source") == "body-silhouette"
-    assert root.find(".//*[@data-ground-shadow-cut='pen']") is not None
+    assert root.find(".//*[@data-supported-shadow-source='pen']") is not None
+    assert root.find(".//*[@data-ground-shadow-cut='pen']") is None
