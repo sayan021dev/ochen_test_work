@@ -247,7 +247,9 @@ REQUIRE_SITE_PASSWORD и COOKIE_SECURE всегда true в production. Свер
 image/revision, readiness, TLS и анонимный 401 документации отдельно от remote main.
 Перед серверными изменениями сверять хост, владение Termius, mounts и backups.
 
-Выпуск 11 ноября завершён: https://true-4.ru, runtime revision `245425d`.
+Первый выпуск 11 ноября: https://true-4.ru, runtime revision `245425d`.
+Общий логотип страницы входа, редактора и галереи развёрнут из `c4c4981`;
+актуальные сведения о runtime всегда сверять с docs/RELEASE.md и работающим image.
 Фактические проверки, image, backup и отдельный статус CI — в docs/RELEASE.md.
 Swagger открывается после входа на главной в том же браузере. Production env
 пользователь создал через скрытую форму; не перезаписывать его и не генерировать
