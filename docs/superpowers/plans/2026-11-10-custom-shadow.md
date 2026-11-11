@@ -1,5 +1,8 @@
 # Custom Shadow Implementation Plan
 
+> Архив этапа разработки. Текущее принятое поведение описано в [итоге V1](../../V1.md);
+> при выпуске использовать [актуальную инструкцию](../../DEPLOYMENT.md).
+
 > Execution: superpowers:executing-plans, native implementation; user approved feature and main pushes.
 
 **Goal:** optional per-object vector shadow controls without changing default artwork.

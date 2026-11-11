@@ -1,5 +1,8 @@
 # Silhouette Shadow Implementation Plan
 
+> Архив этапа разработки. Текущее принятое поведение описано в [итоге V1](../../V1.md);
+> при выпуске использовать [актуальную инструкцию](../../DEPLOYMENT.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans. Steps use checkbox syntax.
 
 **Goal:** Replace custom footprint distortion with a proportionate vector silhouette projected from a fixed ground line.

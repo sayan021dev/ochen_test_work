@@ -1,5 +1,8 @@
 # Receiver Shadows and Scene Light Implementation Plan
 
+> Архив этапа разработки. Текущее принятое поведение описано в [итоге V1](../../V1.md);
+> при выпуске использовать [актуальную инструкцию](../../DEPLOYMENT.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans. Steps use checkbox syntax.
 
 **Goal:** Paint supported objects' shadows on their receivers and add a removable experimental light source.

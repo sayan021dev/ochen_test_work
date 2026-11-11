@@ -1,5 +1,8 @@
 # Composition fidelity and attached shadows
 
+> Архив этапа разработки. Текущее принятое поведение описано в [итоге V1](../../V1.md);
+> при выпуске использовать [актуальную инструкцию](../../DEPLOYMENT.md).
+
 The user explicitly requested implementation and tests, with main commits/push.
 This is a correction of the accepted product rather than a new approval stage.
 

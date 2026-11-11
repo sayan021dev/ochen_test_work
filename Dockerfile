@@ -6,6 +6,9 @@ COPY frontend/ ./
 RUN npm run build
 
 FROM python:3.12-slim
+ARG GIT_REVISION=development
+LABEL org.opencontainers.image.revision=$GIT_REVISION
+LABEL org.opencontainers.image.source="https://github.com/sayan021dev/ochen_test_work"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONPATH=/app/backend
 WORKDIR /app
 COPY requirements.lock ./

@@ -1,5 +1,8 @@
 # Editor refinement implementation plan
 
+> Архив этапа разработки. Текущее принятое поведение описано в [итоге V1](../../V1.md);
+> при выпуске использовать [актуальную инструкцию](../../DEPLOYMENT.md).
+
 User authorized all listed changes in chat and screenshots, including optional free transforms, corrected original-shadow controls and deploy password gate. Direct main commits/push remain authorized.
 
 ## Outcomes and boundaries

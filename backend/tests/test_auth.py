@@ -144,6 +144,42 @@ def test_login_logout_and_wrong_password(make_app):
         assert client.get("/api/projects").status_code == 401
 
 
+def test_real_app_protects_swagger_and_schema_with_secure_cookie(tmp_path):
+    from app.main import create_app
+
+    config = Settings(
+        _env_file=None,
+        site_password="test-production-password",
+        require_site_password=True,
+        auth_secret="a" * 64,
+        cookie_secure=True,
+        allowed_origins=["https://true-4.ru"],
+        database_url=f"sqlite:///{tmp_path}/production.db",
+        openai_api_key="",
+        http_proxy="",
+    )
+    app = create_app(config)
+    Base.metadata.create_all(app.state.engine)
+    with TestClient(app, base_url="https://true-4.ru") as client:
+        for path in ["/docs", "/redoc", "/openapi.json", "/api/bootstrap"]:
+            assert client.get(path).status_code == 401
+        start(client)
+        result = client.post(
+            "/api/auth/login",
+            json={"password": "test-production-password"},
+            headers={"Origin": "https://true-4.ru"},
+        )
+        assert result.status_code == 200
+        auth_header = next(h for h in result.headers.get_list("set-cookie") if AUTH_COOKIE in h)
+        assert all(flag in auth_header.lower() for flag in ["secure", "httponly", "samesite=lax"])
+        assert "SwaggerUIBundle" in client.get("/docs").text
+        assert "redoc" in client.get("/redoc").text.lower()
+        assert client.get("/openapi.json").json()["openapi"].startswith("3.")
+        assert len(client.get("/api/bootstrap").json()["assets"]) == 40
+        assert client.post("/api/auth/logout").status_code == 200
+        assert client.get("/docs").status_code == 401
+
+
 def test_csrf_and_origin_required_for_login_logout(make_app):
     with TestClient(make_app()) as client:
         assert client.post("/api/auth/login", json={"password": "example-pass"}).status_code == 403

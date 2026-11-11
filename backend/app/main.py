@@ -38,7 +38,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
         app.state.engine.dispose()
 
-    app = FastAPI(title="Иллюстрации · Очень", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(
+        title="Сложено · Редактор иллюстраций",
+        version="0.1.0",
+        description=(
+            "API векторного редактора: каталог, композиции, палитры, проекты и SVG. "
+            "При включённой защите сначала войдите на главной странице в этом же браузере. "
+            "Изменяющие запросы требуют X-CSRF-Token из /api/auth."
+        ),
+        lifespan=lifespan,
+    )
     app.state.engine = make_engine(config.database_url)
     install_auth(app, config, csrf_token)
     app.state.ai_cache = {}

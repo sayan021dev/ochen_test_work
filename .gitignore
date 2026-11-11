@@ -21,7 +21,7 @@ dist/
 .next/
 coverage/
 playwright-report/
-test-results/
+test-results*/
 *.tsbuildinfo
 
 # Local data and temporary research
