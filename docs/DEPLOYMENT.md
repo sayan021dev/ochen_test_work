@@ -17,8 +17,11 @@
 - Домен `true-4.ru`, HTTPS, существующий ACME webroot `/var/www/certbot`.
   Новый reverse proxy на портах 80/443 не запускается.
 
-После пересоздания общего Nginx нужно снова проверить его подключение к сети
-`slozheno-prod_edge`. При необходимости подключить только этот контейнер командой
+При первом выпуске добавить внешнюю сеть `slozheno-prod_edge` в декларативную
+конфигурацию только edge-сервиса, сохранив все остальные поля/сервисы. Перед записью
+сделать защищённую копию; выполнить `compose config --quiet`. Уже работающий edge
+подключается без пересоздания. После его будущего пересоздания снова проверить сеть.
+При необходимости подключить только этот контейнер командой
 `docker network connect slozheno-prod_edge <EDGE_CONTAINER>`. При обычном обновлении
 web Nginx пересоздавать не нужно: DNS upstream обновляется через Docker resolver.
 
@@ -73,6 +76,16 @@ Entrypoint применяет Alembic перед стартом API. `up --wait`
    [HTTPS-конфигурацию](../deploy/nginx-https.conf), снова `nginx -t` и reload.
 4. Проверить certificate SAN/expiry, HTTP→HTTPS и автоматическое продление.
    При ошибке синтаксиса восстановить backup до reload; другие сайты не перезапускать.
+
+На этом сервере существующий Certbot выполняет renew в цикле. Для подхвата нового
+сертификата предусмотрены [helper](../deploy/slozheno-tls-reload.sh),
+[service](../deploy/slozheno-tls-reload.service) и [timer](../deploy/slozheno-tls-reload.timer).
+Helper устанавливается root в `/usr/local/sbin/slozheno-tls-reload` с правами `0755`,
+units — в `/etc/systemd/system`. Проверить `bash -n`, `systemd-analyze verify`,
+затем `systemctl daemon-reload` и `systemctl enable --now slozheno-tls-reload.timer`.
+Контрольный запуск service должен завершиться с кодом 0. Дважды в сутки timer сравнивает
+SHA256 сертификата со stamp в `/var/lib/slozheno-tls`; graceful reload выполняется
+только при изменении файла и после успешного `nginx -t`. Паролей в helper/units нет.
 
 ## Доступ и smoke после выпуска
 
