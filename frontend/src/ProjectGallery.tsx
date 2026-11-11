@@ -7,6 +7,7 @@ import {
   Plus,
 } from "lucide-react";
 import { Illustration } from "./Canvas";
+import { Brand } from "./Brand";
 import { FORMATS, FORMAT_LABELS, type Asset, type Project } from "./types";
 import "./panels.css";
 export type ProjectGalleryProps = {
@@ -31,14 +32,7 @@ export function ProjectGallery({
   return (
     <main className="sb-project-gallery">
       <header className="app-header sb-gallery-header">
-        <a className="brand" href="/" aria-label="Сложено, главная">
-          <span className="brand-mark">
-            <i />
-            <i />
-            <i />
-          </span>
-          <h1>Сложено</h1>
-        </a>
+        <Brand />
         <div className="sb-gallery-actions">
           <button
             type="button"

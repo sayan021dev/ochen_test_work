@@ -320,16 +320,6 @@
   align-items: center;
   gap: 20px;
 }
-.sb-access-brand {
-  font-family: "TikTok Sans", Inter, sans-serif;
-  font-size: 27px;
-  letter-spacing: -1px;
-}
-.sb-access-brand > span {
-  color: #ff68a4;
-  font-size: 17px;
-  margin-left: 3px;
-}
 .sb-gallery-scroll {
   overflow: auto;
   min-height: 0;

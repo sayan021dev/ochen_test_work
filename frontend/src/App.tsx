@@ -30,6 +30,7 @@ import { ShadowFeaturesProvider } from "./features";
 import { ExperimentalDialog } from "./ExperimentalDialog";
 import { Library } from "./Library";
 import { PasswordGate } from "./PasswordGate";
+import { Brand } from "./Brand";
 import { PaletteDialog } from "./PaletteDialog";
 import { WelcomeDialog } from "./WelcomeDialog";
 import { ProjectGallery } from "./ProjectGallery";
@@ -729,14 +730,7 @@ function Editor({
       >
         <header className="app-header">
           <div className="header-project-actions">
-            <a className="brand" href="/" aria-label="Сложено, главная">
-              <span className="brand-mark">
-                <i />
-                <i />
-                <i />
-              </span>
-              <h1>Сложено</h1>
-            </a>
+            <Brand />
             <button
               className="text-button new-project-button"
               onClick={newProject}

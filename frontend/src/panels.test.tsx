@@ -136,6 +136,16 @@ it("rejects incomplete HEX colors before applying", async () => {
   expect(applied).toBe(false);
 });
 
+it("shows the editor logo as the home link on the password page", () => {
+  const view = render(<PasswordGate onLogin={async () => {}} />);
+  const brand = view.getByRole("link", { name: "Сложено, главная" });
+  expect(brand.getAttribute("href")).toBe("/");
+  expect(brand.querySelector(".brand-mark")?.getAttribute("aria-hidden")).toBe(
+    "true",
+  );
+  expect(brand.textContent).toBe("Сложено");
+});
+
 it("clears a rejected password and allows retry", async () => {
   const attempts: string[] = [];
   const view = render(

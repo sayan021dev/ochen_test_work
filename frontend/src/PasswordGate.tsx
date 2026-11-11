@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, LoaderCircle, LockKeyhole } from "lucide-react";
+import { Brand } from "./Brand";
 import "./panels.css";
 export type PasswordGateProps = {
   onLogin: (password: string) => Promise<void>;
@@ -46,9 +47,7 @@ export function PasswordGate({ onLogin }: PasswordGateProps) {
   };
   return (
     <main className="sb-password-page">
-      <div className="sb-access-brand">
-        Сложено<span>●</span>
-      </div>
+      <Brand className="sb-access-brand" />
       <form
         className="sb-password-card"
         onSubmit={(event) => void submit(event)}

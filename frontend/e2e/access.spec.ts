@@ -8,6 +8,10 @@ test("password page protects catalogue and generation and permits the editor aft
   ]);
   await page.goto("http://127.0.0.1:8019");
   await expect(page.getByLabel("Пароль доступа")).toBeVisible();
+  const brand = page.getByRole("link", { name: "Сложено, главная" });
+  await expect(brand).toBeVisible();
+  await expect(brand.locator(".brand-mark i")).toHaveCount(3);
+  const loginBrand = await brand.innerHTML();
   expect(
     (await page.request.get("http://127.0.0.1:8019/api/bootstrap")).status(),
   ).toBe(401);
@@ -24,6 +28,7 @@ test("password page protects catalogue and generation and permits the editor aft
   await page.getByLabel("Пароль доступа").fill("test-access-only");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page.getByTestId("artboard")).toBeVisible();
+  expect(await brand.innerHTML()).toBe(loginBrand);
   expect(
     (await page.request.get("http://127.0.0.1:8019/api/bootstrap")).status(),
   ).toBe(200);
