@@ -14,7 +14,9 @@ OpenAI подбирает существующие предметы, алгор�
 [Короткое демо](docs/evidence/demo.webm) · [Примеры SVG и JSON](examples/compositions/manifest.json)
 
 Обычная и экспериментальная версии приняты пользователем 11 ноября 2026.
-Публичный выпуск готовится для `true-4.ru`; его фактический статус указан в журнале выпуска.
+Сайт развёрнут на **[true-4.ru](https://true-4.ru)**. Введите пароль проверяющего;
+после входа в том же браузере доступен [Swagger](https://true-4.ru/docs).
+Подтверждённые версии, проверки и backup: [журнал выпуска](docs/RELEASE.md).
 
 ## Возможности
 
@@ -344,6 +346,8 @@ COOKIE_SECURE=true
 Пароль и ключи не попадают в сборку frontend или Git. Production-конфигурация для
 `true-4.ru` находится в `compose.production.yaml`: пароль обязателен, БД не публикует порт,
 cookie передаются только по HTTPS. [Скрытая форма в Termius и порядок выпуска](docs/DEPLOYMENT.md).
+
+![Парольный вход на production](docs/evidence/production-login.png)
 
 ## Темы и защита AI
 

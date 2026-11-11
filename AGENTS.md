@@ -246,3 +246,10 @@ Production: отдельный `/opt/slozheno`, `compose.production.yaml`, пр�
 REQUIRE_SITE_PASSWORD и COOKIE_SECURE всегда true в production. Сверять работающий
 image/revision, readiness, TLS и анонимный 401 документации отдельно от remote main.
 Перед серверными изменениями сверять хост, владение Termius, mounts и backups.
+
+Выпуск 11 ноября завершён: https://true-4.ru, runtime revision `245425d`.
+Фактические проверки, image, backup и отдельный статус CI — в docs/RELEASE.md.
+Swagger открывается после входа на главной в том же браузере. Production env
+пользователь создал через скрытую форму; не перезаписывать его и не генерировать
+заново пароль БД/AUTH_SECRET при обычном обновлении. Сеть edge закреплена в его
+декларативной конфигурации, для обновлённого TLS установлен условный reload timer.
